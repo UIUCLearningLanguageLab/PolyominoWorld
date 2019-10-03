@@ -11,6 +11,9 @@ def generate_data(the_world, num_training_instances, master_shape_list, color_li
     shape_counter = 0
     shape_list = []
     event_counter = 0
+    f = open(file_name, 'w')
+    f.close()
+
     for i in range(9):  # num of shape types/size
         for j in range(8):  # num of colors
             for k in range(num_training_instances):
@@ -67,17 +70,17 @@ def main():
 
     #the_display = display.Display(the_world)
 
-    train_data_list = generate_data(the_world, num_training_instances, shape_list, color_list, num_images, "training.txt")
-    test_data_list = generate_data(the_world, num_test_instances, shape_list, color_list, num_images, "test.txt")
+    train_data_list = generate_data(the_world, num_training_instances, shape_list, color_list, num_images, "training.csv")
+    #test_data_list = generate_data(the_world, num_test_instances, shape_list, color_list, num_images, "test.csv")
 
-    # write Data
-    print("training data list size = {}".format(len(train_data_list)))
-    file = open('dataset.txt', 'wb')
-    pickle.dump(train_data_list, file)
-
-    print("testing data list size = {}".format(len(test_data_list)))
-    f = open('test_dataset.txt', 'wb')
-    pickle.dump(test_data_list, f)
+    # # write Data
+    # print("training data list size = {}".format(len(train_data_list)))
+    # file = open('dataset.txt', 'wb')
+    # pickle.dump(train_data_list, file)
+    #
+    # print("testing data list size = {}".format(len(test_data_list)))
+    # f = open('test_dataset.txt', 'wb')
+    # pickle.dump(test_data_list, f)
 
     #the_display.root.mainloop()
 

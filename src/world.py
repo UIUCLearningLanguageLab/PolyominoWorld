@@ -60,10 +60,10 @@ class World:
     def save_world_state(self, file_name):
 
         outfile = open(file_name, 'a')
-        output_string = "{}-{},".format(self.event_counter, self.turn_counter)
+        output_string = "{},{},".format(self.event_counter, self.turn_counter)
 
         for i in range(self.num_shapes):
-            output_string += "{}-{}-{}-{}-{}-{}-{},".format(self.current_shape_list[i].name,
+            output_string += "{},{},{},{},{},{},{},".format(self.current_shape_list[i].name,
                                                             self.current_shape_list[i].size,
                                                             self.current_shape_list[i].color,
                                                             self.current_shape_list[i].current_variant,
@@ -88,9 +88,9 @@ class World:
                         color = 'silver'
 
                 values = self.color_value_dict[color]
-                r_string += "{:s}-".format(str(values[0]))
-                g_string += "{:s}-".format(str(values[1]))
-                b_string += "{:s}-".format(str(values[2]))
+                r_string += "{:s},".format(str(values[0]))
+                g_string += "{:s},".format(str(values[1]))
+                b_string += "{:s},".format(str(values[2]))
                 j += 1
             i += 1
         output_string += r_string[:-1] + "," + g_string[:-1] + "," + b_string[:-1] + '\n'

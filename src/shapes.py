@@ -34,7 +34,7 @@ class Shape:
         self.current_variant = random.choice(self.variant_list)
         self.active_cell_list = self.active_cell_dict[self.current_variant]
         self.get_dimensions()
-        self.action_probs = np.array(config.Shape.action_probs_dict[self.name])
+        self.action_probs = np.array(config.Shape.action_probs_list)
         self.determine_initial_position()
 
     def determine_initial_position(self):

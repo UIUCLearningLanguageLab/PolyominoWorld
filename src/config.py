@@ -29,6 +29,7 @@ class Shape:
     shape_probs_dict = [10, 10, 5, 5, 2, 2, 2, 2, 2]
     shape_color_list = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta']
     # probability of: rest, move, rotate, flip
+    action_probs_list = [.25, .25, .25, .25]
     action_probs_dict = {'Monomino':    [.25, .25, .25, .25],
                      'Domino':      [.25, .25, .25, .25],
                      'Tromino1':    [.25, .25, .25, .25],
