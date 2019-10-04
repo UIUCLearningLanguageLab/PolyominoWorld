@@ -1,4 +1,5 @@
 from src import config
+from src import shapes
 
 
 class World:
@@ -6,11 +7,9 @@ class World:
     def __init__(self):
         self.history_list = []
         self.event_counter = None
-        self.num_scenes = config.World.num_scenes
-        self.scene_length = config.World.scene_length
         self.num_rows = config.World.num_rows
         self.num_columns = config.World.num_columns
-        self.num_shapes = config.World.num_shapes
+        self.num_shapes = 1
 
         self.shape_id_counter = None
         self.occupied_cell_dict = None
@@ -21,24 +20,16 @@ class World:
         self.num_features = 0
         self.feature_list = []
         self.feature_index_dict = {}
-        self.color_list = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta']
-        self.color_list = ['black']
-        self.shapes_list = ['Monomino', 'Domino',
-                            'Tromino1', 'Tromino2',
-                            'Tetromino1', 'Tetromino2', 'Tetromino3', 'Tetromino4', 'Tetromino5']
-        self.color_value_dict = {'black':   (-1., -1., -1.),
-                                 'white':   (1., 1., 1.),
-                                 'red':     (1., -1., -1.),
-                                 'blue':    (-1., 1., -1.),
-                                 'green':   (-1., -1., 1.),
-                                 'yellow':  (1., -1., 1.),
-                                 'cyan':    (-1., 1., 1.),
-                                 'magenta': (1., 1., -1.),
-                                 'grey': (0., 0., 0.),
-                                 'silver': (-.5, -.5, -.5)
-                                 }
-        self.sizes_list = [1, 2, 3, 4]
-        self.generate_label_indexes()
+
+        self.master_shape_dict = {'monomino': shapes.Monomino(self),
+                                  'domino': shapes.Domino(self),
+                                  'tromino1': shapes.Tromino1(self),
+                                  'tromino2': shapes.Tromino2(self),
+                                  'tetromino1': shapes.Tetromino1(self),
+                                  'tetromino2': shapes.Tetromino2(self),
+                                  'tetromino3': shapes.Tetromino3(self),
+                                  'tetromino4': shapes.Tetromino4(self),
+                                  'tetromino5': shapes.Tetromino5(self)}
 
     def init_world(self, event_counter):
         self.event_counter = event_counter
@@ -48,7 +39,9 @@ class World:
         self.shape_dict = {}
         self.turn_counter = 0
 
-    def add_shape_to_world(self, shape, shape_id_counter):
+    def add_shape_to_world(self, shape_name, shape_id_counter, color):
+        shape = self.master_shape_dict[shape_name]
+        shape.init_shape(shape_id_counter, color)
         self.current_shape_list.append(shape)
         self.shape_dict[shape_id_counter] = shape
 
@@ -79,15 +72,15 @@ class World:
             for j in range(self.num_columns + 2):
 
                 if i == 0 or i == self.num_rows+1 or j == 0 or j == self.num_columns+1:
-                    color = 'grey'
+                    color = 'silver'
                 else:
                     if (i, j) in self.occupied_cell_dict:
                         shape_id = self.occupied_cell_dict[(i, j)]
                         color = self.shape_dict[shape_id].color
                     else:
-                        color = 'silver'
+                        color = 'grey'
 
-                values = self.color_value_dict[color]
+                values = config.Shape.color_value_dict[color]
                 r_string += "{:s},".format(str(values[0]))
                 g_string += "{:s},".format(str(values[1]))
                 b_string += "{:s},".format(str(values[2]))
@@ -95,20 +88,3 @@ class World:
             i += 1
         output_string += r_string[:-1] + "," + g_string[:-1] + "," + b_string[:-1] + '\n'
         outfile.write(output_string)
-
-    def reset(self):
-        self.init_world(self.event_counter)
-
-    def generate_label_indexes(self):
-        for shape in self.shapes_list:
-            self.feature_list.append(shape)
-            self.feature_index_dict[shape] = self.num_features
-            self.num_features += 1
-        for size in self.sizes_list:
-            self.feature_list.append(size)
-            self.feature_index_dict[size] = self.num_features
-            self.num_features += 1
-        for color in self.color_list:
-            self.feature_list.append(color)
-            self.feature_index_dict[color] = self.num_features
-            self.num_features += 1

@@ -1,9 +1,6 @@
-import sys
 import numpy as np
 import pickle
-import seaborn as sns
 import matplotlib.pyplot as plt
-import seaborn as sns
 from src import config
 from src import world
 import heatmapcluster
