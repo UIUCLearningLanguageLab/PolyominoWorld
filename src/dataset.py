@@ -2,11 +2,11 @@ import numpy as np
 from src import config
 import random
 
+
 class Dataset:
 
     def __init__(self, filename):
         self.filename = filename
-        self.batch_size = None
 
         self.shape_list = config.Shape.shape_list
         self.size_list = config.Shape.size_list
@@ -32,6 +32,9 @@ class Dataset:
         self.load_data()
 
         self.num_events = len(self.event_dict)
+        self.x = None
+        self.y = None
+        self.create_xy(False)
 
     def generate_index_dicts(self):
         for i in range(self.num_shapes):
@@ -76,23 +79,13 @@ class Dataset:
 
         f.close()
 
-    ###########################################################################################################
-    def batch_shuffled_data(self, batch_size):
+    def create_xy(self, shuffle):
+        self.x = []
+        self.y = []
 
-        event_indexes = list(range(self.num_events))
-        random.shuffle(event_indexes)
-        print(event_indexes)
-        x = []
-        y = []
-        labels = []
-        events = []
-        turns = []
-        for index in event_indexes:
-            event = self.event_dict[index]
-            for state in event:
-                x.append(state[0])
-                y.append(state[1])
-                labels.append(state[2])
-                events.append(state[3])
-                turns.append(state[4])
-        return x, y, labels, events, turns
+        print(len(self.event_dict))
+        for i in range(len(self.event_dict)):
+            print(i, len(self.event_dict[i]))
+
+
+

@@ -19,6 +19,24 @@ class NumpyFfnet:
         np.set_printoptions(suppress=True, precision=3, floatmode='fixed', linewidth=np.inf)
 
     ############################################################################################################
+    def train(self, x, y, learning_rate):
+        for j in range(len(x)):
+            h, o = self.feedforward(x[j])
+            o_cost = self.calc_cost(o, y[j])
+            self.backpropogation(x[j], o, h, o_cost, learning_rate)
+
+    ############################################################################################################
+    def test(self, x, y):
+        sum_cost = 0
+        for i in range(len(x)):
+            h, o = self.feedforward(x)
+            o_cost = self.calc_cost(y, o)
+            sum_cost += (o_cost**2).sum()
+
+        average_cost = sum_cost/len(x)
+        return average_cost
+
+    ############################################################################################################
     def feedforward(self, x):
         h = self.tanh(np.dot(self.h_x, x) + self.h_bias)
         o = self.sigmoid(np.dot(self.o_h, h) + self.o_bias)
