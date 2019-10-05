@@ -20,21 +20,15 @@ class NumpyFfnet:
 
     ############################################################################################################
     def train(self, x, y, learning_rate):
-        for j in range(len(x)):
-            h, o = self.feedforward(x[j])
-            o_cost = self.calc_cost(o, y[j])
-            self.backpropogation(x[j], o, h, o_cost, learning_rate)
+        h, o = self.feedforward(x)
+        o_cost = self.calc_cost(y, o)
+        self.backpropogation(x, o, h, o_cost, learning_rate)
 
     ############################################################################################################
     def test(self, x, y):
-        sum_cost = 0
-        for i in range(len(x)):
-            h, o = self.feedforward(x)
-            o_cost = self.calc_cost(y, o)
-            sum_cost += (o_cost**2).sum()
-
-        average_cost = sum_cost/len(x)
-        return average_cost
+        h, o = self.feedforward(x)
+        o_cost = self.calc_cost(y, o)
+        return o, h, o_cost
 
     ############################################################################################################
     def feedforward(self, x):
@@ -54,10 +48,10 @@ class NumpyFfnet:
         h_cost = np.dot(o_delta, self.o_h)
         h_delta = h_cost * self.tanh_prime(h)
 
-        self.o_bias -= o_delta * learning_rate
+        self.o_bias += o_delta * learning_rate
         self.o_h += (np.dot(o_delta.reshape(len(o_delta), 1), h.reshape(1, len(h))) * learning_rate)
 
-        self.h_bias -= h_delta * learning_rate
+        self.h_bias += h_delta * learning_rate
         self.h_x += (np.dot(h_delta.reshape(len(h_delta), 1), x.reshape(1, len(x))) * learning_rate)
 
     ############################################################################################################

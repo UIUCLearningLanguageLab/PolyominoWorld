@@ -7,6 +7,7 @@ class Dataset:
 
     def __init__(self, filename):
         self.filename = filename
+        self.name = filename[:-4]
 
         self.shape_list = config.Shape.shape_list
         self.size_list = config.Shape.size_list
@@ -17,23 +18,28 @@ class Dataset:
         self.num_sizes = len(self.size_list)
         self.num_colors = len(self.color_list)
         self.num_actions = len(self.action_list)
+        self.index_starts = [self.num_shapes,
+                             self.num_shapes + self.num_sizes,
+                             self.num_shapes + self.num_sizes + self.num_colors,
+                             self.num_shapes + self.num_sizes + self.num_colors + self.num_actions]
 
         self.x_size = (config.World.num_rows+2) * (config.World.num_columns+2) * 3
-        self.y_size = self.y_size = self.num_shapes + self.num_sizes + self.num_colors + self.num_actions
+        self.y_size = self.num_shapes + self.num_sizes + self.num_colors + self.num_actions
 
         self.color_index_dict = {}
         self.shape_index_dict = {}
         self.size_index_dict = {}
         self.action_index_dict = {}
 
-        self.event_dict = {}
+        self.scene_dict = {}
 
         self.generate_index_dicts()
         self.load_data()
 
-        self.num_events = len(self.event_dict)
+        self.num_scenes = len(self.scene_dict)
         self.x = None
         self.y = None
+        self.label_list = None
         self.create_xy(False)
 
     def generate_index_dicts(self):
@@ -50,7 +56,7 @@ class Dataset:
         f = open(self.filename)
         for line in f:
             data = (line.strip().strip('\n').strip()).split(',')
-            event = int(data[0])
+            scene = int(data[0])
             turn = int(data[1])
             shape = data[2]
             size = int(data[3])
@@ -72,20 +78,26 @@ class Dataset:
             y[color_index] = 1
             y[action_index] = 1
 
-            if event not in self.event_dict:
-                self.event_dict[event] = []
+            if scene not in self.scene_dict:
+                self.scene_dict[scene] = []
 
-            self.event_dict[event].append((x, y, labels, event, turn))
+            self.scene_dict[scene].append((turn, labels, x, y))
 
         f.close()
 
     def create_xy(self, shuffle):
-        self.x = []
-        self.y = []
-
-        print(len(self.event_dict))
-        for i in range(len(self.event_dict)):
-            print(i, len(self.event_dict[i]))
-
-
-
+        x = []
+        y = []
+        self.label_list = []
+        index_list = list(range(self.num_scenes))
+        if shuffle:
+            random.shuffle(index_list)
+        for i in range(self.num_scenes):
+            index = index_list[i]
+            scene = self.scene_dict[index]
+            for event in scene:
+                self.label_list.append(event[1])
+                x.append(event[2])
+                y.append(event[3])
+        self.x = np.array(x, float)
+        self.y = np.array(y, float)

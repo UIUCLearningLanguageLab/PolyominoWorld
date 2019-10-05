@@ -27,8 +27,8 @@ def generate_data(the_world, num_events, event_length, file_name):
 
 def main():
 
-    event_n = 0
-    train_n = 1
+    event_n = 5
+    train_n = 5
     test_n = 1
     the_world = world.World()
 
