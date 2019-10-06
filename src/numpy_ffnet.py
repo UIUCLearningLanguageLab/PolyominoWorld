@@ -73,3 +73,35 @@ class NumpyFfnet:
     @staticmethod
     def sigmoid_prime(z):
         return 1/(1+np.exp(-z)) * (1 - 1/(1+np.exp(-z)))
+
+    ############################################################################################################
+    def save_weights(self, filename):
+        f = open(filename, 'w')
+
+        h_bias_string = "x0"
+        for i in range(self.hidden_size):
+            h_bias_string += ",{}".format(self.h_bias[i])
+        f.write(h_bias_string+"\n")
+
+        for i in range(len(self.input_size)):
+            h_weight_string = "x{}".format(i+1)
+            weight = self.h_x[:, i]
+            for j in range(self.hidden_size):
+                h_weight_string += ",{}".format(weight[j])
+            f.write(h_weight_string + "\n")
+
+        o_bias_string = "h0"
+        for i in range(self.output_size):
+            o_bias_string += ",{}".format(self.o_bias[i])
+        f.write(o_bias_string+"\n")
+
+        for i in range(len(self.hidden_size)):
+            o_weight_string = "h{}".format(i+1)
+            weight = self.o_h[:, i]
+            for j in range(self.output_size):
+                o_weight_string += ",{}".format(weight[j])
+            f.write(o_weight_string + "\n")
+
+        f.close()
+
+
