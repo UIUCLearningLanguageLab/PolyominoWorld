@@ -29,8 +29,8 @@ def generate_data(the_world, num_scenes, scene_length, file_name):
 
 def main():
 
-    event_n = 5
-    train_n = 5
+    event_n = 10
+    train_n = 100
     test_n = 1
     the_world = world.World()
 

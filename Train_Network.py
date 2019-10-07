@@ -81,22 +81,24 @@ def evaluate(net, the_dataset, verbose):
     costs /= the_dataset.x.shape[0]
     costs /= np.array([the_dataset.num_shapes, the_dataset.num_sizes, the_dataset.num_colors, the_dataset.num_actions], float)
     pc = accuracy_array / the_dataset.x.shape[0]
-    print("{}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}".format(the_dataset.name,
+    print("{:14s}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}".format(the_dataset.name,
                                                             costs[0], costs[1], costs[2], costs[3],
                                                             pc[0]*100, pc[1]*100, pc[2]*100, pc[3]*100))
 
 
-def train(net, the_dataset, num_epochs, learning_rate):
+def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
     randomize = True
     for i in range(num_epochs):
-        the_dataset.create_xy(randomize)
-        for j in range(the_dataset.x.shape[0]):
-            net.train(the_dataset.x[j], the_dataset.y[j], learning_rate)
-        costs = test(net, the_dataset)
-        if i % 10 == 0:
-            print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(i, the_dataset.name,
-                                                                                  costs[0], costs[2],
+        training_set.create_xy(randomize)
+        for j in range(training_set.x.shape[0]):
+            net.train(training_set.x[j], training_set.y[j], learning_rate)
+        costs = test(net, training_set)
+        if i % output_freq == 0:
+            print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(i, training_set.name,
+                                                                                  costs[1], costs[2],
                                                                                   costs[3], costs[4]))
+            evaluate(net, training_set, False)
+            evaluate(net, test_set, False)
 
 
 def main():
@@ -107,19 +109,22 @@ def main():
     learning_rate = 0.20
     num_epochs = 1000
     weight_init = [0, 0.0000001]
-    verbose = True
+    output_freq = 1
 
     training_set = dataset.Dataset('training.csv')
     test_set = dataset.Dataset('test.csv')
 
     net = numpy_ffnet.NumpyFfnet(input_size, hidden_size, output_size, weight_init)
     costs = test(net, training_set)
-    print("{} Cost: {:0.3f} {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(training_set.name, costs[0], costs[1], costs[2],
+    print("{:14s} Cost: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(training_set.name, costs[1], costs[2],
                                                                     costs[3], costs[4]))
 
-    train(net, training_set, num_epochs, learning_rate)
-    evaluate(net, training_set, verbose)
-    evaluate(net, test_set, verbose)
+    train(net, training_set, test_set, num_epochs, learning_rate, output_freq)
+
+    evaluate(net, test_set, True)
+
+    evaluate(net, training_set, False)
+    evaluate(net, test_set, False)
 
 
 
