@@ -18,6 +18,8 @@ class Dataset:
         self.num_sizes = len(self.size_list)
         self.num_colors = len(self.color_list)
         self.num_actions = len(self.action_list)
+
+
         self.index_starts = [self.num_shapes,
                              self.num_shapes + self.num_sizes,
                              self.num_shapes + self.num_sizes + self.num_colors,

@@ -31,7 +31,8 @@ class Shape:
                         'cyan': (-1., 1., 1.),
                         'magenta': (1., 1., -1.),
                         'grey': (0., 0., 0.),
-                        'silver': (-0.5, -0.5, -0.5)
+                        'silver': (-0.5, -0.5, -0.5),
+                        'teal': (0, 0.5, 0.5)
                         }
     num_shapes = len(shape_list)
     num_sizes = len(size_list)
@@ -41,7 +42,7 @@ class Shape:
 
 
 class Data:
-    def __init__(self,id_number, name, size, color, image_matrix, label_matrix):
+    def __init__(self, id_number, name, size, color, image_matrix, label_matrix):
         self.id_number = id_number
         self.name = name
         self.size = size

@@ -29,13 +29,15 @@ def generate_data(the_world, num_scenes, scene_length, file_name):
 
 def main():
 
-    event_n = 10
-    train_n = 100
+    train_n = 1   # how many scenes for each colored shape
     test_n = 1
+
+    event_n = 10  # num of events of
+
     the_world = world.World()
 
-    generate_data(the_world, train_n, event_n, "training.csv")
-    generate_data(the_world, test_n, event_n, "test.csv")
+    generate_data(the_world, train_n, event_n, "training_all_1_10.csv")
+    generate_data(the_world, test_n, event_n, "test_all_1_10.csv")
 
 
 main()
