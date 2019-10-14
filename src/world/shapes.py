@@ -22,7 +22,7 @@ class Shape:
         self.color = None
         self.position = None
 
-        self.action_list = config.Shape.action_list
+        self.action_list = config.Shape.master_action_list
         self.action_choice = self.action_list[0]
         self.action_probs = None
         self.flip_dict = None
@@ -115,6 +115,7 @@ class Shape:
                 direction = random.choice([0, 1])
                 done = self.flip(direction)
             try_counter += 1
+
 
     def move(self, direction):
         new_position = [self.position[0] + direction[0], self.position[1] + direction[1]]

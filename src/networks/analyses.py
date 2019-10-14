@@ -1,23 +1,36 @@
-from src.networks import pytorch_nets, dataset
 import numpy as np
-import sys
+
+
+def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
+    randomize = True
+    for i in range(num_epochs):
+        training_set.create_xy(randomize)
+        for j in range(training_set.x.shape[0]):
+            net.train(training_set.x[j], training_set.y[j], learning_rate)
+        costs = test(net, training_set)
+        if (i+1) % output_freq == 0:
+            #print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(i, training_set.name,
+                                                                                  # costs[0], costs[1],
+                                                                                  # costs[2], costs[3]))
+            evaluate(net, training_set, False)
+            evaluate(net, test_set, False)
+            print('\n')
 
 
 def test(net, the_dataset):
     costs = np.array([0, 0, 0, 0], float)
     the_dataset.create_xy(False)
     for i in range(the_dataset.x.shape[0]):
-        o, o_cost = net.test_item(the_dataset.x[i], the_dataset.y[i])
+        o, h, o_cost = net.test(the_dataset.x[i], the_dataset.y[i])
         costs[0] += (o_cost[:the_dataset.index_starts[0]] ** 2).sum()
         costs[1] += (o_cost[the_dataset.index_starts[0]:the_dataset.index_starts[1]] ** 2).sum()
         costs[2] += (o_cost[the_dataset.index_starts[1]:the_dataset.index_starts[2]] ** 2).sum()
         costs[3] += (o_cost[the_dataset.index_starts[2]:the_dataset.index_starts[3]] ** 2).sum()
     costs /= the_dataset.x.shape[0]
-    costs /= np.array([the_dataset.y.shape[1],
-                       the_dataset.num_shapes,
-                       the_dataset.num_sizes,
-                       the_dataset.num_colors,
-                       the_dataset.num_actions], float)
+    costs /= np.array([the_dataset.num_shapes_all,
+                       the_dataset.num_sizes_all,
+                       the_dataset.num_colors_all,
+                       the_dataset.num_actions_all], float)
     return costs
 
 
@@ -82,54 +95,11 @@ def evaluate(net, the_dataset, verbose):
             print("\t\tAction Guess:  {}".format(action_outputs))
 
     costs /= the_dataset.x.shape[0]
-    costs /= np.array([the_dataset.num_shapes, the_dataset.num_sizes, the_dataset.num_colors, the_dataset.num_actions], float)
+    costs /= np.array([the_dataset.num_shapes_all,
+                       the_dataset.num_sizes_all,
+                       the_dataset.num_colors_all,
+                       the_dataset.num_actions_all], float)
     pc = accuracy_array / the_dataset.x.shape[0]
-    print("{:14s}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}".format(the_dataset.name,
+    print("\t{:20s}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}  |  {:0.2f}  {:0.2f}  {:0.2f}  {:0.2f}".format(the_dataset.name,
                                                             costs[0], costs[1], costs[2], costs[3],
                                                             pc[0]*100, pc[1]*100, pc[2]*100, pc[3]*100))
-
-
-def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
-    randomize = True
-    for i in range(num_epochs):
-        training_set.create_xy(randomize)
-        for j in range(training_set.x.shape[0]):
-            net.train(training_set.x[j], training_set.y[j], learning_rate)
-        costs = test(net, training_set)
-        if i % output_freq == 0:
-            print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(i, training_set.name,
-                                                                                  costs[1], costs[2],
-                                                                                  costs[3], costs[4]))
-            evaluate(net, training_set, False)
-            evaluate(net, test_set, False)
-
-
-def main():
-
-    input_size = 432
-    hidden_size = 32
-    output_size = 25
-    learning_rate = 0.20
-    num_epochs = 1000
-    weight_init = 0.0000001
-    output_freq = 1
-
-    training_set = dataset.Dataset(sys.argv[1])
-    test_set = dataset.Dataset(sys.argv[2])
-
-    net = pytorch_nets.FFNet(input_size, hidden_size, output_size, weight_init, learning_rate)
-    costs = test(net, training_set)
-    print("{:14s} Cost: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(training_set.name, costs[1], costs[2],
-                                                                    costs[3], costs[4]))
-
-    train(net, training_set, test_set, num_epochs, learning_rate, output_freq)
-
-    evaluate(net, test_set, True)
-
-    evaluate(net, training_set, False)
-    evaluate(net, test_set, False)
-
-
-
-
-main()
