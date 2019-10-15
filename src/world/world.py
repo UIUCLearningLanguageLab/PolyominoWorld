@@ -109,24 +109,28 @@ class World:
         outfile = open(file_name, 'a')
         output_string = "{},{},".format(self.event_counter, self.turn_counter)
 
+        current_shape = self.current_shape_list[0]
+
         for i in range(self.shapes_per_image):
-            output_string += "{},{},{},{},{},{},{},".format(self.current_shape_list[i].name,
-                                                            self.current_shape_list[i].size,
-                                                            self.current_shape_list[i].color,
-                                                            self.current_shape_list[i].current_variant,
-                                                            self.current_shape_list[i].position[0],
-                                                            self.current_shape_list[i].position[1],
-                                                            self.current_shape_list[i].action_choice)
+            output_string += "{},{},{},{},{},{},{},".format(current_shape.name,
+                                                            current_shape.size,
+                                                            current_shape.color,
+                                                            current_shape.current_variant,
+                                                            current_shape.position[0],
+                                                            current_shape.position[1],
+                                                            current_shape.action_choice)
 
         r_string = ""
         g_string = ""
         b_string = ""
 
+        save_list = []
         for i in range(self.num_rows):
             for j in range(self.num_columns):
                 if (i, j) in self.occupied_cell_dict:
                     shape_id = self.occupied_cell_dict[(i, j)]
                     color = self.shape_dict[shape_id].color
+                    save_list.append((shape_id, color))
                 else:
                     color = 'grey'
 
@@ -134,7 +138,9 @@ class World:
                 r_string += "{:s},".format(str(values[0]))
                 g_string += "{:s},".format(str(values[1]))
                 b_string += "{:s},".format(str(values[2]))
+
                 j += 1
             i += 1
+
         output_string += r_string[:-1] + "," + g_string[:-1] + "," + b_string[:-1] + '\n'
         outfile.write(output_string)

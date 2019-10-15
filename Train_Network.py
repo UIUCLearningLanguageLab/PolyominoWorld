@@ -12,7 +12,7 @@ def main():
     output_freq = 100
     verbose = False
 
-    training_set = dataset.Dataset('data/w8-8_s9_c8_0_1_10.csv')
+    training_set = dataset.Dataset('data/w8-8_s9_c8_0_5_10.csv')
     test_set = dataset.Dataset('data/w8-8_s9_c8_0_1_10.csv')
 
     net = numpy_ffnet.NumpyFfnet(training_set.x_size, hidden_size, training_set.y_size, weight_init)

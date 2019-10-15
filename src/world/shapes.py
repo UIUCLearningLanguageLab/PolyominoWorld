@@ -46,8 +46,8 @@ class Shape:
                 break
             else:
                 all_cells_empty = True
-                position = [random.randint(1, self.the_world.num_columns-self.dimensions[0]+1),
-                            random.randint(1, self.the_world.num_rows-self.dimensions[1]+1)]
+                position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
+                            random.randint(0, self.the_world.num_rows-self.dimensions[1])]
                 active_world_cells = self.get_active_world_cells(position)
                 for i in range(len(active_world_cells)):
                     if active_world_cells[i] in self.the_world.occupied_cell_dict:
@@ -116,7 +116,6 @@ class Shape:
                 done = self.flip(direction)
             try_counter += 1
 
-
     def move(self, direction):
         new_position = [self.position[0] + direction[0], self.position[1] + direction[1]]
         new_active_world_cell_list = self.get_active_world_cells(new_position)
@@ -157,7 +156,7 @@ class Shape:
     def check_legal_position(self, active_world_cell_list, action_choice):
         legal_position = True
         for cell in active_world_cell_list:
-            if (cell[0] == 0) or (cell[1] == 0) or (cell[0] > self.the_world.num_columns) or (cell[1] > self.the_world.num_rows):
+            if (cell[0] < 0) or (cell[1] < 0) or (cell[0] > self.the_world.num_columns-1) or (cell[1] > self.the_world.num_rows-1):
                 legal_position = False
             if cell in self.the_world.occupied_cell_dict:
                 shape_id = self.the_world.occupied_cell_dict[cell]

@@ -150,3 +150,5 @@ class Dataset:
                 y.append(event[3])
         self.x = np.array(x, float)
         self.y = np.array(y, float)
+
+        self.num_items = len(self.x)
