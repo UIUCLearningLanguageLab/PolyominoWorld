@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import sys
 
 
 class FFNet(nn.Module):
@@ -9,7 +10,6 @@ class FFNet(nn.Module):
         super(FFNet, self).__init__()
 
         self.fc1 = nn.Linear(input_size, hidden_size)
-        self.sigmoid = nn.Sigmoid()
         self.fc2 = nn.Linear(hidden_size, output_size)
         self.sigmoid = nn.Sigmoid()
 
@@ -17,18 +17,17 @@ class FFNet(nn.Module):
 
         self.weight_init = weight_init
 
-        self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate)
-
         self.fc1.apply(self.init_weights)
         self.fc2.apply(self.init_weights)
 
+        self.criterion = nn.MSELoss()
+
     def forward_item(self, x):
-        out = self.fc1(x)
-        out = self.sigmoid(out)
-        out = self.fc2(out)
-        out = self.sigmoid(out)
-        return out
+        z_h = self.fc1(x)
+        h = self.sigmoid(z_h)
+        z_o = self.fc2(h)
+        o = self.sigmoid(z_o)
+        return o
 
     def test_item(self, x, y):
         out = self.forward_item(x)
@@ -39,11 +38,14 @@ class FFNet(nn.Module):
         if type(m) == nn.Linear:
             m.weight.data.uniform_(-self.weight_init, self.weight_init)
             m.bias.data.uniform_(-self.weight_init, self.weight_init)
+        else:
+            print("Not a linear weight being initialized")
+            sys.exit(0)
 
-    def train_item(self, x, y):
+    def train_item(self, x, y, optimizer):
         out = self.forward_item(x)
         loss = self.criterion(out, y)
-        self.optimizer.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        optimizer.step()
         return out, loss

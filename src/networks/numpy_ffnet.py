@@ -1,15 +1,14 @@
 import numpy as np
-from src import config
 
 
 class NumpyFfnet:
     ############################################################################################################
-    def __init__(self, input_size, hidden_size, output_size, weight_init):
+    def __init__(self, input_size, hidden_size, output_size, weight_stdev):
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
-        self.weight_stdev = weight_init[1]
+        self.weight_stdev = weight_stdev
 
         self.h_bias = np.random.normal(0, self.weight_stdev, [self.hidden_size])
         self.h_x = np.random.normal(0, self.weight_stdev, [self.hidden_size, self.input_size])
@@ -104,3 +103,31 @@ class NumpyFfnet:
             f.write(o_weight_string + "\n")
 
         f.close()
+
+    ############################################################################################################
+    def load_weights(self, filename):
+        f = open(filename)
+        for line in f:
+            data = (line.strip().strip('\n').strip()).split(',')
+            label = data[0]
+            weights = data[1:]
+
+            if label[0] == 'x':
+                if label[1] == '0':
+                    for i in range(len(weights)):
+                        self.h_bias[i] = float(weights[i])
+                else:
+                    column = int(label[1:]) - 1
+                    for i in range(len(weights)):
+                        self.h_x[i, column] = float(weights[i])
+
+            elif label[0] == 'h':
+                if label[1] == '0':
+                    for i in range(len(weights)):
+                        self.o_bias[i] = float(weights[i])
+                else:
+                    column = int(label[1:]) - 1
+                    for i in range(len(weights)):
+                        self.o_h[i, column] = float(weights[i])
+        f.close()
+

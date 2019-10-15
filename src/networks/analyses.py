@@ -1,17 +1,21 @@
 import numpy as np
+import time
 
 
 def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
     randomize = True
+    start_time = time.time()
     for i in range(num_epochs):
         training_set.create_xy(randomize)
         for j in range(training_set.x.shape[0]):
             net.train(training_set.x[j], training_set.y[j], learning_rate)
         costs = test(net, training_set)
         if i % output_freq == 0:
-            #print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f}".format(i, training_set.name,
-                                                                                  # costs[0], costs[1],
-                                                                                  # costs[2], costs[3]))
+            took = time.time() - start_time
+            start_time = time.time()
+            print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f} {:0.3f}s.".format(i, training_set.name,
+                                                                                  costs[0], costs[1],
+                                                                                  costs[2], costs[3], took))
             evaluate(net, training_set, False)
             evaluate(net, test_set, False)
             print('\n')

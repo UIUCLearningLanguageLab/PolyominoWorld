@@ -16,8 +16,8 @@ def main():
     # if 0, will do all combinations of shapes and colors
     num_types = 0
 
-    num_instances_per_type = 5   # how many sequences for each colored shape
-    num_events_per_scene = 10  # num of events per sequence
+    num_instances_per_type = 10   # how many sequences for each colored shape
+    num_events_per_scene = 1  # num of events per sequence
 
     the_world = world.World(shape_list, color_list, world_rows, world_columns)
 

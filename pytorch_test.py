@@ -17,11 +17,12 @@ weight_init = 1
 np.set_printoptions(precision=4, suppress=True)
 
 model = pytorch_nets.FFNet(input_size, hidden_size, output_size, weight_init, learning_rate)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 for e in range(num_epochs):
     epoch_loss = 0
     for i in range(4):
-        out, loss = model.train_item(x[i], y[i])
+        out, loss = model.train_item(x[i], y[i], optimizer)
         epoch_loss += loss
     if e % 100 == 0:
         print(e, epoch_loss)
