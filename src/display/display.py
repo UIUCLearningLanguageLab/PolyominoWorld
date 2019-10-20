@@ -64,13 +64,179 @@ class Display:
         self.quit_button.pack(side=tk.LEFT, padx=4)
 
         self.update_current_item()
-        self.draw_network_frame()
+        self.draw_windows()
 
     def update_current_item(self):
         self.i_entry.delete(0, tk.END)  # deletes the current value
         self.i_entry.insert(0, self.i)  # inserts new value assigned by 2nd parameter
         self.current_x = np.copy(self.the_dataset.x[self.i])
         self.current_y = np.copy(self.the_dataset.y[self.i])
+
+    def draw_weight_frame(self):
+        self.weight_canvas.delete("all")
+        self.weight_canvas.create_text(550, 20, text="Selected Unit: {}".format(self.selected_unit), font="Arial 16 bold", fill='white')
+        if self.selected_unit is not None:
+            if self.selected_unit[0] == 'i':
+                self.weight_canvas.create_text(550, 50, text="Input-->Hidden Weights", font="Arial 12 bold", fill='white')
+                self.draw_hx_weights()
+            elif self.selected_unit[0] == 'h':
+
+                self.weight_canvas.create_text(1000, 50, text="Hidden-->Output Weights", font="Arial 12 bold", fill='white')
+                self.draw_hx_weights()
+                self.draw_yh_weights()
+            elif self.selected_unit[0] == 'o':
+                self.weight_canvas.create_text(550, 50, text="Hidden-->Output Weights", font="Arial 12 bold", fill='white')
+                self.draw_yh_weights()
+            self.root.update()
+
+    def draw_hx_weights(self):
+        index = int(self.selected_unit[1:])-1
+
+        if self.selected_unit[0] == 'i':
+            startx = 500
+            starty = 70
+            size = 17
+            spacing = 2
+            hiddens_per_column = 8
+
+            weight_vector = np.copy(self.the_network.h_x[:, index])
+
+            for i in range(self.the_network.hidden_size):
+                y1 = starty + (size + spacing) * i
+                fcolor = self.network_hex_color(weight_vector[i])
+                self.weight_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor)
+                if (i + 1) % hiddens_per_column == 0:
+                    startx += size + spacing
+                    starty -= hiddens_per_column * (size + spacing)
+
+        elif self.selected_unit[0] == 'h':
+            start_x = 280
+            start_y = 60
+            size = 13
+            spacing = 1
+            group_spacing = 130
+
+            self.weight_canvas.create_text(start_x + 50, start_y - 20, text="Input --> Hidden Weights",
+                                            font="Arial 12 bold", fill='white')
+
+            self.weight_canvas.create_text(start_x - 20, start_y + 50, text="Red", font="Arial 12 bold", fill='white')
+            self.weight_canvas.create_text(start_x - 29, start_y + 180, text="Green", font="Arial 12 bold",
+                                            fill='white')
+            self.weight_canvas.create_text(start_x - 23, start_y + 310, text="Blue", font="Arial 12 bold",
+                                            fill='white')
+
+            weight_vector = np.copy(self.the_network.h_x[index, :])
+            weight_matrix = weight_vector.reshape((3, self.the_world.num_rows, self.the_world.num_columns))
+
+            for i in range(weight_matrix.shape[0]):
+                for j in range(weight_matrix.shape[1]):
+                    for k in range(weight_matrix.shape[2]):
+                        color = self.network_hex_color(weight_matrix[i, j, k])
+
+                        x1 = start_x + (size + spacing) * j
+                        y1 = start_y + (size + spacing) * k + (i * group_spacing)
+                        try:
+                            self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
+                        except:
+                            print(weight_matrix[i, j], color)
+
+    def draw_yh_weights(self):
+        index = int(self.selected_unit[1:])-1
+
+        if self.selected_unit[0] == 'h':
+
+            start_x = 800
+            start_y = 60
+            size = 22
+            spacing = 2
+
+            weight_vector = np.copy(self.the_network.o_h[:, index])
+            shape_weights = weight_vector[:self.the_dataset.index_starts[0]]
+
+            for i in range(shape_weights.shape[0]):
+                the_label = self.the_dataset.master_shape_list[i]
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
+                                                fill='white')
+
+                fcolor = self.network_hex_color(shape_weights[i])
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
+
+            start_x = 800
+            start_y = 300
+            size = 22
+            spacing = 2
+
+            weight_vector = np.copy(self.the_network.o_h[:, index])
+            size_weights = weight_vector[self.the_dataset.index_starts[0]:self.the_dataset.index_starts[1]]
+
+            for i in range(size_weights.shape[0]):
+                the_label = "size " + str(self.the_dataset.master_size_list[i])
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
+                                                fill='white')
+
+                fcolor = self.network_hex_color(size_weights[i])
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
+
+            start_x = 1200
+            start_y = 60
+            size = 22
+            spacing = 2
+
+            weight_vector = np.copy(self.the_network.o_h[:, index])
+            color_weights = weight_vector[self.the_dataset.index_starts[1]:self.the_dataset.index_starts[2]]
+
+            for i in range(color_weights.shape[0]):
+                the_label = self.the_dataset.master_color_list[i]
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
+                                                fill='white')
+
+                fcolor = self.network_hex_color(color_weights[i])
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
+
+            start_x = 1200
+            start_y = 300
+            size = 22
+            spacing = 2
+
+            weight_vector = np.copy(self.the_network.o_h[:, index])
+            action_weights = weight_vector[self.the_dataset.index_starts[2]:self.the_dataset.index_starts[3]]
+
+            for i in range(action_weights.shape[0]):
+                the_label = self.the_dataset.master_action_list[i]
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
+                                                fill='white')
+
+                fcolor = self.network_hex_color(action_weights[i])
+                y1 = start_y + (size + spacing) * i
+                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
+
+        elif self.selected_unit[0] == 'o':
+            startx = 500
+            starty = 70
+            size = 17
+            spacing = 2
+            hiddens_per_column = 8
+
+            weight_vector = np.copy(self.the_network.o_h[index, :])
+
+            for i in range(self.the_network.hidden_size):
+                y1 = starty + (size + spacing) * i
+                fcolor = self.network_hex_color(weight_vector[i])
+                self.weight_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor)
+                if (i + 1) % hiddens_per_column == 0:
+                    startx += size + spacing
+                    starty -= hiddens_per_column * (size + spacing)
+
+    def draw_windows(self):
+        self.draw_network_frame()
+        self.draw_weight_frame()
 
     def draw_network_frame(self):
         self.network_canvas.delete("all")
@@ -108,9 +274,6 @@ class Display:
         self.network_canvas.create_text(start_x-20, start_y+50, text="Red", font="Arial 14 bold", fill='white')
         self.network_canvas.create_text(start_x-29, start_y+180, text="Green", font="Arial 14 bold", fill='white')
         self.network_canvas.create_text(start_x-23, start_y+310, text="Blue", font="Arial 14 bold", fill='white')
-
-        # self.network_canvas.create_text(start_x+50, start_y+60, text="Green", font="Arial 20 bold", fill='white')
-        # self.network_canvas.create_text(start_x+50, start_y+80, text="Blue", font="Arial 20 bold", fill='white')
 
         self.current_x = np.copy(self.the_dataset.x[self.i])
 
@@ -303,14 +466,14 @@ class Display:
         else:
             self.i = 0
         self.update_current_item()
-        self.draw_network_frame()
+        self.draw_windows()
 
     def update(self):
         new_i = int(self.i_entry.get())
         if 0 <= new_i < self.the_dataset.num_items:
             self.i = new_i
             self.update_current_item()
-            self.draw_network_frame()
+            self.draw_windows()
 
     @staticmethod
     def rgb_to_hex(r, g, b):
@@ -357,16 +520,16 @@ class Display:
         if the_tag is not None:
             if the_tag == self.selected_unit:
                 self.selected_unit = None
-                self.draw_network_frame()
+                self.draw_windows()
             else:
                 print(the_tag)
 
                 if the_tag[0] == 'i':
                     self.selected_unit = the_tag
-                    self.draw_network_frame()
+                    self.draw_windows()
                 if the_tag[0] == 'h':
                     self.selected_unit = the_tag
-                    self.draw_network_frame()
+                    self.draw_windows()
                 if the_tag[0] == 'o':
                     self.selected_unit = the_tag
-                    self.draw_network_frame()
+                    self.draw_windows()
