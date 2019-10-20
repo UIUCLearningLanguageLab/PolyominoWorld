@@ -13,11 +13,11 @@ class Shape:
     master_shape_list = ['monomino', 'domino',
                   'tromino1', 'tromino2',
                   'tetromino1', 'tetromino2', 'tetromino3', 'tetromino4', 'tetromino5']
-    master_action_list = ['rest', 'move', 'rotate', 'flip']
+    master_action_list = ['appear', 'rest', 'move', 'rotate', 'flip']
     master_size_list = [1, 2, 3, 4]
     master_color_list = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta']
 
-    action_probs_list = [.25, .25, .25, .25]
+    action_probs_list = [.00, .25, .25, .25, .25]
 
     color_value_dict = {'black': (-1., -1., -1.),
                         'white': (1., 1., 1.),

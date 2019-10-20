@@ -4,7 +4,7 @@ import numpy as np
 def main():
     np.set_printoptions(precision=4, suppress=True)
 
-    hidden_size = 32
+    hidden_size = 16
     learning_rate = 0.20
     num_epochs = 1000
     weight_init = 0.0000001
@@ -13,8 +13,8 @@ def main():
 
     # 8 colors and 9 shapes
 
-    training_set = dataset.Dataset('data/w8-8_s9_c8_0_100_1.csv')
-    test_set = dataset.Dataset('data/w8-8_s9_c8_0_1_5.csv')
+    training_set = dataset.Dataset('data/w6-6_s9_c8_0_10_4.csv')
+    test_set = dataset.Dataset('data/w6-6_s9_c8_0_1_4.csv')
 
     net = numpy_ffnet.NumpyFfnet(training_set.x_size, hidden_size, training_set.y_size, weight_init)
     costs = analyses.test(net, training_set)

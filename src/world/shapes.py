@@ -21,14 +21,14 @@ class Shape:
         self.active_world_cell_list = None
         self.color = None
         self.position = None
-
         self.action_list = config.Shape.master_action_list
-        self.action_choice = self.action_list[0]
+        self.action_choice = None
         self.action_probs = None
         self.flip_dict = None
         self.rotation_dict = None
 
     def init_shape(self, id_number, color):
+        self.action_choice = self.action_list[0]
         self.id_number = id_number
         self.color = color
         self.current_variant = random.choice(self.variant_list)

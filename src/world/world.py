@@ -62,11 +62,14 @@ class World:
 
         if num_types == 0:
             for i in range(9):  # num of shape types/size
+                shape_name = self.shape_list[i]
+
                 for j in range(8):  # num of colors
+                    shape_color = self.color_list[j]
+
                     for k in range(num_instances_per_type):
                         self.init_world(scene_counter)
-                        shape_name = self.shape_list[i]
-                        shape_color = self.color_list[j]
+
                         self.add_shape_to_world(shape_name, shape_counter, shape_color)
                         self.save_world_state(file_name)
                         shape_counter += 1
