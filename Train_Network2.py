@@ -7,13 +7,13 @@ def main():
 
     hidden_size = 16
     learning_rate = 0.20
-    num_epochs = 10000
+    num_epochs = 1000
     weight_init = 0.0000001
     output_freq = 100
     verbose = False
 
-    training_set = dataset.Dataset('data/w6-6_s9_c8_0_10_4.csv')
-    test_set = dataset.Dataset('data/w6-6_s9_c8_0_1_4.csv')
+    training_set = dataset.Dataset('data/w6-6_s9_c8_0_100_2.csv')
+    test_set = dataset.Dataset('data/w6-6_s9_c8_0_5_0.csv')
 
     net = pytorch_nets.FFNet(training_set.x_size, hidden_size, training_set.y_size, weight_init)
     costs = pytorch_nets.test(net, training_set)

@@ -5,15 +5,15 @@ import numpy as np
 def main():
     np.set_printoptions(precision=4, suppress=True)
 
-    hidden_size = 32
+    hidden_size = 16
     learning_rate = 0.10
     num_epochs = 1000
     weight_init = 0.000001
     output_freq = 10
     verbose = False
 
-    training_set = dataset.Dataset('data/w6-6_s9_c8_0_1000_2.csv')
-    test_set = dataset.Dataset('data/w6-6_s9_c8_0_10_4.csv')
+    training_set = dataset.Dataset('data/w6-6_s9_c8_0_100_2.csv')
+    test_set = dataset.Dataset('data/w6-6_s9_c8_0_5_0.csv')
 
     net = numpy_ffnet.NumpyFfnet(training_set.x_size, hidden_size, training_set.y_size, weight_init)
     costs = analyses.test(net, test_set)
