@@ -1,19 +1,35 @@
-import torch
 import torch.nn as nn
 import sys
+import numpy as np
+
+
+def test(net, the_dataset):
+    costs = np.array([0, 0, 0, 0], float)
+    randomize = False
+    the_dataset.create_xy(randomize)
+    for i in range(the_dataset.x.shape[0]):
+        o, h, o_cost = net.test_item(the_dataset.x[i], the_dataset.y[i])
+    #     costs[0] += (o_cost[:the_dataset.index_starts[0]] ** 2).sum()
+    #     costs[1] += (o_cost[the_dataset.index_starts[0]:the_dataset.index_starts[1]] ** 2).sum()
+    #     costs[2] += (o_cost[the_dataset.index_starts[1]:the_dataset.index_starts[2]] ** 2).sum()
+    #     costs[3] += (o_cost[the_dataset.index_starts[2]:the_dataset.index_starts[3]] ** 2).sum()
+    # costs /= the_dataset.x.shape[0]
+    # costs /= np.array([the_dataset.num_shapes_all,
+    #                    the_dataset.num_sizes_all,
+    #                    the_dataset.num_colors_all,
+    #                    the_dataset.num_actions_all], float)
+    return costs
 
 
 class FFNet(nn.Module):
     ############################################################################################################
-    def __init__(self, input_size, hidden_size, output_size, weight_init, learning_rate):
+    def __init__(self, input_size, hidden_size, output_size, weight_init):
 
         super(FFNet, self).__init__()
 
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
         self.sigmoid = nn.Sigmoid()
-
-        self.learning_rate = learning_rate
 
         self.weight_init = weight_init
 

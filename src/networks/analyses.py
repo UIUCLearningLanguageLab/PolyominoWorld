@@ -3,6 +3,7 @@ import time
 
 
 def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
+
     randomize = True
     start_time = time.time()
     for i in range(num_epochs):
@@ -16,7 +17,7 @@ def train(net, training_set, test_set, num_epochs, learning_rate, output_freq):
             print("Epoch:{} {:16s} costs: {:0.3f} {:0.3f} {:0.3f} {:0.3f} {:0.3f}s.".format(i, training_set.name,
                                                                                   costs[0], costs[1],
                                                                                   costs[2], costs[3], took))
-            evaluate(net, training_set, False)
+            #evaluate(net, training_set, False)
             evaluate(net, test_set, False)
             print('\n')
 

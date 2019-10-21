@@ -36,13 +36,3 @@ class Shape:
     num_sizes = len(master_size_list)
     num_colors = len(master_color_list)
     num_actions = len(master_action_list)
-
-
-# class Data:
-#     def __init__(self, id_number, name, size, color, image_matrix, label_matrix):
-#         self.id_number = id_number
-#         self.name = name
-#         self.size = size
-#         self.color = color
-#         self.image_matrix = image_matrix
-#         self.label_matrix = label_matrix

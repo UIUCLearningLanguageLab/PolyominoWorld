@@ -17,7 +17,10 @@ class Display:
         self.current_y = None
         self.selected_unit = None
 
-        self.the_network = numpy_ffnet.NumpyFfnet(self.the_dataset.x_size, 32, self.the_dataset.y_size, 0.001)
+        hidden_size = int(the_network.split('_')[1][1:])
+        print(hidden_size)
+
+        self.the_network = numpy_ffnet.NumpyFfnet(self.the_dataset.x_size, hidden_size, self.the_dataset.y_size, 0.001)
         self.the_network.load_weights(the_network)
 
         self.the_world = world.World(config.Shape.master_shape_list, config.Shape.master_color_list,
