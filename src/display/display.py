@@ -17,10 +17,7 @@ class Display:
         self.current_y = None
         self.selected_unit = None
 
-        hidden_size = int(the_network.split('_')[1][1:])
-        print(hidden_size)
-
-        self.the_network = numpy_ffnet.NumpyFfnet(self.the_dataset.x_size, hidden_size, self.the_dataset.y_size, 0.001)
+        self.the_network = numpy_ffnet.NumpyFfnet(self.the_dataset.x_size, 32, self.the_dataset.y_size, 0.001)
         self.the_network.load_weights(the_network)
 
         self.the_world = world.World(config.Shape.master_shape_list, config.Shape.master_color_list,
@@ -49,8 +46,6 @@ class Display:
         self.network_canvas.pack()
         self.weight_canvas.pack()
 
-        self.network_canvas.bind("<Button-1>", self.network_click)
-
         self.i_label = tk.Label(self.button_frame, text="Current Item:", bg='white', fg='black')
         self.i_label.pack(side=tk.LEFT)
 
@@ -67,7 +62,7 @@ class Display:
         self.quit_button.pack(side=tk.LEFT, padx=4)
 
         self.update_current_item()
-        self.draw_windows()
+        self.draw_window()
 
     def update_current_item(self):
         self.i_entry.delete(0, tk.END)  # deletes the current value
@@ -75,173 +70,7 @@ class Display:
         self.current_x = np.copy(self.the_dataset.x[self.i])
         self.current_y = np.copy(self.the_dataset.y[self.i])
 
-    def draw_weight_frame(self):
-        self.weight_canvas.delete("all")
-        self.weight_canvas.create_text(550, 20, text="Selected Unit: {}".format(self.selected_unit), font="Arial 16 bold", fill='white')
-        if self.selected_unit is not None:
-            if self.selected_unit[0] == 'i':
-                self.weight_canvas.create_text(550, 50, text="Input-->Hidden Weights", font="Arial 12 bold", fill='white')
-                self.draw_hx_weights()
-            elif self.selected_unit[0] == 'h':
-
-                self.weight_canvas.create_text(1000, 50, text="Hidden-->Output Weights", font="Arial 12 bold", fill='white')
-                self.draw_hx_weights()
-                self.draw_yh_weights()
-            elif self.selected_unit[0] == 'o':
-                self.weight_canvas.create_text(550, 50, text="Hidden-->Output Weights", font="Arial 12 bold", fill='white')
-                self.draw_yh_weights()
-            self.root.update()
-
-    def draw_hx_weights(self):
-        index = int(self.selected_unit[1:])-1
-
-        if self.selected_unit[0] == 'i':
-            startx = 500
-            starty = 70
-            size = 17
-            spacing = 2
-            hiddens_per_column = 8
-
-            weight_vector = np.copy(self.the_network.h_x[:, index])
-
-            for i in range(self.the_network.hidden_size):
-                y1 = starty + (size + spacing) * i
-                fcolor = self.network_hex_color(weight_vector[i])
-                self.weight_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor)
-                if (i + 1) % hiddens_per_column == 0:
-                    startx += size + spacing
-                    starty -= hiddens_per_column * (size + spacing)
-
-        elif self.selected_unit[0] == 'h':
-            start_x = 280
-            start_y = 60
-            size = 13
-            spacing = 1
-            group_spacing = 130
-
-            self.weight_canvas.create_text(start_x + 50, start_y - 20, text="Input --> Hidden Weights",
-                                            font="Arial 12 bold", fill='white')
-
-            self.weight_canvas.create_text(start_x - 20, start_y + 50, text="Red", font="Arial 12 bold", fill='white')
-            self.weight_canvas.create_text(start_x - 29, start_y + 180, text="Green", font="Arial 12 bold",
-                                            fill='white')
-            self.weight_canvas.create_text(start_x - 23, start_y + 310, text="Blue", font="Arial 12 bold",
-                                            fill='white')
-
-            weight_vector = np.copy(self.the_network.h_x[index, :])
-            weight_matrix = weight_vector.reshape((3, self.the_world.num_rows, self.the_world.num_columns))
-
-            for i in range(weight_matrix.shape[0]):
-                for j in range(weight_matrix.shape[1]):
-                    for k in range(weight_matrix.shape[2]):
-                        color = self.network_hex_color(weight_matrix[i, j, k])
-
-                        x1 = start_x + (size + spacing) * j
-                        y1 = start_y + (size + spacing) * k + (i * group_spacing)
-                        try:
-                            self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-                        except:
-                            print(weight_matrix[i, j], color)
-
-    def draw_yh_weights(self):
-        index = int(self.selected_unit[1:])-1
-
-        if self.selected_unit[0] == 'h':
-
-            start_x = 800
-            start_y = 60
-            size = 22
-            spacing = 2
-
-            weight_vector = np.copy(self.the_network.o_h[:, index])
-            shape_weights = weight_vector[:self.the_dataset.index_starts[0]]
-
-            for i in range(shape_weights.shape[0]):
-                the_label = self.the_dataset.master_shape_list[i]
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
-                                                fill='white')
-
-                fcolor = self.network_hex_color(shape_weights[i])
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
-
-            start_x = 800
-            start_y = 300
-            size = 22
-            spacing = 2
-
-            weight_vector = np.copy(self.the_network.o_h[:, index])
-            size_weights = weight_vector[self.the_dataset.index_starts[0]:self.the_dataset.index_starts[1]]
-
-            for i in range(size_weights.shape[0]):
-                the_label = "size " + str(self.the_dataset.master_size_list[i])
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
-                                                fill='white')
-
-                fcolor = self.network_hex_color(size_weights[i])
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
-
-            start_x = 1200
-            start_y = 60
-            size = 22
-            spacing = 2
-
-            weight_vector = np.copy(self.the_network.o_h[:, index])
-            color_weights = weight_vector[self.the_dataset.index_starts[1]:self.the_dataset.index_starts[2]]
-
-            for i in range(color_weights.shape[0]):
-                the_label = self.the_dataset.master_color_list[i]
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
-                                                fill='white')
-
-                fcolor = self.network_hex_color(color_weights[i])
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
-
-            start_x = 1200
-            start_y = 300
-            size = 22
-            spacing = 2
-
-            weight_vector = np.copy(self.the_network.o_h[:, index])
-            action_weights = weight_vector[self.the_dataset.index_starts[2]:self.the_dataset.index_starts[3]]
-
-            for i in range(action_weights.shape[0]):
-                the_label = self.the_dataset.master_action_list[i]
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
-                                                fill='white')
-
-                fcolor = self.network_hex_color(action_weights[i])
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size, fill=fcolor)
-
-        elif self.selected_unit[0] == 'o':
-            startx = 500
-            starty = 70
-            size = 17
-            spacing = 2
-            hiddens_per_column = 8
-
-            weight_vector = np.copy(self.the_network.o_h[index, :])
-
-            for i in range(self.the_network.hidden_size):
-                y1 = starty + (size + spacing) * i
-                fcolor = self.network_hex_color(weight_vector[i])
-                self.weight_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor)
-                if (i + 1) % hiddens_per_column == 0:
-                    startx += size + spacing
-                    starty -= hiddens_per_column * (size + spacing)
-
-    def draw_windows(self):
-        self.draw_network_frame()
-        self.draw_weight_frame()
-
-    def draw_network_frame(self):
+    def draw_window(self):
         self.network_canvas.delete("all")
         self.weight_canvas.delete("all")
         self.draw_world()
@@ -278,49 +107,35 @@ class Display:
         self.network_canvas.create_text(start_x-29, start_y+180, text="Green", font="Arial 14 bold", fill='white')
         self.network_canvas.create_text(start_x-23, start_y+310, text="Blue", font="Arial 14 bold", fill='white')
 
+        # self.network_canvas.create_text(start_x+50, start_y+60, text="Green", font="Arial 20 bold", fill='white')
+        # self.network_canvas.create_text(start_x+50, start_y+80, text="Blue", font="Arial 20 bold", fill='white')
+
         self.current_x = np.copy(self.the_dataset.x[self.i])
 
         rgb_matrix = self.current_x.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_columns))
-        counter = 0
         for i in range(self.the_dataset.num_rows):
             for j in range(self.the_dataset.num_columns):
                 r_color = self.network_hex_color(rgb_matrix[0, i, j])
                 g_color = self.network_hex_color(rgb_matrix[1, i, j])
                 b_color = self.network_hex_color(rgb_matrix[2, i, j])
 
-                the_tag = "i" + str(counter + 1)
-                if self.selected_unit == the_tag:
-                    border_color = 'yellow'
-                else:
-                    border_color = "#333333"
                 self.network_canvas.create_rectangle(i * size + start_x,
                                                      j * size + start_y,
                                                      (i + 1) * size + start_x,
                                                      (j + 1) * size + start_y,
-                                                     fill=r_color, outline=border_color, tags=the_tag)
+                                                     fill=r_color, outline="#333333")
 
-                the_tag = "i" + str(counter + 1 + self.the_dataset.num_rows*self.the_dataset.num_columns)
-                if self.selected_unit == the_tag:
-                    border_color = 'yellow'
-                else:
-                    border_color = "#333333"
                 self.network_canvas.create_rectangle(i * size + start_x,
                                                      j * size + start_y + input_size,
                                                      (i + 1) * size + start_x,
                                                      (j + 1) * size + start_y + input_size,
-                                                     fill=g_color, outline=border_color, tags=the_tag)
+                                                     fill=g_color, outline="#333333")
 
-                the_tag = "i" + str(counter + 1 + 2*self.the_dataset.num_rows*self.the_dataset.num_columns)
-                if self.selected_unit == the_tag:
-                    border_color = 'yellow'
-                else:
-                    border_color = "#333333"
                 self.network_canvas.create_rectangle(i * size + start_x,
                                                      j * size + start_y + 2*input_size,
                                                      (i + 1) * size + start_x,
                                                      (j + 1) * size + start_y + 2*input_size,
-                                                     fill=b_color, outline=border_color, tags=the_tag)
-                counter += 1
+                                                     fill=b_color, outline="#333333")
 
     def draw_hidden_layer(self):
         startx = 500
@@ -346,8 +161,16 @@ class Display:
                 starty -= hiddens_per_column * (size + spacing)
 
     def draw_shape_outputs(self, o):
+        shape_actual = self.the_dataset.y[self.i][:self.the_dataset.index_starts[0]]
         shape_outputs = o[:self.the_dataset.index_starts[0]]
-        shape_probs = shape_outputs / shape_outputs.sum()
+        shape_softmax = shape_outputs / shape_outputs.sum()
+        shape_actual_index = np.argmax(shape_actual)
+        shape_actual_score = shape_outputs[shape_actual_index]
+        shape_guess_index = np.argmax(shape_outputs)
+        if shape_actual_index == shape_guess_index:
+            shape_correct = True
+        else:
+            shape_correct = False
 
         startx = 800
         starty = 60
@@ -355,7 +178,7 @@ class Display:
         spacing = 2
 
         for i in range(len(shape_outputs)):
-            the_tag = "o" + str(i + 1)
+            the_tag = "shape" + str(i + 1)
             the_label = self.the_dataset.master_shape_list[i]
             fcolor = self.network_hex_color(o[i])
             if self.selected_unit == the_tag:
@@ -367,14 +190,22 @@ class Display:
             self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor, outline=bcolor,
                                                  tags=the_tag)
             self.network_canvas.create_text(startx-60, y1 + 10 + 2, text=the_label, font="Arial 14 bold", fill='white')
-            value = "{:0.1f}%".format(100 * shape_probs[i])
-            bar_size = round(100 * shape_probs[i])
+            value = "{:0.1f}%".format(100 * shape_softmax[i])
+            bar_size = round(100 * shape_softmax[i])
             self.network_canvas.create_rectangle(startx + 50, y1 + 4, startx + 50 + bar_size, y1 + 16, fill='blue')
             self.network_canvas.create_text(startx + 200, y1 + 10 + 2, text=value, font="Arial 12 bold", fill='white')
 
     def draw_size_outputs(self, o):
+        size_actual = self.the_dataset.y[self.i][self.the_dataset.index_starts[0]:self.the_dataset.index_starts[1]]
         size_outputs = o[self.the_dataset.index_starts[0]:self.the_dataset.index_starts[1]]
-        size_probs = size_outputs / size_outputs.sum()
+        size_softmax = size_outputs / size_outputs.sum()
+        size_actual_index = np.argmax(size_actual)
+        size_actual_score = size_outputs[size_actual_index]
+        size_guess_index = np.argmax(size_outputs)
+        if size_actual_index == size_guess_index:
+            size_correct = True
+        else:
+            size_correct = False
 
         startx = 800
         starty = 300
@@ -382,7 +213,7 @@ class Display:
         spacing = 2
 
         for i in range(len(size_outputs)):
-            the_tag = "o" + str(i + 1 + self.the_dataset.num_shapes_all)
+            the_tag = "size" + str(i + 1)
             the_label = "size " + str(self.the_dataset.master_size_list[i])
             fcolor = self.network_hex_color(size_outputs[i])
             if self.selected_unit == the_tag:
@@ -394,14 +225,22 @@ class Display:
             self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor, outline=bcolor,
                                                  tags=the_tag)
             self.network_canvas.create_text(startx-60, y1 + 10 + 2, text=the_label, font="Arial 14 bold", fill='white')
-            value = "{:0.1f}%".format(100 * size_probs[i])
-            bar_size = round(100 * size_probs[i])
+            value = "{:0.1f}%".format(100 * size_softmax[i])
+            bar_size = round(100 * size_softmax[i])
             self.network_canvas.create_rectangle(startx + 50, y1 + 4, startx + 50 + bar_size, y1 + 16, fill='blue')
             self.network_canvas.create_text(startx + 200, y1 + 10 + 2, text=value, font="Arial 12 bold", fill='white')
 
     def draw_color_outputs(self, o):
+        color_actual = self.the_dataset.y[self.i][self.the_dataset.index_starts[1]:self.the_dataset.index_starts[2]]
         color_outputs = o[self.the_dataset.index_starts[1]:self.the_dataset.index_starts[2]]
-        color_probs = color_outputs / color_outputs.sum()
+        color_softmax = color_outputs / color_outputs.sum()
+        color_actual_index = np.argmax(color_actual)
+        color_actual_score = color_outputs[color_actual_index]
+        color_guess_index = np.argmax(color_outputs)
+        if color_actual_index == color_guess_index:
+            color_correct = True
+        else:
+            color_correct = False
 
         startx = 1200
         starty = 60
@@ -409,7 +248,7 @@ class Display:
         spacing = 2
 
         for i in range(len(color_outputs)):
-            the_tag = "o" + str(i + 1 + self.the_dataset.num_shapes_all + self.the_dataset.num_sizes_all)
+            the_tag = "size" + str(i + 1)
             the_label = self.the_dataset.master_color_list[i]
             fcolor = self.network_hex_color(color_outputs[i])
             if self.selected_unit == the_tag:
@@ -421,14 +260,22 @@ class Display:
             self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor, outline=bcolor,
                                                  tags=the_tag)
             self.network_canvas.create_text(startx-60, y1 + 10 + 2, text=the_label, font="Arial 14 bold", fill='white')
-            value = "{:0.1f}%".format(100 * color_probs[i])
-            bar_size = round(100 * color_probs[i])
+            value = "{:0.1f}%".format(100 * color_softmax[i])
+            bar_size = round(100 * color_softmax[i])
             self.network_canvas.create_rectangle(startx + 50, y1 + 4, startx + 50 + bar_size, y1 + 16, fill='blue')
             self.network_canvas.create_text(startx + 200, y1 + 10 + 2, text=value, font="Arial 12 bold", fill='white')
 
     def draw_action_outputs(self, o):
+        action_actual = self.the_dataset.y[self.i][self.the_dataset.index_starts[2]:self.the_dataset.index_starts[3]]
         action_outputs = o[self.the_dataset.index_starts[2]:self.the_dataset.index_starts[3]]
-        action_probs = action_outputs / action_outputs.sum()
+        action_softmax = action_outputs / action_outputs.sum()
+        action_actual_index = np.argmax(action_actual)
+        action_actual_score = action_outputs[action_actual_index]
+        action_guess_index = np.argmax(action_outputs)
+        if action_actual_index == action_guess_index:
+            action_correct = True
+        else:
+            action_correct = False
 
         startx = 1200
         starty = 300
@@ -436,7 +283,7 @@ class Display:
         spacing = 2
 
         for i in range(len(action_outputs)):
-            the_tag = "o" + str(i + 1 + self.the_dataset.num_shapes_all + self.the_dataset.num_sizes_all + self.the_dataset.num_colors_all)
+            the_tag = "size" + str(i + 1)
             the_label = self.the_dataset.master_action_list[i]
             fcolor = self.network_hex_color(action_outputs[i])
             if self.selected_unit == the_tag:
@@ -448,8 +295,8 @@ class Display:
             self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor, outline=bcolor,
                                                  tags=the_tag)
             self.network_canvas.create_text(startx-60, y1 + 10 + 2, text=the_label, font="Arial 14 bold", fill='white')
-            value = "{:0.1f}%".format(100 * action_probs[i])
-            bar_size = round(100 * action_probs[i])
+            value = "{:0.1f}%".format(100 * action_softmax[i])
+            bar_size = round(100 * action_softmax[i])
             self.network_canvas.create_rectangle(startx + 50, y1 + 4, startx + 50 + bar_size, y1 + 16, fill='blue')
             self.network_canvas.create_text(startx + 200, y1 + 10 + 2, text=value, font="Arial 12 bold", fill='white')
 
@@ -469,14 +316,14 @@ class Display:
         else:
             self.i = 0
         self.update_current_item()
-        self.draw_windows()
+        self.draw_window()
 
     def update(self):
         new_i = int(self.i_entry.get())
         if 0 <= new_i < self.the_dataset.num_items:
             self.i = new_i
             self.update_current_item()
-            self.draw_windows()
+            self.draw_window()
 
     @staticmethod
     def rgb_to_hex(r, g, b):
@@ -508,31 +355,3 @@ class Display:
             return '#ff{}{}'.format(hex_value, hex_value)
         else:
             return "#ffffff"
-
-    def get_tags(self, event):
-        x, y = event.x, event.y
-        ids = self.network_canvas.find_overlapping(x, y, x, y)
-        if len(ids) > 0:
-            the_tag = self.network_canvas.itemcget(ids[0], "tags").split()[0]
-        else:
-            the_tag = None
-        return the_tag
-
-    def network_click(self, event):
-        the_tag = self.get_tags(event)
-        if the_tag is not None:
-            if the_tag == self.selected_unit:
-                self.selected_unit = None
-                self.draw_windows()
-            else:
-                print(the_tag)
-
-                if the_tag[0] == 'i':
-                    self.selected_unit = the_tag
-                    self.draw_windows()
-                if the_tag[0] == 'h':
-                    self.selected_unit = the_tag
-                    self.draw_windows()
-                if the_tag[0] == 'o':
-                    self.selected_unit = the_tag
-                    self.draw_windows()

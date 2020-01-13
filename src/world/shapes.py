@@ -7,7 +7,7 @@ from src import config
 class Shape:
 
     def __init__(self, the_world):
-
+        self.custom= the_world.custom
         self.the_world = the_world
         self.id_number = None
         self.name = None
@@ -21,14 +21,14 @@ class Shape:
         self.active_world_cell_list = None
         self.color = None
         self.position = None
+
         self.action_list = config.Shape.master_action_list
-        self.action_choice = None
+        self.action_choice = self.action_list[0]
         self.action_probs = None
         self.flip_dict = None
         self.rotation_dict = None
 
     def init_shape(self, id_number, color):
-        self.action_choice = self.action_list[0]
         self.id_number = id_number
         self.color = color
         self.current_variant = random.choice(self.variant_list)
@@ -46,8 +46,13 @@ class Shape:
                 break
             else:
                 all_cells_empty = True
-                position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
-                            random.randint(0, self.the_world.num_rows-self.dimensions[1])]
+                if(self.custom!=None):
+                    position = [random.randint(self.custom[0], min(self.the_world.num_columns-self.dimensions[0],self.custom[1])),
+                                random.randint(self.custom[2], min(self.the_world.num_rows-self.dimensions[1],self.custom[3]))]
+                else:
+                    position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
+                                random.randint(0, self.the_world.num_rows-self.dimensions[1])]
+
                 active_world_cells = self.get_active_world_cells(position)
                 for i in range(len(active_world_cells)):
                     if active_world_cells[i] in self.the_world.occupied_cell_dict:
@@ -158,6 +163,9 @@ class Shape:
         for cell in active_world_cell_list:
             if (cell[0] < 0) or (cell[1] < 0) or (cell[0] > self.the_world.num_columns-1) or (cell[1] > self.the_world.num_rows-1):
                 legal_position = False
+            if(self.custom):
+                if(cell[0] < self.custom[0]) or (cell[1] < self.custom[2]) or (cell[0] > self.custom[1]) or (cell[1] > self.custom[3]):
+                    legal_position = False
             if cell in self.the_world.occupied_cell_dict:
                 shape_id = self.the_world.occupied_cell_dict[cell]
                 if shape_id != self.id_number:

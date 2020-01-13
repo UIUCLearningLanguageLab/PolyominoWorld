@@ -6,7 +6,8 @@ import random
 
 class World:
 
-    def __init__(self, shape_list, color_list, num_rows, num_columns):
+    def __init__(self, shape_list, color_list, num_rows, num_columns, custom):
+        self.custom = custom
         self.history_list = []
         self.event_counter = None
         self.num_rows = num_rows
@@ -46,52 +47,52 @@ class World:
         self.shape_dict = {}
         self.turn_counter = 0
 
-    def generate_world(self, num_types, num_instances_per_type, num_events_per_scene):
-        world_name = "w{}-{}_s{}_c{}_{}_{}_{}".format(self.num_rows, self.num_columns,
-                                                      len(self.shape_list), len(self.color_list),
-                                                      num_types, num_instances_per_type, num_events_per_scene)
+    def generate_world(self, num_types, num_sequences_per_type, num_events_per_sequence):
+
+        if num_types == 0:
+            world_name = "w{}-{}_s{}_c{}_{}_{}_{}".format(self.num_rows, self.num_columns,
+                                                          len(self.shape_list), len(self.color_list),
+                                                          num_types, num_sequences_per_type, num_events_per_sequence)
+        else:
+            world_name = "w{}-{}_s{}_c{}_{}_{}_{}".format(self.num_rows, self.num_columns,
+                                                          num_types, num_types,
+                                                          num_types, num_sequences_per_type, num_events_per_sequence)
 
         file_name = "data/" + world_name + ".csv"
 
         shape_counter = 0
-        scene_counter = 0
-
-        f = open(file_name, 'w')
-        f.write(world_name + "\n")
-        f.close()
+        sequence_counter = 0
 
         if num_types == 0:
-            for i in range(9):  # num of shape types/size
-                shape_name = self.shape_list[i]
-
-                for j in range(8):  # num of colors
-                    shape_color = self.color_list[j]
-
-                    for k in range(num_instances_per_type):
-                        self.init_world(scene_counter)
-
+            for i in range(len(self.shape_list)):  # num of shape types/size
+                for j in range(len(self.color_list)):  # num of colors
+                    for k in range(num_sequences_per_type):
+                        self.init_world(sequence_counter)
+                        shape_name = self.shape_list[i]
+                        shape_color = self.color_list[j]
                         self.add_shape_to_world(shape_name, shape_counter, shape_color)
                         self.save_world_state(file_name)
                         shape_counter += 1
 
-                        for m in range(num_events_per_scene):
+                        for m in range(num_events_per_sequence):
                             self.next_turn()
                             self.save_world_state(file_name)
-                        scene_counter += 1
+                        sequence_counter += 1
+
         elif num_types > 0:
             for i in range(num_types):
-                for j in range(num_instances_per_type):
-                    self.init_world(scene_counter)
+                for j in range(num_sequences_per_type):
+                    self.init_world(sequence_counter)
                     shape_name = random.choice(self.shape_list)
                     shape_color = random.choice(self.color_list)
                     self.add_shape_to_world(shape_name, shape_counter, shape_color)
                     self.save_world_state(file_name)
                     shape_counter += 1
 
-                    for k in range(num_events_per_scene):
+                    for k in range(num_events_per_sequence):
                         self.next_turn()
                         self.save_world_state(file_name)
-                    scene_counter += 1
+                    sequence_counter += 1
         else:
             print("ERROR: Num Types must be >= 0")
             sys.exit()

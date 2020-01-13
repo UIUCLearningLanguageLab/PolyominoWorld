@@ -2,7 +2,7 @@ class PrintOptions:
     print_items = True
     print_confusion_matrices = True
     def print_red(skk): print("\033[91m {}\033[00m" .format(skk))
-    def print_green(skk): print("\033[92m {}\033[00m" .format(skk)) 
+    def print_green(skk): print("\033[92m {}\033[00m" .format(skk))
 
 
 class Display:
@@ -10,15 +10,15 @@ class Display:
 
 
 class Shape:
-    master_shape_list = ['monomino', 'domino',
-                  'tromino1', 'tromino2',
-                  'tetromino1', 'tetromino2', 'tetromino3', 'tetromino4', 'tetromino5']
-    master_action_list = ['appear', 'rest', 'move', 'rotate', 'flip']
+    master_feature_type_list = ['shape', 'size', 'color', 'action']
+    master_feature_type_index_dict = {'shape': 0, 'size': 1, 'color': 2, 'action': 3}
+    num_master_feature_types = 4
+
+    master_shape_list = ['monomino', 'domino', 'tromino1', 'tromino2',
+                         'tetromino1', 'tetromino2', 'tetromino3', 'tetromino4', 'tetromino5']
     master_size_list = [1, 2, 3, 4]
+
     master_color_list = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta']
-
-    action_probs_list = [.00, .25, .25, .25, .25]
-
     color_value_dict = {'black': (-1., -1., -1.),
                         'white': (1., 1., 1.),
                         'red': (1., -1., -1.),
@@ -32,7 +32,10 @@ class Shape:
                         'teal': (0, 0.5, 0.5)
                         }
 
-    num_shapes = len(master_shape_list)
-    num_sizes = len(master_size_list)
-    num_colors = len(master_color_list)
-    num_actions = len(master_action_list)
+    master_action_list = ['rest', 'move', 'rotate', 'flip']
+    action_prob_list = [.25, .25, .25, .25]
+
+    master_feature_type_size_dict = {'shape': len(master_shape_list),
+                                     'size': len(master_size_list),
+                                     'color': len(master_color_list),
+                                     'action': len(master_action_list)}
