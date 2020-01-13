@@ -21,12 +21,15 @@ class Shape:
     master_color_list = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta']
     color_value_dict = {'black': (-1., -1., -1.),
                         'white': (1., 1., 1.),
+
                         'red': (1., -1., -1.),
                         'blue': (-1., -1., 1.),
                         'green': (-1., 1., -1.),
+
                         'yellow': (1., 1., -1.),
                         'cyan': (-1., 1., 1.),
                         'magenta': (1., -1., 1.),
+
                         'grey': (0., 0., 0.),
                         'silver': (-0.5, -0.5, -0.5),
                         'teal': (0, 0.5, 0.5)

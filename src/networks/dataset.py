@@ -2,6 +2,7 @@ from src import config
 import random
 import torch
 import sys
+import pickle
 
 
 class DataSet:
@@ -31,6 +32,8 @@ class DataSet:
         self.sequence_list = None
         self.num_events = None
         self.world_size = None
+
+        self.network_state_list = None
 
         self.x = None
         self.y = None
@@ -143,7 +146,9 @@ class DataSet:
         self.num_sequences = len(self.sequence_list)
 
     def load_network_state_data(self):
-        pass
+        f = open(self.network_state_filename)
+        self.network_state_list = pickle.load(f)
+        f.close()
 
     def create_xy(self, x_type, y_type, shuffle_sequences, shuffle_events):
         x = []

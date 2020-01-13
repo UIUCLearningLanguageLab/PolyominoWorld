@@ -2,20 +2,27 @@ import torch
 import torch.nn as nn
 import sys
 import pickle
+import datetime
+import os
+
 
 class MlNet(nn.Module):
     ############################################################################################################
-    def __init__(self, net_type, input_size, hidden_size, output_size, weight_init):
+    def __init__(self, net_type, training_set, hidden_size, output_size, learning_rate, weight_init):
 
         super(MlNet, self).__init__()
+        self.net_name = None
         self.net_type = net_type
 
-        self.input_size = input_size
+        self.training_set = training_set
+        self.input_size = training_set.world_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        self.learning_rate = learning_rate
         self.weight_init = weight_init
+        self.current_epoch = 0
 
-        self.h_x = nn.Linear(input_size, hidden_size).float()
+        self.h_x = nn.Linear(self.input_size, hidden_size).float()
         self.y_h = nn.Linear(hidden_size, output_size).float()
         self.sigmoid = nn.Sigmoid().float()
 
@@ -27,10 +34,8 @@ class MlNet(nn.Module):
 
         self.hidden_states = []
 
-        self.network_states_file = "models/states_{}_i{}-h{}-o{}-ff.csv".format(net_type, input_size, hidden_size,
-                                                                                output_size)
-        self.network_weights_file = "models/weights_{}_{}-h{}-o{}-ff.csv".format(net_type, input_size, hidden_size,
-                                                                                 output_size)
+        self.start_datetime = datetime.datetime.timetuple(datetime.datetime.now())
+        self.create_network_directory()
 
     def forward_item(self, x):
         z_h = self.h_x(x.float())
@@ -60,17 +65,49 @@ class MlNet(nn.Module):
         optimizer.step()
         return out, loss
 
-    def save_network_state(self, x, y, o, h):
-        item_state_list = [x, y, h, o]
-        self.hidden_states.append(item_state_list)
+    def create_network_directory(self):
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}".format(self.net_type,
+                                                   self.start_datetime[0],
+                                                   self.start_datetime[1],
+                                                   self.start_datetime[2],
+                                                   self.start_datetime[3],
+                                                   self.start_datetime[4],
+                                                   self.start_datetime[5],
+                                                   self.start_datetime[6])
+        try:
+            os.mkdir("models/" + self.net_name)
+        except:
+            print("ERROR: Network {} directory already exists".format(self.net_name))
+            sys.exit()
+        file_location = "models/" + self.net_name + "/network_properties.csv"
+        f = open(file_location, 'w')
+        f.write("network_name: {}\n".format(self.net_name))
+        f.write("network_type: {}\n".format(self.net_type))
+        f.write("input_size: {}\n".format(self.input_size))
+        f.write("hidden_size: {}\n".format(self.hidden_size))
+        f.write("output_size: {}\n".format(self.output_size))
+        f.write("learning_rate: {}\n".format(self.learning_rate))
+        f.write("weight_init: {}\n".format(self.weight_init))
+        f.write("training_file: {}".format(self.training_set.world_state_filename))
+        f.close()
 
-    def generate_states_file(self):
-        outfile = open(self.network_states_file, 'wb')
+    def save_network_states(self, dataset, x_type, y_type):
+        network_state_list = []
+
+        dataset.create_xy(x_type, y_type, False, False)
+
+        for i in range(len(dataset.x)):
+            o, h, o_cost = self.test_item(dataset.x[i], dataset.y[i])
+            network_state_list.append((dataset.x[i], dataset.y[i], o, h))
+
+        file_location = "models/" + self.net_name + "/states_e{}.csv".format(self.current_epoch)
+        outfile = open(file_location, 'wb')
         pickle.dump(self.hidden_states, outfile)
         outfile.close()
 
-    def generate_weights_file(self):
-        outfile = open(self.network_weights_file, 'wb')
+    def save_network_weights(self):
+        file_location = "models/" + self.net_name + "/weights_e{}.csv".format(self.current_epoch)
+        outfile = open(file_location, 'wb')
         weights_list = [self.h_x, self.y_h]
         pickle.dump(weights_list, outfile)
         outfile.close()

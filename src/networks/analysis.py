@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import sys
 import torch
 
@@ -8,121 +7,163 @@ def train_a(net, training_set, test_set,
             num_epochs, learning_rate, shuffle_sequences, shuffle_events,
             output_freq, verbose):
 
+    x_type = 'world_state'
     if net.net_type == 'classifier':
-        x_type = 'world_state'
         y_type = 'feature_vector'
     elif net.net_type == 'autoassociator':
-        x_type = 'world_state'
         y_type = 'world_state'
     else:
-        print("Unrecognized net type {}".format(net.net_type))
+        print("Unrecognized net type {} 1".format(net.net_type))
         sys.exit()
 
-    print("Training {} epochs on {}-{}-{} {} on dataset {}, testing on dataset {}".format(num_epochs,
-                                                                                          net.input_size,
-                                                                                          net.hidden_size,
-                                                                                          net.output_size,
-                                                                                          net.net_type,
-                                                                                          training_set.name,
-                                                                                          test_set.name))
+    print("Training {} on {} epochs".format(net.net_name, num_epochs))
+    if net.net_type == "classifier":
+        evaluate_classifier(net, training_set, test_set, False)
+    elif net.net_type == 'autoassociator':
+        evaluate_autoassociator(net, training_set, test_set, False)
+    else:
+        print("Unrecognized net type {} 2".format(net.net_type))
+        sys.exit()
 
-    start_time = time.time()
     for i in range(num_epochs):
+        net.current_epoch += 1
+
         training_set.create_xy(x_type, y_type, shuffle_sequences, shuffle_events)
         optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
         for j in range(len(training_set.x)):
             net.train_item(training_set.x[j], training_set.y[j], optimizer)
 
-        if i % output_freq == 0:
-
-            took = time.time() - start_time
-            start_time = time.time()
-
+        if net.current_epoch % output_freq == 0:
             if net.net_type == 'classifier':
-                training_costs, training_pc = evaluate_classifier(net, training_set, verbose)
-                test_costs, test_pc = evaluate_classifier(net, test_set, verbose)
-
-                output_string = "Epoch:{} {:0.2f}s |".format(i, took)
-                for j in range(training_set.num_included_feature_types):
-                    output_string += "  {:0.2f}-{:0.2f}".format(training_costs[j], test_costs[j])
-                output_string += "  | "
-                for j in range(training_set.num_included_feature_types):
-                    output_string += "  {:0.2f}-{:0.2f}".format(training_pc[j], test_pc[j])
-                print(output_string)
-
+                evaluate_classifier(net, training_set, test_set, verbose)
             elif net.net_type == 'autoassociator':
-                cost = 0
-                for j in range(len(training_set.x)):
-                    o, h, o_cost = net.test_item(training_set.x[j], training_set.y[j])
-                    cost += o_cost.sum()
-                print("Epoch:{} {:16s} costs: {:0.1f}  took:{:0.2f}s.".format(i, training_set.name, cost, took))
+                evaluate_autoassociator(net, training_set, test_set, verbose)
 
-    print("Training complete. Saving hidden states and weights.")
+    print("Final Performance on Training Set")
+    if net.net_type == "classifier":
+        evaluate_classifier(net, training_set, test_set, True)
+    elif net.net_type == 'autoassociator':
+        evaluate_autoassociator(net, training_set, test_set, True)
+    else:
+        print("Unrecognized net type {} 3".format(net.net_type))
+        sys.exit()
+
+    print("\nSaving hidden states and weights.")
+    net.save_network_states(training_set, x_type, y_type)
+    net.save_network_weights()
+
+
+def evaluate_autoassociator(net, training_set, test_set, verbose):
+    training_cost = 0
+    test_cost = 0
+
     for i in range(len(training_set.x)):
-        if net.net_type == 'classifier':
-            out, h, o_cost = net.test_item(training_set.x[i], training_set.y[i])
-        elif net.net_type == 'autoassociator':
-            out, h, o_cost = net.test_item(training_set.x[i], training_set.x[i])
-        else:
-            print("Network type not found")
-            sys.exit(2)
+        o, h, o_cost = net.test_item(training_set.x[i], training_set.y[i])
+        training_cost += o_cost.sum()
+        if verbose:
+            print("Training Event {} {}  Cost: {:0.1f}".format(i, training_set.label_list[i], o_cost))
 
-        net.save_network_state(training_set.x[i], training_set.y[i], out, h)
+    for i in range(len(test_set.x)):
+        o, h, o_cost = net.test_item(test_set.x[i], test_set.y[i])
+        test_cost += o_cost.sum()
+        if verbose:
+            print("Test Event {} {}  Cost: {:0.1f}".format(i, test_set.label_list[i], o_cost))
 
-    net.generate_states_file()
-    net.generate_weights_file()
+    print("Epoch:{}     training cost: {:0.1f}    test cost: {:0.1f}  .".format(net.current_epoch,
+                                                                                training_cost,
+                                                                                test_cost))
 
 
-def evaluate_classifier(net, the_dataset, verbose):
-    the_dataset.create_xy('world_state', 'feature_vector', False, False)
+def evaluate_classifier(net, training_set, test_set, verbose):
 
-    accuracy_array = np.zeros([the_dataset.num_included_feature_types], float)
-    costs = np.zeros([the_dataset.num_included_feature_types], float)
+    training_accuracies, training_costs = evaluate_classifier_dataset(net, training_set, verbose)
+    test_accuracies, test_costs = evaluate_classifier_dataset(net, test_set, verbose)
 
-    for i in range(len(the_dataset.x)):
-        o, h, o_cost = net.test_item(the_dataset.x[i], the_dataset.y[i])
-        actual_score_list = []
+    output_string = "Epoch:{} |".format(net.current_epoch)
+    for j in range(training_set.num_included_feature_types):
+        output_string += "  {:0.2f}-{:0.2f}".format(training_costs[j], test_costs[j])
+    output_string += "  | "
+    for j in range(training_set.num_included_feature_types):
+        output_string += "  {:0.2f}-{:0.2f}".format(training_accuracies[j], test_accuracies[j])
+    print(output_string)
 
-        for j in range(the_dataset.num_included_feature_types):
 
-            start_index = the_dataset.included_fv_indexes[j][0]
-            stop_index = the_dataset.included_fv_indexes[j][1]
+def evaluate_classifier_dataset(net, dataset, verbose):
+    dataset.create_xy('world_state', 'feature_vector', False, False)
+    accuracies = np.zeros([dataset.num_included_feature_types], float)
+    costs = np.zeros([dataset.num_included_feature_types], float)
 
-            current_cost = (o_cost[start_index:stop_index] ** 2).sum()
-            costs[j] += current_cost
+    for i in range(len(dataset.x)):
+        o, h, o_cost = net.test_item(dataset.x[i], dataset.y[i])
+        guess_list = []
+        actual_list = []
 
-            current_o = o[start_index:stop_index]
-            current_y = the_dataset.y[i][start_index:stop_index]
-            current_guess_index = np.argmax(current_o.detach().numpy())
-            current_actual_index = np.argmax(current_y.detach().numpy())
-
-            actual_score = current_o[current_actual_index]
-
-            actual_score_list.append(actual_score)
-            if current_guess_index == current_actual_index:
-                accuracy_array[j] += 1
+        output_string1 = "\tOutputs |"
+        output_string2 = "\tTargets |"
+        output_string3 = "\tCost    |"
+        output_string4 = "\tActual"
+        output_string5 = "\tGuess"
 
         if verbose:
-            output_string = "{}  {}".format(i, the_dataset.label_list[i])
-            for j in range(the_dataset.num_included_features):
-                output_string += "  {:0.3f}".format(actual_score_list[j])
-            print(output_string)
+            print("Event {}".format(i))
 
-            for j in range(the_dataset.num_included_feature_types):
-                feature_type = the_dataset.included_feature_type_list[j]
-                start_index = the_dataset.included_fv_indexes[j][0]
-                stop_index = the_dataset.included_fv_indexes[j][1]
-                current_o = o[start_index:stop_index]
-                current_y = the_dataset.y[start_index:stop_index]
-                print("\t\t{}} Actual:  {}".format(feature_type, current_y))
-                print("\t\t{}} Guess:   {}".format(feature_type, current_o))
+        for j in range(dataset.num_included_feature_types):
+
+            feature_type = dataset.included_feature_type_list[j]
+
+            start_index = dataset.included_fv_indexes[j][0]
+            stop_index = dataset.included_fv_indexes[j][1]
+
+            current_costs = o_cost[start_index:stop_index+1]
+            current_sum_cost = (current_costs ** 2).sum()
+            costs[j] += current_sum_cost
+
+            current_o = o[start_index:stop_index+1]
+            current_y = dataset.y[i][start_index:stop_index+1]
+
+            guess_index = np.argmax(current_o.detach().numpy())
+            actual_index = np.argmax(current_y.detach().numpy())
+
+            guess_score = current_o[guess_index]
+            actual_score = current_y[actual_index]
+
+            guess_label = dataset.feature_list_dict[feature_type][guess_index]
+            actual_label = dataset.feature_list_dict[feature_type][actual_index]
+
+            guess_list.append((guess_index, guess_label, guess_score))
+            actual_list.append((actual_index, actual_label, actual_score))
+
+            if guess_index == actual_index:
+                accuracies[j] += 1
+
+            for k in range(dataset.feature_type_size_dict[feature_type]):
+                output_string1 += " {:0.2f}".format(current_o[k])
+                output_string2 += " {:0.2f}".format(current_y[k])
+                output_string3 += " {:0.2f}".format(current_costs[k])
+            output_string1 += " |"
+            output_string2 += " |"
+            output_string3 += " |"
+            output_string4 += "\t{:2s} {:10s} {:0.3f}".format(str(actual_list[j][0]), str(actual_list[j][1]), actual_list[j][2])
+            output_string5 += "\t{:2s} {:10s} {:0.3f}".format(str(guess_list[j][0]), str(guess_list[j][1]), guess_list[j][2])
+
+        if verbose:
+            print(output_string1)
+            print(output_string2)
+            print(output_string3)
+            print(output_string4)
+            print(output_string5)
             print()
 
-    costs /= len(the_dataset.x)
-    for i in range(the_dataset.num_included_feature_types):
-        feature_type = the_dataset.included_feature_type_list[i]
-        costs[i] /= the_dataset.included_feature_type_size_dict[feature_type]
-    pc = accuracy_array / len(the_dataset.x)
+    costs /= len(dataset.x)
+    for i in range(dataset.num_included_feature_types):
+        feature_type = dataset.included_feature_type_list[i]
+        costs[i] /= dataset.included_feature_type_size_dict[feature_type]
+    accuracies = accuracies / len(dataset.x)
 
-    return costs, pc
+    return accuracies, costs
+
+
+
+
+
