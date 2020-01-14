@@ -1,27 +1,30 @@
-from src.networks import network
+from src.networks import dataset, network, analysis
 import numpy as np
-import torch
 
 
 def main():
     np.set_printoptions(precision=4, suppress=True)
 
     learning_rate = 0.20
-    num_epochs = 100
-    weight_init = 0.0000001
-    output_freq = 5
+    num_epochs = 5000
+    weight_init = 0.01
+    output_freq = 10
     verbose = False
-    net_type = 'autoassociator'
+    included_features = [1, 1, 1, 0]  # Include: Shape, Size, Color, Action
+    shuffle_sequences = True
+    shuffle_events = False
 
-    network_file = 'models/i192-h16-o25-ff.csv'
+    training_file = 'data/w6-6_s9_c8_0_1_0.csv'
+    test_file = 'data/w6-6_s9_c8_0_1_0.csv'
+    network_file = 'models/classifier_2020_1_13_21_23_12/states_e100.csv'
 
-    net = network.SlNet(network_file, learning_rate)
+    training_set = dataset.DataSet(training_file, network_file, included_features)
+    test_set = dataset.DataSet(test_file, network_file, included_features)
 
-    for i in range(num_epochs):
-        epoch_loss = 0
-        for j in range(net.num_items):
-            out, loss = net.train_item(net.hidden[j], net.y[j])
-            epoch_loss += loss.sum()
+    net = network.SlNet(training_set, learning_rate, weight_init)
+
+    analysis.train_b(net, training_set, test_set, num_epochs, learning_rate,
+                     shuffle_sequences, shuffle_events, output_freq, verbose)
 
 
 main()

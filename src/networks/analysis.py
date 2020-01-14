@@ -54,25 +54,64 @@ def train_a(net, training_set, test_set,
     net.save_network_weights()
 
 
+def train_b(net, training_set, test_set,
+            num_epochs, learning_rate, shuffle_sequences, shuffle_events,
+            output_freq, verbose):
+
+    evaluate_classifier(net, training_set, test_set, False)
+
+    for i in range(num_epochs):
+        net.current_epoch += 1
+
+        training_set.create_xy('hidden_state', 'feature_vector', shuffle_sequences, shuffle_events)
+        optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
+
+        for j in range(len(training_set.x)):
+            net.train_item(training_set.x[j], training_set.y[j], optimizer)
+
+        if net.current_epoch % output_freq == 0:
+            evaluate_classifier(net, training_set, test_set, verbose)
+
+    print("Final Performance on Training Set")
+    evaluate_classifier(net, training_set, test_set, True)
+
+    print("\nSaving hidden states and weights.")
+    net.save_network_states(training_set, x_type, y_type)
+    net.save_network_weights()
+
+
 def evaluate_autoassociator(net, training_set, test_set, verbose):
     training_cost = 0
     test_cost = 0
 
+    training_set.create_xy('world_state', 'world_state', False, False)
     for i in range(len(training_set.x)):
         o, h, o_cost = net.test_item(training_set.x[i], training_set.y[i])
         training_cost += o_cost.sum()
-        if verbose:
-            print("Training Event {} {}  Cost: {:0.1f}".format(i, training_set.label_list[i], o_cost))
 
+        if verbose:
+            output_string = "Training Event {}".format(i)
+            for item in training_set.label_list[i]:
+                output_string += " {:10s}".format(str(item))
+            output_string += "{:0.1f}".format(o_cost.sum())
+            print(output_string)
+
+    test_set.create_xy('world_state', 'world_state', False, False)
     for i in range(len(test_set.x)):
         o, h, o_cost = net.test_item(test_set.x[i], test_set.y[i])
         test_cost += o_cost.sum()
-        if verbose:
-            print("Test Event {} {}  Cost: {:0.1f}".format(i, test_set.label_list[i], o_cost))
 
-    print("Epoch:{}     training cost: {:0.1f}    test cost: {:0.1f}  .".format(net.current_epoch,
-                                                                                training_cost,
-                                                                                test_cost))
+        if verbose:
+            output_string = "Test Event {}".format(i)
+            for item in test_set.label_list[i]:
+                output_string += " {:10s}".format(str(item))
+            output_string += "{:0.1f}".format(o_cost.sum())
+            print(output_string)
+
+    training_cost = training_cost / len(training_set.x)
+    test_cost = test_cost / len(test_set.x)
+    print("Epoch:{}     training cost: {:0.1f}    test cost: {:0.1f}  ".format(net.current_epoch,
+                                                                               training_cost, test_cost))
 
 
 def evaluate_classifier(net, training_set, test_set, verbose):

@@ -7,11 +7,10 @@ import pickle
 
 class DataSet:
 
-    def __init__(self, name, world_state_filename, network_state_filename, features):
+    def __init__(self, world_state_filename, network_state_filename, features):
         self.world_state_filename = world_state_filename
         self.network_state_filename = network_state_filename
         self.feature_include_array = features
-        self.name = name
 
         self.feature_type_list = []
         self.feature_type_index_dict = {}
@@ -34,6 +33,7 @@ class DataSet:
         self.world_size = None
 
         self.network_state_list = None
+        self.h_size = None
 
         self.x = None
         self.y = None
@@ -88,7 +88,6 @@ class DataSet:
                 self.num_included_features += self.feature_type_size_dict[feature_type]
 
     def load_world_state_data(self):
-
         self.sequence_list = []
         self.num_events = 0
         sequence_data = []
@@ -138,7 +137,7 @@ class DataSet:
                     self.sequence_list.append(sequence_data)
                     sequence_data = []
 
-            sequence_data.append((shape, size, color, variant, x_coord, y_coord, action, world_state, feature_vector))
+            sequence_data.append([shape, size, color, variant, x_coord, y_coord, action, world_state, feature_vector])
 
         f.close()
 
@@ -146,9 +145,19 @@ class DataSet:
         self.num_sequences = len(self.sequence_list)
 
     def load_network_state_data(self):
-        f = open(self.network_state_filename)
-        self.network_state_list = pickle.load(f)
+        f = open(self.network_state_filename, 'rb')
+        self.network_state_list = pickle.load(f)  # [[x, y, o, h], [x, y, o, h], ...]
         f.close()
+
+        self.h_size = len(self.network_state_list[0][3])
+
+        event_counter = 0
+        for i in range(self.num_sequences):
+            sequence = self.sequence_list[i]
+            for j in range(len(sequence)):
+                hidden_state = self.network_state_list[event_counter][3]
+                self.sequence_list[i][j].append(hidden_state)
+                event_counter += 1
 
     def create_xy(self, x_type, y_type, shuffle_sequences, shuffle_events):
         x = []
@@ -187,7 +196,7 @@ class DataSet:
                 if x_type == 'world_state':
                     x.append(event[7])
                 elif x_type == 'hidden_state':
-                    x.append(None)
+                    x.append(event[9])
                 else:
                     print("x_type {} not recognized".format(x_type))
                     sys.exit()
