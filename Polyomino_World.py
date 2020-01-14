@@ -1,4 +1,4 @@
-from src.display import display
+from polyomino_world.display import display
 
 
 def main():

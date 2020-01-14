@@ -1,4 +1,4 @@
-from src.networks import dataset, network, analysis
+from polyomino_world.networks import dataset, network, analysis
 import numpy as np
 
 

@@ -1,10 +1,10 @@
-from src.networks import dataset, network, analysis
+from polyomino_world.networks import dataset, network, analysis
 import numpy as np
 
 
 def main():
     np.set_printoptions(precision=4, suppress=True)
-
+    #test
     hidden_size = 32
     learning_rate = 0.20
     num_epochs = 10
@@ -28,6 +28,7 @@ def main():
 
     analysis.train_a(net, training_set, test_set, num_epochs, learning_rate,
                      shuffle_sequences, shuffle_events, output_freq, verbose)
+
 
 
 main()

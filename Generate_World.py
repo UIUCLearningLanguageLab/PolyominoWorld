@@ -1,4 +1,4 @@
-from src.world import world
+from polyomino_world.world import world
 
 
 def main():
