@@ -159,7 +159,7 @@ class DataSet:
                 self.sequence_list[i][j].append(hidden_state)
                 event_counter += 1
 
-    def create_xy(self, net, shuffle_sequences, shuffle_events):
+    def create_xy(self, x_type, y_type, shuffle_sequences, shuffle_events):
         x = []
         y = []
         self.label_list = []
@@ -193,20 +193,20 @@ class DataSet:
 
                 self.label_list.append(label_list)
 
-                if net.x_type == 'WorldState':
+                if x_type == 'world_state':
                     x.append(event[7])
-                elif net.x_type == 'HiddenState':
+                elif x_type == 'hidden_state':
                     x.append(event[9])
                 else:
-                    print("x_type {} not recognized while creating xy's".format(net.x_type))
+                    print("x_type {} not recognized".format(x_type))
                     sys.exit()
 
-                if net.y_type == 'WorldState':
+                if y_type == 'world_state':
                     y.append(event[7])
-                elif net.y_type == 'FeatureVector':
+                elif y_type == 'feature_vector':
                     y.append(event[8])
                 else:
-                    print("y_type {} not recognized while creating xy's".format(net.y_type))
+                    print("y_type {} not recognized".format(y_type))
                     sys.exit()
 
         self.x = x

@@ -8,12 +8,11 @@ import os
 
 class MlNet(nn.Module):
     ############################################################################################################
-    def __init__(self, x_type, y_type, training_set, hidden_size, learning_rate, weight_init):
+    def __init__(self, net_type, training_set, hidden_size, learning_rate, weight_init):
 
         super(MlNet, self).__init__()
         self.net_name = None
-        self.x_type = x_type
-        self.y_type = y_type
+        self.net_type = net_type
         self.training_set = training_set
         self.hidden_size = hidden_size
         self.learning_rate = learning_rate
@@ -21,12 +20,12 @@ class MlNet(nn.Module):
 
         self.input_size = training_set.world_size
 
-        if y_type == 'WorldState':
+        if net_type == 'autoassociator':
             self.output_size = training_set.world_size
-        elif y_type == 'FeatureVector':
+        elif net_type == 'classifier':
             self.output_size = training_set.num_included_features
         else:
-            print("Y Type {} not recognized")
+            print("Net Type {} not recognized")
             sys.exit()
 
         self.current_epoch = 0
@@ -75,14 +74,14 @@ class MlNet(nn.Module):
         return o, loss
 
     def create_network_directory(self):
-        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(self.x_type, self.y_type,
-                                                         self.start_datetime[0],
-                                                         self.start_datetime[1],
-                                                         self.start_datetime[2],
-                                                         self.start_datetime[3],
-                                                         self.start_datetime[4],
-                                                         self.start_datetime[5],
-                                                         self.start_datetime[6])
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}".format(self.net_type,
+                                                      self.start_datetime[0],
+                                                      self.start_datetime[1],
+                                                      self.start_datetime[2],
+                                                      self.start_datetime[3],
+                                                      self.start_datetime[4],
+                                                      self.start_datetime[5],
+                                                      self.start_datetime[6])
         try:
             os.mkdir("models/" + self.net_name)
         except:
@@ -91,8 +90,7 @@ class MlNet(nn.Module):
         file_location = "models/" + self.net_name + "/network_properties.csv"
         f = open(file_location, 'w')
         f.write("network_name: {}\n".format(self.net_name))
-        f.write("x_type: {}\n".format(self.x_type))
-        f.write("y_type: {}\n".format(self.y_type))
+        f.write("network_type: {}\n".format(self.net_type))
         f.write("input_size: {}\n".format(self.input_size))
         f.write("hidden_size: {}\n".format(self.hidden_size))
         f.write("output_size: {}\n".format(self.output_size))
@@ -101,10 +99,10 @@ class MlNet(nn.Module):
         f.write("training_file: {}".format(self.training_set.world_state_filename))
         f.close()
 
-    def save_network_states(self, dataset):
+    def save_network_states(self, dataset, x_type, y_type):
         network_state_list = []
 
-        dataset.create_xy(self, False, False)
+        dataset.create_xy(x_type, y_type, False, False)
 
         for i in range(len(dataset.x)):
             o, h, o_cost = self.test_item(dataset.x[i], dataset.y[i])
@@ -124,33 +122,18 @@ class MlNet(nn.Module):
 
 
 class SlNet(torch.nn.Module):
-    def __init__(self, x_type, y_type, training_set, learning_rate, weight_init):
+    def __init__(self, training_set, learning_rate, weight_init):
         super(SlNet, self).__init__()
-
-        self.x_type = x_type
-        self.y_type = y_type
         self.training_set = training_set
         self.learning_rate = learning_rate
         self.weight_init = weight_init
         self.net_name = None
+        self.net_type = "classifier"
 
         self.current_epoch = 0
 
-        if x_type == 'world_state':
-            self.input_size = training_set.world_size
-        elif x_type == 'hidden_state':
-            self.input_size = training_set.h_size
-        else:
-            print("X Type {} not recognized".format(self.x_type))
-            sys.exit()
-
-        if y_type == 'world_state':
-            self.output_size = training_set.world_size
-        elif y_type == 'feature_vector':
-            self.output_size = training_set.num_included_features
-        else:
-            print("Y Type {} not recognized".format(self.y_type))
-            sys.exit()
+        self.input_size = training_set.h_size
+        self.output_size = training_set.num_included_features
 
         self.y_x = nn.Linear(self.output_size, self.input_size).float()
         self.sigmoid = nn.Sigmoid().float()
@@ -199,14 +182,14 @@ class SlNet(torch.nn.Module):
         outfile.close()
 
     def create_network_directory(self):
-        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(self.x_type, self.y_type,
-                                                         self.start_datetime[0],
-                                                         self.start_datetime[1],
-                                                         self.start_datetime[2],
-                                                         self.start_datetime[3],
-                                                         self.start_datetime[4],
-                                                         self.start_datetime[5],
-                                                         self.start_datetime[6])
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}".format(self.net_type+"B",
+                                                      self.start_datetime[0],
+                                                      self.start_datetime[1],
+                                                      self.start_datetime[2],
+                                                      self.start_datetime[3],
+                                                      self.start_datetime[4],
+                                                      self.start_datetime[5],
+                                                      self.start_datetime[6])
         try:
             os.mkdir("models/" + self.net_name)
         except:
@@ -215,8 +198,7 @@ class SlNet(torch.nn.Module):
         file_location = "models/" + self.net_name + "/network_properties.csv"
         f = open(file_location, 'w')
         f.write("network_name: {}\n".format(self.net_name))
-        f.write("x_type: {}\n".format(self.x_type))
-        f.write("y_type: {}\n".format(self.y_type))
+        f.write("network_type: {}\n".format(self.net_type))
         f.write("input_size: {}\n".format(self.input_size))
         f.write("output_size: {}\n".format(self.output_size))
         f.write("learning_rate: {}\n".format(self.learning_rate))
