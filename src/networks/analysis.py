@@ -3,54 +3,52 @@ import sys
 import torch
 
 
-def train_a(net, training_set, test_set,
-            num_epochs, learning_rate, shuffle_sequences, shuffle_events,
+def train_a(net, training_set, test_set, num_epochs, learning_rate, shuffle_sequences, shuffle_events,
             output_freq, verbose):
 
-    x_type = 'world_state'
-    if net.net_type == 'classifier':
-        y_type = 'feature_vector'
-    elif net.net_type == 'autoassociator':
-        y_type = 'world_state'
-    else:
-        print("Unrecognized net type {} 1".format(net.net_type))
-        sys.exit()
-
-    print("Training {} on {} epochs".format(net.net_name, num_epochs))
-    if net.net_type == "classifier":
+    print("Training {}-{} on {} epochs".format(net.x_type, net.y_type, num_epochs))
+    training_set.create_xy(net, False, False)
+    test_set.create_xy(net, False, False)
+    if net.y_type == 'FeatureVector':
         evaluate_classifier(net, training_set, test_set, False)
-    elif net.net_type == 'autoassociator':
+    elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
         evaluate_autoassociator(net, training_set, test_set, False)
     else:
-        print("Unrecognized net type {} 2".format(net.net_type))
+        print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
         sys.exit()
 
     for i in range(num_epochs):
         net.current_epoch += 1
 
-        training_set.create_xy(x_type, y_type, shuffle_sequences, shuffle_events)
+        training_set.create_xy(net, shuffle_sequences, shuffle_events)
+        test_set.create_xy(net, shuffle_sequences, shuffle_events)
         optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
         for j in range(len(training_set.x)):
             net.train_item(training_set.x[j], training_set.y[j], optimizer)
 
         if net.current_epoch % output_freq == 0:
-            if net.net_type == 'classifier':
+            if net.y_type == 'FeatureVector':
                 evaluate_classifier(net, training_set, test_set, verbose)
-            elif net.net_type == 'autoassociator':
+            elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
                 evaluate_autoassociator(net, training_set, test_set, verbose)
+            else:
+                print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
+                sys.exit()
 
     print("Final Performance on Training Set")
-    if net.net_type == "classifier":
+    training_set.create_xy(net, False, False)
+    test_set.create_xy(net, False, False)
+    if net.y_type == 'FeatureVector':
         evaluate_classifier(net, training_set, test_set, True)
-    elif net.net_type == 'autoassociator':
+    elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
         evaluate_autoassociator(net, training_set, test_set, True)
     else:
-        print("Unrecognized net type {} 3".format(net.net_type))
+        print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
         sys.exit()
 
     print("\nSaving hidden states and weights.")
-    net.save_network_states(training_set, x_type, y_type)
+    net.save_network_states(training_set)
     net.save_network_weights()
 
 
@@ -58,12 +56,15 @@ def train_b(net, training_set, test_set,
             num_epochs, learning_rate, shuffle_sequences, shuffle_events,
             output_freq, verbose):
 
+    training_set.create_xy(net, False, False)
+    test_set.create_xy(net, False, False)
     evaluate_classifier(net, training_set, test_set, False)
 
     for i in range(num_epochs):
         net.current_epoch += 1
 
-        training_set.create_xy('hidden_state', 'feature_vector', shuffle_sequences, shuffle_events)
+        training_set.create_xy(net, shuffle_sequences, shuffle_events)
+        test_set.create_xy(net, shuffle_sequences, shuffle_events)
         optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
         for j in range(len(training_set.x)):
@@ -73,10 +74,12 @@ def train_b(net, training_set, test_set,
             evaluate_classifier(net, training_set, test_set, verbose)
 
     print("Final Performance on Training Set")
+    training_set.create_xy(net, False, False)
+    test_set.create_xy(net, False, False)
     evaluate_classifier(net, training_set, test_set, True)
 
     print("\nSaving hidden states and weights.")
-    net.save_network_states(training_set, x_type, y_type)
+    net.save_network_states(training_set)
     net.save_network_weights()
 
 
@@ -84,7 +87,6 @@ def evaluate_autoassociator(net, training_set, test_set, verbose):
     training_cost = 0
     test_cost = 0
 
-    training_set.create_xy('world_state', 'world_state', False, False)
     for i in range(len(training_set.x)):
         o, h, o_cost = net.test_item(training_set.x[i], training_set.y[i])
         training_cost += o_cost.sum()
@@ -96,7 +98,6 @@ def evaluate_autoassociator(net, training_set, test_set, verbose):
             output_string += "{:0.1f}".format(o_cost.sum())
             print(output_string)
 
-    test_set.create_xy('world_state', 'world_state', False, False)
     for i in range(len(test_set.x)):
         o, h, o_cost = net.test_item(test_set.x[i], test_set.y[i])
         test_cost += o_cost.sum()
@@ -129,7 +130,6 @@ def evaluate_classifier(net, training_set, test_set, verbose):
 
 
 def evaluate_classifier_dataset(net, dataset, verbose):
-    dataset.create_xy('world_state', 'feature_vector', False, False)
     accuracies = np.zeros([dataset.num_included_feature_types], float)
     costs = np.zeros([dataset.num_included_feature_types], float)
 
