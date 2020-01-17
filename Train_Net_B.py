@@ -14,9 +14,9 @@ def main():
     shuffle_sequences = True
     shuffle_events = False
 
-    training_file = 'data/w6-6_s9_c8_0_1_0.csv'
-    test_file = 'data/w6-6_s9_c8_0_1_0.csv'
-    network_file = 'models/classifier_2020_1_13_21_23_12/states_e100.csv'
+    training_file = 'w6-6_s9_c8_0_1_0.csv'
+    test_file = 'w6-6_s9_c8_0_1_0.csv'
+    network_file = None
 
     training_set = dataset.DataSet(training_file, network_file, included_features)
     test_set = dataset.DataSet(test_file, network_file, included_features)

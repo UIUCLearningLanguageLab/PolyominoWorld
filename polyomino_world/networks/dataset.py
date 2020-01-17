@@ -7,11 +7,12 @@ import pickle
 
 class DataSet:
 
-    def __init__(self, world_state_filename, network_state_filename, features, project_path):
+    def __init__(self, world_state_filename, network_state_filename, features, project_path, processor):
         self.world_state_filename = world_state_filename
         self.network_state_filename = network_state_filename
         self.feature_include_array = features
         self.project_path = project_path
+        self.processor = processor
 
         self.feature_type_list = []
         self.feature_type_index_dict = {}
@@ -105,7 +106,16 @@ class DataSet:
             x_coord = int(data[6])
             y_coord = int(data[7])
             action = data[8]
-            world_state = torch.cuda.FloatTensor([float(i) for i in data[9:]])
+
+            if self.processor == 'GPU':
+                world_state = torch.cuda.FloatTensor([float(i) for i in data[9:]])
+            else:
+                data_list = []
+                for datum in data[9:]:
+                    data_list.append(float(datum))
+
+                world_state = torch.tensor(data_list, dtype=float)
+
             self.world_size = len(data[9:])
 
             feature_list = []
@@ -132,7 +142,11 @@ class DataSet:
                 for j in range(len(current_feature_list)):
                     feature_list.append(current_feature_list[j])
 
-            feature_vector = torch.cuda.FloatTensor(feature_list)
+            if self.processor == 'GPU':
+                feature_vector = torch.cuda.FloatTensor(feature_list)
+            else:
+                feature_vector = torch.tensor(feature_list, dtype=float)
+
             if sequence_number != 0:
                 if event_number == 0:
                     self.sequence_list.append(sequence_data)

@@ -8,8 +8,7 @@ import os
 
 class MlNet(nn.Module):
     ############################################################################################################
-    def __init__(self, x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path,
-                 save_directory):
+    def __init__(self, x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path, processor):
 
         super(MlNet, self).__init__()
         self.net_name = None
@@ -20,7 +19,7 @@ class MlNet(nn.Module):
         self.learning_rate = learning_rate
         self.weight_init = weight_init
         self.project_path = project_path
-        self.save_directory = save_directory
+        self.processor = processor
 
         self.input_size = training_set.world_size
 
@@ -83,7 +82,7 @@ class MlNet(nn.Module):
             print("Creating models directory")
             os.mkdir(self.project_path + '/models')
         except Exception as e:
-            print(e)
+            pass
 
         self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(self.x_type, self.y_type,
                                                          self.start_datetime[0],

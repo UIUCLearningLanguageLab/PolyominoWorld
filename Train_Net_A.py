@@ -4,7 +4,6 @@ import numpy as np
 
 def main():
     np.set_printoptions(precision=4, suppress=True)
-    #test
     hidden_size = 32
     learning_rate = 0.20
     num_epochs = 10
@@ -16,19 +15,22 @@ def main():
     included_features = [1, 1, 1, 0]  # Include: Shape, Size, Color, Action
     shuffle_sequences = True
     shuffle_events = False
+    processor = 'CPU'
 
-    training_file = 'data/w6-6_s9_c8_0_10_0.csv'
-    test_file = 'data/w6-6_s9_c8_0_1_0.csv'
+    project_path = './'
+    training_file = 'w6-6_s9_c8_0_10_0.csv'
+    test_file = 'w6-6_s9_c8_0_1_0.csv'
     network_file = None
 
-    training_set = dataset.DataSet(training_file, network_file, included_features)
-    test_set = dataset.DataSet(test_file, network_file, included_features)
+    training_set = dataset.DataSet(training_file, network_file, included_features, project_path, processor)
+    test_set = dataset.DataSet(test_file, network_file, included_features, project_path, processor)
 
-    net = network.MlNet(x_type, y_type, training_set, hidden_size, learning_rate, weight_init)
+    net = network.MlNet(x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path, processor)
 
-    analysis.train_a(net, training_set, test_set, num_epochs, learning_rate,
-                     shuffle_sequences, shuffle_events, output_freq, verbose)
+    results_dict = analysis.train_a(net, training_set, test_set, num_epochs, learning_rate,
+                                    shuffle_sequences, shuffle_events, output_freq, verbose)
 
+    print('Done with job.main', flush=True)
 
 
 main()

@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import numpy as np
 
+
 def main(param2val):
 
     print(param2val, flush=True)
@@ -31,7 +32,7 @@ def main(param2val):
 
     sys.stdout.flush()
 
-    net = network.MlNet(x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path, save_path)
+    net = network.MlNet(x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path)
     net.cuda()
 
     results_dict = analysis.train_a(net, training_set, test_set, num_epochs, learning_rate,
