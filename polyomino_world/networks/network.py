@@ -8,13 +8,38 @@ import os
 
 class MlNet(nn.Module):
     ############################################################################################################
-    def __init__(self, x_type, y_type, training_set, hidden_size, learning_rate, weight_init, project_path, processor):
+    def __init__(self):
 
         super(MlNet, self).__init__()
+        self.net_name = None
+        self.x_type = None
+        self.y_type = None
+        self.training_set = None
+        self.optimizer = None
+        self.hidden_size = None
+        self.learning_rate = None
+        self.weight_init = None
+        self.project_path = None
+        self.processor = None
+        self.input_size = None
+        self.output_size = None
+        self.current_epoch = None
+        self.h_x = None
+        self.y_h = None
+        self.sigmoid = None
+        self.criterion = None
+        self.criterion2 = None
+        self.hidden_states = None
+        self.start_datetime = None
+        self.model_directory = None
+
+    def init_model(self, x_type, y_type, training_set, hidden_size, optimizer, learning_rate, weight_init,
+                   project_path, processor):
         self.net_name = None
         self.x_type = x_type
         self.y_type = y_type
         self.training_set = training_set
+        self.optimizer = optimizer
         self.hidden_size = hidden_size
         self.learning_rate = learning_rate
         self.weight_init = weight_init
@@ -23,9 +48,9 @@ class MlNet(nn.Module):
 
         self.input_size = training_set.world_size
 
-        if y_type == 'WorldState':
+        if self.y_type == 'WorldState':
             self.output_size = training_set.world_size
-        elif y_type == 'FeatureVector':
+        elif self.y_type == 'FeatureVector':
             self.output_size = training_set.num_included_features
         else:
             print("Y Type {} not recognized")
@@ -47,6 +72,49 @@ class MlNet(nn.Module):
 
         self.start_datetime = datetime.datetime.timetuple(datetime.datetime.now())
         self.create_network_directory()
+
+    def load_model(self, model_directory, training_set):
+        self.net_name = model_directory
+        self.training_set = training_set
+        params_file = open('models/' + model_directory + '/network_properties.csv')
+        for line in params_file:
+
+            data = (line.strip().strip('\n').strip()).split()
+            parameter = data[0]
+            value = data[1]
+
+            if parameter == 'x_type:':
+                self.x_type = value
+            elif parameter == 'y_type:':
+                self.y_type = value
+            elif parameter == 'input_size:':
+                self.input_size = int(value)
+            elif parameter == 'hidden_size:':
+                self.hidden_size = int(value)
+            elif parameter == 'output_size:':
+                self.output_size = int(value)
+            elif parameter == 'optimizer:':
+                self.optimizer = value
+            elif parameter == 'learning_rate:':
+                self.learning_rate = float(value)
+            elif parameter == 'weight_init:':
+                self.weight_init = float(value)
+        params_file.close()
+
+        self.h_x = nn.Linear(self.input_size, self.hidden_size).float()
+        self.y_h = nn.Linear(self.hidden_size, self.output_size).float()
+        self.sigmoid = nn.Sigmoid().float()
+
+        self.criterion = nn.MSELoss()
+        self.criterion2 = nn.MSELoss(reduction='none')
+
+        weight_file = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
+        weight_file = open(weight_file, 'rb')
+        weights_list = pickle.load(weight_file)
+        weight_file.close()
+
+        self.h_x = weights_list[0]
+        self.y_h = weights_list[1]
 
     def forward_item(self, x):
         z_h = self.h_x(x.float())
@@ -105,6 +173,7 @@ class MlNet(nn.Module):
         f.write("input_size: {}\n".format(self.input_size))
         f.write("hidden_size: {}\n".format(self.hidden_size))
         f.write("output_size: {}\n".format(self.output_size))
+        f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
         f.write("training_file: {}".format(self.training_set.world_state_filename))
@@ -119,13 +188,13 @@ class MlNet(nn.Module):
             o, h, o_cost = self.test_item(dataset.x[i], dataset.y[i])
             network_state_list.append((dataset.x[i], dataset.y[i], o.detach().cpu().numpy(), h.detach().cpu().numpy()))
 
-        file_location = self.project_path + "/models/" + self.net_name + "/states_e{}.csv".format(self.current_epoch)
+        file_location = self.project_path + "/models/" + self.net_name + "/states.csv".format(self.current_epoch)
         outfile = open(file_location, 'wb')
         pickle.dump(network_state_list, outfile)
         outfile.close()
 
     def save_network_weights(self):
-        file_location = self.project_path + "/models/" + self.net_name + "/weights_e{}.csv".format(self.current_epoch)
+        file_location = self.project_path + "/models/" + self.net_name + "/weights.csv".format(self.current_epoch)
         outfile = open(file_location, 'wb')
         weights_list = [self.h_x, self.y_h]
         pickle.dump(weights_list, outfile)

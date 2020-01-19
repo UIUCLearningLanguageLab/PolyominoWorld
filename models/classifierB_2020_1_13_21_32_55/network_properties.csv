@@ -1,7 +1,0 @@
-network_name: classifierB_2020_1_13_21_32_55
-network_type: classifier
-input_size: 32
-output_size: 21
-learning_rate: 0.2
-weight_init: 0.01
-training_file: data/w6-6_s9_c8_0_1_0.csv

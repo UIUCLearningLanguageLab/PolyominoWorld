@@ -33,6 +33,8 @@ class DataSet:
         self.sequence_list = None
         self.num_events = None
         self.world_size = None
+        self.num_rows = None
+        self.num_columns = None
 
         self.network_state_list = None
         self.h_size = None
@@ -159,8 +161,13 @@ class DataSet:
         self.sequence_list.append(sequence_data)
         self.num_sequences = len(self.sequence_list)
 
+        # todo get this information from the datafile name, or better yet redo dataset so it is a directory with
+        # todo separate params file and data file, and then get from params file
+        self.num_rows = int((self.world_size/3)**0.5)
+        self.num_columns = int((self.world_size / 3) ** 0.5)
+
     def load_network_state_data(self):
-        f = open(self.project_path + "/models/" + self.network_state_filename, 'rb')
+        f = open(self.project_path + "models/" + self.network_state_filename, 'rb')
         self.network_state_list = pickle.load(f)  # [[x, y, o, h], [x, y, o, h], ...]
         f.close()
 

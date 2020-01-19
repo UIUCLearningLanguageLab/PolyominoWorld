@@ -5,7 +5,7 @@ import time
 import csv
 
 
-def train_a(net, training_set, test_set, num_epochs, learning_rate, shuffle_sequences, shuffle_events,
+def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, shuffle_sequences, shuffle_events,
             output_freq, verbose):
 
     results_dict = {'training_cost': [], 'test_cost': [], 'epoch': []}
@@ -33,7 +33,12 @@ def train_a(net, training_set, test_set, num_epochs, learning_rate, shuffle_sequ
 
         training_set.create_xy(net, shuffle_sequences, shuffle_events)
         test_set.create_xy(net, shuffle_sequences, shuffle_events)
-        optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+        if optimizer == 'Adam':
+            optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+        elif optimizer == 'SGD':
+            optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
+        else:
+            optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
         for j in range(len(training_set.x)):
             net.train_item(training_set.x[j], training_set.y[j], optimizer)
@@ -120,7 +125,7 @@ def evaluate_autoassociator(net, training_set, test_set, verbose, results_dict, 
 
     training_cost = training_cost / len(training_set.x)
     test_cost = test_cost / len(test_set.x)
-    print("Epoch:{}     training cost: {:0.1f}    test cost: {:0.1f}  took: {:0.2f}s".format(net.current_epoch,
+    print("Epoch:{}     training cost: {:0.4f}    test cost: {:0.4f}  took: {:0.2f}s".format(net.current_epoch,
                                                                                              training_cost, test_cost,
                                                                                              took), flush=True)
     results_dict['training_cost'].append(training_cost)
@@ -236,7 +241,7 @@ def evaluate_classifier_dataset(net, dataset, verbose):
 
 
 def save_performance(net, results_dict):
-    file_location = "models/" + net.net_name + "/performance_e{}.csv".format(net.current_epoch)
+    file_location = "models/" + net.net_name + "/performance.csv".format(net.current_epoch)
 
     with open(file_location, "w") as outfile:
         writer = csv.writer(outfile)

@@ -1,3 +1,0 @@
-training_cost,test_cost,epoch,training_shape_cost,test_shape_cost,training_shape_accuracy,test_shape_accuracy,training_size_cost,test_size_cost,training_size_accuracy,test_size_accuracy,training_color_cost,test_color_cost,training_color_accuracy,test_color_accuracy
-36.60704201857249,36.60603152381049,0,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
-8.857886448836936,8.873444384998745,10,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
