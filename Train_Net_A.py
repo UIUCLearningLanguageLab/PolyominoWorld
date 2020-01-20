@@ -4,14 +4,14 @@ import numpy as np
 
 def main():
     np.set_printoptions(precision=4, suppress=True)
-    hidden_size = 32
-    learning_rate = 0.05
-    num_epochs = 500
-    weight_init = 0.001
+    hidden_size = 64
+    learning_rate = 0.005
+    num_epochs = 10000
+    weight_init = 0.0000001
     output_freq = 10
     verbose = False
     x_type = 'WorldState'
-    y_type = 'FeatureVector'
+    y_type = 'WorldState'
     included_features = [1, 1, 1, 0]  # Include: Shape, Size, Color, Action
     shuffle_sequences = True
     shuffle_events = False

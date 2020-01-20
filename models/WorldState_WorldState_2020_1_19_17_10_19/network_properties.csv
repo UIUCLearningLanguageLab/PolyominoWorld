@@ -1,0 +1,10 @@
+network_name: WorldState_WorldState_2020_1_19_17_10_19
+x_type: WorldState
+y_type: WorldState
+input_size: 108
+hidden_size: 64
+output_size: 108
+optimizer: Adam
+learning_rate: 0.005
+weight_init: 1e-07
+training_file: w6-6_s9_c8_0_100_0.csv
