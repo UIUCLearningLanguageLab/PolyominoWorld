@@ -32,10 +32,13 @@ class MlNet(nn.Module):
         self.hidden_states = None
         self.start_datetime = None
         self.model_directory = None
+        self.performance_list = None
+        self.training_time = None
 
-    def init_model(self, x_type, y_type, training_set, hidden_size, optimizer, learning_rate, weight_init,
+    def init_model(self, network_directory, x_type, y_type, training_set,
+                   hidden_size, optimizer, learning_rate, weight_init,
                    project_path, processor):
-        self.net_name = None
+        self.net_name = network_directory
         self.x_type = x_type
         self.y_type = y_type
         self.training_set = training_set
@@ -69,9 +72,17 @@ class MlNet(nn.Module):
         self.criterion2 = nn.MSELoss(reduction='none')
 
         self.hidden_states = []
+        self.performance_list = []
 
         self.start_datetime = datetime.datetime.timetuple(datetime.datetime.now())
-        self.create_network_directory()
+        self.training_time = 0
+
+        if self.processor == 'GPU':
+            if torch.cuda.is_available():
+                self.cuda(0)
+
+        if self.net_name is None:
+            self.create_network_directory()
 
     def load_model(self, model_directory, training_set):
         self.net_name = model_directory
@@ -99,6 +110,10 @@ class MlNet(nn.Module):
                 self.learning_rate = float(value)
             elif parameter == 'weight_init:':
                 self.weight_init = float(value)
+            elif parameter == 'current_epoch:':
+                self.current_epoch = int(value)
+            elif parameter == 'training_time:':
+                self.training_time = float(value)
         params_file.close()
 
         self.h_x = nn.Linear(self.input_size, self.hidden_size).float()
@@ -145,14 +160,29 @@ class MlNet(nn.Module):
         return o, loss
 
     def create_network_directory(self):
-
         try:
             print("Creating models directory")
             os.mkdir(self.project_path + '/models')
         except Exception as e:
             pass
 
-        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(self.x_type, self.y_type,
+        if self.x_type == 'WorldState':
+            x_type = "WS"
+        elif self.x_type == 'HiddenState':
+            x_type = 'HS'
+        else:
+            print("X Type not recognized in directory creation")
+            sys.exit()
+
+        if self.y_type == 'WorldState':
+            y_type = "WS"
+        elif self.y_type == 'FeatureVector':
+            y_type = 'FV'
+        else:
+            print("Y Type not recognized in directory creation")
+            sys.exit()
+
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(x_type, y_type,
                                                          self.start_datetime[0],
                                                          self.start_datetime[1],
                                                          self.start_datetime[2],
@@ -161,10 +191,28 @@ class MlNet(nn.Module):
                                                          self.start_datetime[5],
                                                          self.start_datetime[6])
         try:
-            os.mkdir(self.project_path + "/models/" + self.net_name)
+            os.mkdir(self.project_path + "models/" + self.net_name)
         except Exception as e:
             print(e)
             sys.exit()
+
+        header_string = "epoch,time,training_cost,test_cost"
+        for i in range(self.training_set.num_included_feature_types):
+            header_string += ',{}_training_cost'.format(self.training_set.included_feature_type_list[i])
+        for i in range(self.training_set.num_included_feature_types):
+            header_string += ',{}_test_cost'.format(self.training_set.included_feature_type_list[i])
+        for i in range(self.training_set.num_included_feature_types):
+            header_string += ',{}_training_accuracy'.format(self.training_set.included_feature_type_list[i])
+        for i in range(self.training_set.num_included_feature_types):
+            header_string += ',{}_test_accuracy'.format(self.training_set.included_feature_type_list[i])
+
+        f = open(self.project_path + "models/" + self.net_name + "/performance.csv", 'w')
+        f.write(header_string + "\n")
+        f.close()
+
+        self.save_network_properties()
+
+    def save_network_properties(self):
         file_location = self.project_path + "/models/" + self.net_name + "/network_properties.csv"
         f = open(file_location, 'w')
         f.write("network_name: {}\n".format(self.net_name))
@@ -176,18 +224,17 @@ class MlNet(nn.Module):
         f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
-        f.write("training_file: {}".format(self.training_set.world_state_filename))
+        f.write("training_file: {}\n".format(self.training_set.world_state_filename))
+        f.write("current_epoch: {}\n".format(self.current_epoch))
+        f.write("training_time: {}".format(self.training_time))
         f.close()
 
     def save_network_states(self, dataset):
         network_state_list = []
-
         dataset.create_xy(self, False, False)
-
         for i in range(len(dataset.x)):
             o, h, o_cost = self.test_item(dataset.x[i], dataset.y[i])
             network_state_list.append((dataset.x[i], dataset.y[i], o.detach().cpu().numpy(), h.detach().cpu().numpy()))
-
         file_location = self.project_path + "/models/" + self.net_name + "/states.csv".format(self.current_epoch)
         outfile = open(file_location, 'wb')
         pickle.dump(network_state_list, outfile)
@@ -199,6 +246,16 @@ class MlNet(nn.Module):
         weights_list = [self.h_x, self.y_h]
         pickle.dump(weights_list, outfile)
         outfile.close()
+
+    def save_network_performance(self):
+        file_location = "models/" + self.net_name + "/performance.csv"
+        output_string = ""
+        for item in self.performance_list:
+            output_string += str(item) + ","
+        output_string = output_string[:-1]
+        f = open(file_location, 'a')
+        f.write(output_string + "\n")
+        f.close()
 
 
 class SlNet(torch.nn.Module):

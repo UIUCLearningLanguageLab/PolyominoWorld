@@ -2,37 +2,32 @@ import numpy as np
 import sys
 import torch
 import time
-import csv
 
 
 def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, shuffle_sequences, shuffle_events,
             output_freq, verbose):
 
-    results_dict = {'training_cost': [], 'test_cost': [], 'epoch': []}
-    for i in range(training_set.num_included_feature_types):
-        results_dict["training_" + training_set.included_feature_type_list[i]+"_cost"] = []
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_cost"] = []
-        results_dict["training_" + training_set.included_feature_type_list[i] + "_accuracy"] = []
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_accuracy"] = []
-
     print("Training {}-{} on {} epochs".format(net.x_type, net.y_type, num_epochs))
     training_set.create_xy(net, False, False)
     test_set.create_xy(net, False, False)
-    took = 0
+
+    net.performance_list = [net.current_epoch, 0]
     if net.y_type == 'FeatureVector':
-        results_dict = evaluate_classifier(net, training_set, test_set, False, results_dict, took)
+        evaluate_classifier(net, training_set, test_set, False)
     elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
-        results_dict = evaluate_autoassociator(net, training_set, test_set, False, results_dict, took)
+        evaluate_autoassociator(net, training_set, test_set, False)
     else:
         print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
         sys.exit()
 
     start_time = time.time()
     for i in range(num_epochs):
+
         net.current_epoch += 1
 
         training_set.create_xy(net, shuffle_sequences, shuffle_events)
         test_set.create_xy(net, shuffle_sequences, shuffle_events)
+
         if optimizer == 'Adam':
             optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         elif optimizer == 'SGD':
@@ -40,64 +35,38 @@ def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, s
         else:
             optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
-        for j in range(len(training_set.x)):
-            net.train_item(training_set.x[j], training_set.y[j], optimizer)
+        if net.processor == 'GPU':
+            if torch.cuda.is_available():
+                for j in range(len(training_set.x)):
+                    net.train_item(training_set.x[j].cuda(0), training_set.y[j].cuda(0), optimizer)
+            else:
+                print("GPU ERROR")
+        else:
+            for j in range(len(training_set.x)):
+                net.train_item(training_set.x[j], training_set.y[j], optimizer)
 
         if net.current_epoch % output_freq == 0:
             took = time.time() - start_time
+            net.training_time += took
+            net.performance_list = [net.current_epoch, took/output_freq]
             start_time = time.time()
 
             if net.y_type == 'FeatureVector':
-                results_dict = evaluate_classifier(net, training_set, test_set, verbose, results_dict, took/output_freq)
+                evaluate_classifier(net, training_set, test_set, verbose)
             elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
-                results_dict = evaluate_autoassociator(net, training_set, test_set, verbose, results_dict, took/output_freq)
+                evaluate_autoassociator(net, training_set, test_set, verbose)
             else:
                 print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
                 sys.exit()
 
-    took = time.time() - start_time
-    print("Took {:0.1f} sec".format(took), flush=True)
+            net.save_network_properties()
+            net.save_network_weights()
+            net.save_network_performance()
 
-    print("\nSaving hidden states and weights.")
     net.save_network_states(training_set)
-    net.save_network_weights()
-    save_performance(net, results_dict)
-
-    return results_dict
 
 
-def train_b(net, training_set, test_set,
-            num_epochs, learning_rate, shuffle_sequences, shuffle_events,
-            output_freq, verbose):
-
-    training_set.create_xy(net, False, False)
-    test_set.create_xy(net, False, False)
-    evaluate_classifier(net, training_set, test_set, False)
-
-    for i in range(num_epochs):
-        net.current_epoch += 1
-
-        training_set.create_xy(net, shuffle_sequences, shuffle_events)
-        test_set.create_xy(net, shuffle_sequences, shuffle_events)
-        optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
-
-        for j in range(len(training_set.x)):
-            net.train_item(training_set.x[j], training_set.y[j], optimizer)
-
-        if net.current_epoch % output_freq == 0:
-            evaluate_classifier(net, training_set, test_set, verbose)
-
-    print("Final Performance on Training Set")
-    training_set.create_xy(net, False, False)
-    test_set.create_xy(net, False, False)
-    evaluate_classifier(net, training_set, test_set, True)
-
-    print("\nSaving hidden states and weights.")
-    net.save_network_states(training_set)
-    net.save_network_weights()
-
-
-def evaluate_autoassociator(net, training_set, test_set, verbose, results_dict, took):
+def evaluate_autoassociator(net, training_set, test_set, verbose):
     training_cost = 0
     test_cost = 0
 
@@ -127,20 +96,18 @@ def evaluate_autoassociator(net, training_set, test_set, verbose, results_dict, 
     test_cost = test_cost / len(test_set.x)
     print("Epoch:{}     training cost: {:0.4f}    test cost: {:0.4f}  took: {:0.2f}s".format(net.current_epoch,
                                                                                              training_cost, test_cost,
-                                                                                             took), flush=True)
-    results_dict['training_cost'].append(training_cost)
-    results_dict['test_cost'].append(test_cost)
-    results_dict['epoch'].append(net.current_epoch)
+                                                                                             net.performance_list[1]))
+
+    net.performance_list.append(training_cost)
+    net.performance_list.append(test_cost)
     for i in range(training_set.num_included_feature_types):
-        results_dict["training_" + training_set.included_feature_type_list[i] + "_cost"].append(np.nan)
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_cost"].append(np.nan)
-        results_dict["training_" + training_set.included_feature_type_list[i] + "_accuracy"].append(np.nan)
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_accuracy"].append(np.nan)
-
-    return results_dict
+        net.performance_list.append(np.nan)
+        net.performance_list.append(np.nan)
+        net.performance_list.append(np.nan)
+        net.performance_list.append(np.nan)
 
 
-def evaluate_classifier(net, training_set, test_set, verbose, results_dict, took):
+def evaluate_classifier(net, training_set, test_set, verbose):
 
     training_accuracies, training_costs = evaluate_classifier_dataset(net, training_set, verbose)
     test_accuracies, test_costs = evaluate_classifier_dataset(net, test_set, verbose)
@@ -151,19 +118,19 @@ def evaluate_classifier(net, training_set, test_set, verbose, results_dict, took
     output_string += "  | "
     for j in range(training_set.num_included_feature_types):
         output_string += "  {:0.2f}-{:0.2f}".format(training_accuracies[j], test_accuracies[j])
-    output_string += " took:{:0.2f}s.".format(took)
-    print(output_string, flush=True)
+    output_string += " took:{:0.2f}s.".format(net.performance_list[1])
+    print(output_string)
 
-    results_dict['training_cost'].append(training_costs.sum())
-    results_dict['test_cost'].append(test_costs.sum())
+    net.performance_list.append(training_costs.sum())
+    net.performance_list.append(test_costs.sum())
     for i in range(training_set.num_included_feature_types):
-        results_dict["training_" + training_set.included_feature_type_list[i] + "_cost"].append(training_costs[i])
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_cost"].append(test_costs[i])
-        results_dict["training_" + training_set.included_feature_type_list[i] + "_accuracy"].append(training_accuracies[i])
-        results_dict["test_" + test_set.included_feature_type_list[i] + "_accuracy"].append(test_accuracies[i])
-    results_dict['epoch'].append(net.current_epoch)
-
-    return results_dict
+        net.performance_list.append(training_costs[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(test_costs[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(training_accuracies[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(test_accuracies[i])
 
 
 def evaluate_classifier_dataset(net, dataset, verbose):
@@ -240,13 +207,7 @@ def evaluate_classifier_dataset(net, dataset, verbose):
     return accuracies, costs
 
 
-def save_performance(net, results_dict):
-    file_location = "models/" + net.net_name + "/performance.csv".format(net.current_epoch)
 
-    with open(file_location, "w") as outfile:
-        writer = csv.writer(outfile)
-        writer.writerow(results_dict.keys())
-        writer.writerows(zip(*results_dict.values()))
 
 
 
