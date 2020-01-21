@@ -7,11 +7,10 @@ import pickle
 
 class DataSet:
 
-    def __init__(self, world_state_filename, network_state_filename, features, project_path, processor):
+    def __init__(self, world_state_filename, network_state_filename, features, processor):
         self.world_state_filename = world_state_filename
         self.network_state_filename = network_state_filename
         self.feature_include_array = features
-        self.project_path = project_path
         self.processor = processor
 
         self.feature_type_list = []
@@ -95,7 +94,7 @@ class DataSet:
         self.sequence_list = []
         self.num_events = 0
         sequence_data = []
-        f = open(self.project_path + '/data/' + self.world_state_filename)
+        f = open('data/' + self.world_state_filename)
         for line in f:
             self.num_events += 1
             data = (line.strip().strip('\n').strip()).split(',')
@@ -167,7 +166,7 @@ class DataSet:
         self.num_columns = int((self.world_size / 3) ** 0.5)
 
     def load_network_state_data(self):
-        f = open(self.project_path + "models/" + self.network_state_filename, 'rb')
+        f = open("models/" + self.network_state_filename, 'rb')
         self.network_state_list = pickle.load(f)  # [[x, y, o, h], [x, y, o, h], ...]
         f.close()
 

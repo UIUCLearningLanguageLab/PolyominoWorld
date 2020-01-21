@@ -1,0 +1,11 @@
+epoch,time,training_cost,test_cost,shape_training_cost,size_training_cost,color_training_cost,shape_test_cost,size_test_cost,color_test_cost,shape_training_accuracy,size_training_accuracy,color_training_accuracy,shape_test_accuracy,size_test_accuracy,color_test_accuracy
+5,3.8737531661987306,7.789292301649693,7.913685983045596,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+10,3.731058359146118,7.745003800763322,7.868203442921448,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+15,3.730474424362183,7.709343143566576,7.8315487426175325,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+20,4.028061151504517,7.68212928653837,7.801144532020488,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+25,4.266942834854126,7.661363267506628,7.777622098244804,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+30,3.9037304401397703,7.66675605565607,7.741105586075315,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+35,4.226190996170044,7.631386570195674,7.7127119058020375,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+40,4.102694940567017,7.600705017433049,7.687308256665063,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+45,4.151438236236572,7.576669851707993,7.666932946120263,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+50,4.303408241271972,7.559265305303949,7.65160603980516,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan

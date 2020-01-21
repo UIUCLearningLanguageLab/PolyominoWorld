@@ -8,6 +8,8 @@ class Display:
 
     def __init__(self, the_dataset, the_network):
 
+        # todo make sure the properties of the dataset (rows, columns, maybe other things are same as network's
+
         self.the_dataset = the_dataset
         self.the_network = the_network
         self.i = 0  # currently active item in the dataset

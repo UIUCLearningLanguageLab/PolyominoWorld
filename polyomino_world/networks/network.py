@@ -4,6 +4,7 @@ import sys
 import pickle
 import datetime
 import os
+from polyomino_world.networks import dataset
 
 
 class MlNet(nn.Module):
@@ -19,7 +20,6 @@ class MlNet(nn.Module):
         self.hidden_size = None
         self.learning_rate = None
         self.weight_init = None
-        self.project_path = None
         self.processor = None
         self.input_size = None
         self.output_size = None
@@ -29,16 +29,18 @@ class MlNet(nn.Module):
         self.sigmoid = None
         self.criterion = None
         self.criterion2 = None
-        self.hidden_states = None
         self.start_datetime = None
         self.model_directory = None
         self.performance_list = None
         self.training_time = None
 
-    def init_model(self, network_directory, x_type, y_type, training_set,
-                   hidden_size, optimizer, learning_rate, weight_init,
-                   project_path, processor):
-        self.net_name = network_directory
+        self.criterion = nn.MSELoss()
+        self.criterion2 = nn.MSELoss(reduction='none')
+        self.sigmoid = nn.Sigmoid().float()
+
+    def init_model(self, x_type, y_type, training_set,
+                   hidden_size, optimizer, learning_rate, weight_init, processor):
+
         self.x_type = x_type
         self.y_type = y_type
         self.training_set = training_set
@@ -46,9 +48,7 @@ class MlNet(nn.Module):
         self.hidden_size = hidden_size
         self.learning_rate = learning_rate
         self.weight_init = weight_init
-        self.project_path = project_path
         self.processor = processor
-
         self.input_size = training_set.world_size
 
         if self.y_type == 'WorldState':
@@ -63,30 +63,22 @@ class MlNet(nn.Module):
 
         self.h_x = nn.Linear(self.input_size, self.hidden_size).float()
         self.y_h = nn.Linear(self.hidden_size, self.output_size).float()
-        self.sigmoid = nn.Sigmoid().float()
 
         self.h_x.apply(self.init_weights)
         self.y_h.apply(self.init_weights)
 
-        self.criterion = nn.MSELoss()
-        self.criterion2 = nn.MSELoss(reduction='none')
-
-        self.hidden_states = []
-        self.performance_list = []
-
         self.start_datetime = datetime.datetime.timetuple(datetime.datetime.now())
+
         self.training_time = 0
+
+        self.create_network_directory()
 
         if self.processor == 'GPU':
             if torch.cuda.is_available():
                 self.cuda(0)
 
-        if self.net_name is None:
-            self.create_network_directory()
-
-    def load_model(self, model_directory, training_set):
+    def load_model(self, model_directory, included_features, processor):
         self.net_name = model_directory
-        self.training_set = training_set
         params_file = open('models/' + model_directory + '/network_properties.csv')
         for line in params_file:
 
@@ -114,14 +106,9 @@ class MlNet(nn.Module):
                 self.current_epoch = int(value)
             elif parameter == 'training_time:':
                 self.training_time = float(value)
+            elif parameter == 'training_set:':
+                self.training_set = dataset.DataSet(value, None, included_features, processor)
         params_file.close()
-
-        self.h_x = nn.Linear(self.input_size, self.hidden_size).float()
-        self.y_h = nn.Linear(self.hidden_size, self.output_size).float()
-        self.sigmoid = nn.Sigmoid().float()
-
-        self.criterion = nn.MSELoss()
-        self.criterion2 = nn.MSELoss(reduction='none')
 
         weight_file = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
         weight_file = open(weight_file, 'rb')
@@ -162,7 +149,7 @@ class MlNet(nn.Module):
     def create_network_directory(self):
         try:
             print("Creating models directory")
-            os.mkdir(self.project_path + '/models')
+            os.mkdir('models')
         except Exception as e:
             pass
 
@@ -191,7 +178,7 @@ class MlNet(nn.Module):
                                                          self.start_datetime[5],
                                                          self.start_datetime[6])
         try:
-            os.mkdir(self.project_path + "models/" + self.net_name)
+            os.mkdir("models/" + self.net_name)
         except Exception as e:
             print(e)
             sys.exit()
@@ -206,14 +193,14 @@ class MlNet(nn.Module):
         for i in range(self.training_set.num_included_feature_types):
             header_string += ',{}_test_accuracy'.format(self.training_set.included_feature_type_list[i])
 
-        f = open(self.project_path + "models/" + self.net_name + "/performance.csv", 'w')
+        f = open("models/" + self.net_name + "/performance.csv", 'w')
         f.write(header_string + "\n")
         f.close()
 
         self.save_network_properties()
 
     def save_network_properties(self):
-        file_location = self.project_path + "/models/" + self.net_name + "/network_properties.csv"
+        file_location = "models/" + self.net_name + "/network_properties.csv"
         f = open(file_location, 'w')
         f.write("network_name: {}\n".format(self.net_name))
         f.write("x_type: {}\n".format(self.x_type))
@@ -224,7 +211,7 @@ class MlNet(nn.Module):
         f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
-        f.write("training_file: {}\n".format(self.training_set.world_state_filename))
+        f.write("training_set: {}\n".format(self.training_set.world_state_filename))
         f.write("current_epoch: {}\n".format(self.current_epoch))
         f.write("training_time: {}".format(self.training_time))
         f.close()
@@ -235,13 +222,13 @@ class MlNet(nn.Module):
         for i in range(len(dataset.x)):
             o, h, o_cost = self.test_item(dataset.x[i], dataset.y[i])
             network_state_list.append((dataset.x[i], dataset.y[i], o.detach().cpu().numpy(), h.detach().cpu().numpy()))
-        file_location = self.project_path + "/models/" + self.net_name + "/states.csv".format(self.current_epoch)
+        file_location = "models/" + self.net_name + "/states.csv".format(self.current_epoch)
         outfile = open(file_location, 'wb')
         pickle.dump(network_state_list, outfile)
         outfile.close()
 
     def save_network_weights(self):
-        file_location = self.project_path + "/models/" + self.net_name + "/weights.csv".format(self.current_epoch)
+        file_location = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
         outfile = open(file_location, 'wb')
         weights_list = [self.h_x, self.y_h]
         pickle.dump(weights_list, outfile)
