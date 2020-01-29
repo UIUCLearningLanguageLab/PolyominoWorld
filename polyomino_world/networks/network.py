@@ -192,6 +192,10 @@ class MlNet(nn.Module):
             header_string += ',{}_training_accuracy'.format(self.training_set.included_feature_type_list[i])
         for i in range(self.training_set.num_included_feature_types):
             header_string += ',{}_test_accuracy'.format(self.training_set.included_feature_type_list[i])
+        for i in range(self.training_set.num_included_features):
+            header_string += ',{}_training_accuracy'.format(self.training_set.included_feature_list[i])
+        for i in range(self.training_set.num_included_features):
+            header_string += ',{}_test_accuracy'.format(self.training_set.included_feature_list[i])
 
         f = open("models/" + self.net_name + "/performance.csv", 'w')
         f.write(header_string + "\n")

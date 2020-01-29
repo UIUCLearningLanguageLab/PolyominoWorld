@@ -109,8 +109,8 @@ def evaluate_autoassociator(net, training_set, test_set, verbose):
 
 def evaluate_classifier(net, training_set, test_set, verbose):
 
-    training_accuracies, training_costs = evaluate_classifier_dataset(net, training_set, verbose)
-    test_accuracies, test_costs = evaluate_classifier_dataset(net, test_set, verbose)
+    training_accuracies, training_costs, training_detailed_accuracies = evaluate_classifier_dataset(net, training_set, verbose)
+    test_accuracies, test_costs, test_detailed_accuracies = evaluate_classifier_dataset(net, test_set, verbose)
 
     output_string = "Epoch:{} |".format(net.current_epoch)
     for j in range(training_set.num_included_feature_types):
@@ -131,11 +131,17 @@ def evaluate_classifier(net, training_set, test_set, verbose):
         net.performance_list.append(training_accuracies[i])
     for i in range(training_set.num_included_feature_types):
         net.performance_list.append(test_accuracies[i])
+    for i in range(len(training_detailed_accuracies)):
+        net.performance_list.append(training_detailed_accuracies[i])
+    for i in range(len(test_detailed_accuracies)):
+        net.performance_list.append(test_detailed_accuracies[i])
 
 
 def evaluate_classifier_dataset(net, dataset, verbose):
     accuracies = np.zeros([dataset.num_included_feature_types], float)
     costs = np.zeros([dataset.num_included_feature_types], float)
+    detailed_accuracies = np.zeros([dataset.num_included_features], float)
+    detailed_counts = np.zeros([dataset.num_included_features], float)
 
     for i in range(len(dataset.x)):
         o, h, o_cost = net.test_item(dataset.x[i], dataset.y[i])
@@ -177,8 +183,12 @@ def evaluate_classifier_dataset(net, dataset, verbose):
             guess_list.append((guess_index, guess_label, guess_score))
             actual_list.append((actual_index, actual_label, actual_score))
 
+            feature_index = dataset.included_feature_index_dict[actual_label]
+            detailed_counts[feature_index] += 1
+
             if guess_index == actual_index:
                 accuracies[j] += 1
+                detailed_accuracies[feature_index] += 1
 
             for k in range(dataset.feature_type_size_dict[feature_type]):
                 output_string1 += " {:0.2f}".format(current_o[k])
@@ -204,7 +214,13 @@ def evaluate_classifier_dataset(net, dataset, verbose):
         costs[i] /= dataset.included_feature_type_size_dict[feature_type]
     accuracies = accuracies / len(dataset.x)
 
-    return accuracies, costs
+    for i in range(len(detailed_accuracies)):
+        if detailed_counts[i] != 0:
+            detailed_accuracies[i] = detailed_accuracies[i] / detailed_counts[i]
+        else:
+            detailed_accuracies[i] = np.nan
+
+    return accuracies, costs, detailed_accuracies
 
 
 

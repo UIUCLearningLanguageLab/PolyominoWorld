@@ -25,6 +25,8 @@ class DataSet:
         self.included_feature_type_size_dict = {}
         self.included_feature_type_index_dict = {}
         self.num_included_feature_types = None
+        self.included_feature_list = []
+        self.included_feature_index_dict = {}
         self.num_included_features = None
         self.included_fv_indexes = []
 
@@ -83,12 +85,18 @@ class DataSet:
         self.num_included_features = 0
         for i in range(self.num_feature_types):
             feature_type = self.feature_type_list[i]
+            feature_list = self.feature_list_dict[feature_type]
             if self.feature_include_array[i] == 1:
                 self.included_feature_type_list.append(feature_type)
                 self.included_feature_type_index_dict[feature_type] = self.num_included_feature_types
                 self.num_included_feature_types += 1
                 self.included_feature_type_size_dict[feature_type] = self.feature_type_size_dict[feature_type]
-                self.num_included_features += self.feature_type_size_dict[feature_type]
+
+                for j in range(len(feature_list)):
+                    feature = feature_list[j]
+                    self.included_feature_list.append(feature)
+                    self.included_feature_index_dict[feature] = self.num_included_features
+                    self.num_included_features += 1
 
     def load_world_state_data(self):
         self.sequence_list = []
