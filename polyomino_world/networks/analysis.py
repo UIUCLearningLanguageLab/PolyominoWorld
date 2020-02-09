@@ -1,7 +1,9 @@
 import numpy as np
-import sys
 import torch
 import time
+import sys
+import random
+import math
 
 
 def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, shuffle_sequences, shuffle_events,
@@ -10,15 +12,9 @@ def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, s
     print("Training {}-{} on {} epochs".format(net.x_type, net.y_type, num_epochs))
     training_set.create_xy(net, False, False)
     test_set.create_xy(net, False, False)
-
     net.performance_list = [net.current_epoch, 0]
-    if net.y_type == 'FeatureVector':
-        evaluate_classifier(net, training_set, test_set, False)
-    elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
-        evaluate_autoassociator(net, training_set, test_set, False)
-    else:
-        print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
-        sys.exit()
+    evaluate_network(net, training_set, test_set, False)
+    net.save_network_performance()
 
     start_time = time.time()
     for i in range(num_epochs):
@@ -50,15 +46,7 @@ def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, s
             net.training_time += took
             net.performance_list = [net.current_epoch, took/output_freq]
             start_time = time.time()
-
-            if net.y_type == 'FeatureVector':
-                evaluate_classifier(net, training_set, test_set, verbose)
-            elif net.y_type == 'WorldState' and net.x_type == 'WorldState':
-                evaluate_autoassociator(net, training_set, test_set, verbose)
-            else:
-                print("Unrecognized net type {} {}".format(net.x_type, net.y_type))
-                sys.exit()
-
+            evaluate_network(net, training_set, test_set, verbose)
             net.save_network_properties()
             net.save_network_weights()
             net.save_network_performance()
@@ -66,45 +54,142 @@ def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, s
     net.save_network_states(training_set)
 
 
-def evaluate_autoassociator(net, training_set, test_set, verbose):
-    training_cost = 0
-    test_cost = 0
+def evaluate_network(net, training_set, test_set, verbose):
 
-    for i in range(len(training_set.x)):
-        o, h, o_cost = net.test_item(training_set.x[i], training_set.y[i])
-        training_cost += o_cost.detach().cpu().numpy().sum()
+    if net.y_type == 'FeatureVector':
+        training_accuracies, training_costs, training_detailed_accuracies = evaluate_classifier_dataset(net, training_set, verbose)
+        test_accuracies, test_costs, test_detailed_accuracies = evaluate_classifier_dataset(net, test_set, verbose)
+    elif net.y_type == 'WorldState':
+        training_accuracies, training_costs, training_detailed_accuracies = evaluate_autoassociator_dataset(net, training_set, verbose)
+        test_accuracies, test_costs, test_detailed_accuracies = evaluate_autoassociator_dataset(net, test_set, verbose)
+    else:
+        print("Network Type not recognized")
+        sys.exit()
 
-        if verbose:
-            output_string = "Training Event {}".format(i)
-            for item in training_set.label_list[i]:
-                output_string += " {:10s}".format(str(item))
-            output_string += "{:0.1f}".format(o_cost.sum())
-            print(output_string)
-
-    for i in range(len(test_set.x)):
-        o, h, o_cost = net.test_item(test_set.x[i], test_set.y[i])
-        test_cost += o_cost.detach().cpu().numpy().sum()
-
-        if verbose:
-            output_string = "Test Event {}".format(i)
-            for item in test_set.label_list[i]:
-                output_string += " {:10s}".format(str(item))
-            output_string += "{:0.1f}".format(o_cost.sum())
-            print(output_string)
-
-    training_cost = training_cost / len(training_set.x)
-    test_cost = test_cost / len(test_set.x)
-    print("Epoch:{}     training cost: {:0.4f}    test cost: {:0.4f}  took: {:0.2f}s".format(net.current_epoch,
-                                                                                             training_cost, test_cost,
-                                                                                             net.performance_list[1]))
-
-    net.performance_list.append(training_cost)
-    net.performance_list.append(test_cost)
+    net.performance_list.append(training_costs.sum())
+    net.performance_list.append(test_costs.sum())
     for i in range(training_set.num_included_feature_types):
-        net.performance_list.append(np.nan)
-        net.performance_list.append(np.nan)
-        net.performance_list.append(np.nan)
-        net.performance_list.append(np.nan)
+        net.performance_list.append(training_costs[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(test_costs[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(training_accuracies[i])
+    for i in range(training_set.num_included_feature_types):
+        net.performance_list.append(test_accuracies[i])
+    for i in range(len(training_detailed_accuracies)):
+        net.performance_list.append(training_detailed_accuracies[i])
+    for i in range(len(test_detailed_accuracies)):
+        net.performance_list.append(test_detailed_accuracies[i])
+
+    output_string = "Epoch:{} |".format(net.current_epoch)
+    for j in range(training_set.num_included_feature_types):
+        output_string += "  {:0.2f}-{:0.2f}".format(training_costs[j], test_costs[j])
+    output_string += "  | "
+    for j in range(training_set.num_included_feature_types):
+        output_string += "  {:0.2f}-{:0.2f}".format(training_accuracies[j], test_accuracies[j])
+    output_string += " took:{:0.2f}s.".format(net.performance_list[1])
+    print(output_string)
+
+
+def evaluate_autoassociator_dataset(net, dataset, verbose):
+
+    # initialize the matrices for keeping track of cost and accuracy
+    accuracies = np.zeros([dataset.num_included_feature_types], float)
+    costs = np.zeros([dataset.num_included_feature_types], float)
+    detailed_accuracies = np.zeros([dataset.num_included_features], float)
+    detailed_counts = np.zeros([dataset.num_included_features], float)
+
+    # for each item in the dataset
+    for i in range(len(dataset.x)):
+        # run the item through the network, getting cost and network activation values
+        o, h, o_cost = net.test_item(dataset.x[i], dataset.y[i])
+        o_vector = o.detach().cpu().numpy()
+        label_list = dataset.label_list[i]
+        current_sum_cost = (o_cost ** 2).sum()
+        world_size = int(len(o_vector)/3)
+
+        # use the output vector to calculate which cells are "on", and what color they are
+        color_guess_list = []
+        position_guess_list = []
+        min_x = dataset.num_rows + 1
+        min_y = dataset.num_columns + 1
+        for j in range(world_size):
+            guess_rgb = np.array([o_vector[j], o_vector[j + world_size], o_vector[j + world_size * 2]])
+            distance_vector = np.linalg.norm(dataset.all_color_rgb_matrix - guess_rgb, axis=1)
+            guess_index = np.argmin(distance_vector)
+            guess_label = dataset.all_color_label_list[guess_index]
+            if guess_label != 'grey':
+                # todo this may need to be num_columns, not num_rows, depending on how rXc matrix is flattened
+                coordinates = [math.floor(j / dataset.num_rows), j % dataset.num_rows]
+                if coordinates[0] < min_x:
+                    min_x = coordinates[0]
+                if coordinates[1] < min_y:
+                    min_y = coordinates[1]
+                color_guess_list.append(guess_label)
+                position_guess_list.append(coordinates)
+
+        # convert the list of positions of cells that are "on", to a set of top-left-aligned active coordinates
+        for j in range(len(position_guess_list)):
+            position_guess_list[j] = [position_guess_list[j][0]-min_x, position_guess_list[j][1] - min_y]
+        position_guess_set = set(tuple(tuple(x) for x in position_guess_list))
+
+        # check to see if the set of top-lef- aligned active coordinates matches the definition of any shapes
+        shape_guess_label = None
+        for j in range(len(dataset.master_shape_label_list)):
+            if dataset.master_shape_position_list[j] == position_guess_set:
+                shape_guess_label = dataset.master_shape_label_list[j]
+                break
+        if shape_guess_label is None:
+            shape_guess_label = random.choice(dataset.master_shape_list)
+
+        if len(color_guess_list) > 0:
+            size_guess = len(color_guess_list)
+        else:
+            size_guess = random.choice([1, 2, 3, 4])
+
+        if len(color_guess_list) == 0:
+            color_guess_list = [random.choice(dataset.master_color_label_list)]
+        color_guess_label = random.choice(color_guess_list)
+
+        # print()
+        # print(i, label_list)
+        # print(position_guess_set, shape_guess_label)
+        # print(len(color_guess_list), size_guess)
+        # print(color_guess_list, color_guess_label)
+
+        for j in range(dataset.num_included_feature_types):
+            feature_type = dataset.included_feature_type_list[j]
+            actual_label = label_list[j]
+            feature_index = dataset.included_feature_index_dict[actual_label]
+            detailed_counts[j] += 1
+            costs[j] += current_sum_cost
+
+            if feature_type == 'size':
+                guess_label = size_guess
+            elif feature_type == 'shape':
+                guess_label = shape_guess_label
+            elif feature_type == 'color':
+                guess_label = color_guess_label
+            elif feature_type == 'action':
+                guess_label = None
+            else:
+                print("Feature Type Not recognized While Evaluating Autoassociator")
+                sys.exit()
+
+            if actual_label == guess_label:
+                accuracies[j] += 1
+                detailed_accuracies[feature_index] += 1
+
+    costs /= len(dataset.x)
+    accuracies = accuracies / len(dataset.x)
+
+    for i in range(len(detailed_accuracies)):
+        if detailed_counts[i] != 0:
+            detailed_accuracies[i] = detailed_accuracies[i] / detailed_counts[i]
+        else:
+            detailed_accuracies[i] = np.nan
+
+    return accuracies, costs, detailed_accuracies
 
 
 def evaluate_classifier(net, training_set, test_set, verbose):

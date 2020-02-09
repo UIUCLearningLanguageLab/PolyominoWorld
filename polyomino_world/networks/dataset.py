@@ -1,8 +1,11 @@
 from polyomino_world import config
+from polyomino_world.world import shapes
+from polyomino_world.world import world
 import random
 import torch
 import sys
 import pickle
+import numpy as np
 
 
 class DataSet:
@@ -36,6 +39,13 @@ class DataSet:
         self.world_size = None
         self.num_rows = None
         self.num_columns = None
+        self.all_color_label_list = None
+        self.all_color_rgb_matrix = None
+        self.master_color_label_list = None
+        self.master_shape_position_list = None
+        self.master_shape_label_list = None
+        self.test_world = None
+        self.master_shape_list = None
 
         self.network_state_list = None
         self.h_size = None
@@ -97,6 +107,40 @@ class DataSet:
                     self.included_feature_list.append(feature)
                     self.included_feature_index_dict[feature] = self.num_included_features
                     self.num_included_features += 1
+
+        self.all_color_label_list = []
+        self.master_color_label_list = []
+        self.all_color_rgb_matrix = np.zeros([len(config.Shape.color_value_dict), 3], float)
+
+        i = 0
+        for color in config.Shape.color_value_dict:
+            if color != 'grey':
+                self.master_color_label_list.append(color)
+            self.all_color_label_list.append(color)
+            rgb = config.Shape.color_value_dict[color]
+            self.all_color_rgb_matrix[i, 0] = rgb[0]
+            self.all_color_rgb_matrix[i, 1] = rgb[1]
+            self.all_color_rgb_matrix[i, 2] = rgb[2]
+            i += 1
+
+        self.master_shape_list = ['monomino', 'domino', 'tromino1', 'tromino2', 'tetromino1', 'tetromino2',
+                                  'tetromino3', 'tetromino4', 'tetromino5']
+
+        self.master_shape_position_list = []
+        self.master_shape_label_list = []
+        self.test_world = world.World(self.master_shape_list, ['black'], 4, 4, None, 1, 1, 1)
+
+        shape_counter = 0
+        for i in range(len(self.master_shape_list)):  # num of shape types/size
+            self.test_world.reset_world()
+            shape_name = self.master_shape_list[i]
+            shape_color = 'black'
+            self.test_world.add_shape_to_world(shape_name, shape_counter, shape_color)
+            current_shape = self.test_world.current_shape_list[-1]
+            for j in range(current_shape.num_variants):
+                active_cells = current_shape.active_cell_dict[j]
+                self.master_shape_label_list.append(shape_name)
+                self.master_shape_position_list.append(set(active_cells))
 
     def load_world_state_data(self):
         self.sequence_list = []

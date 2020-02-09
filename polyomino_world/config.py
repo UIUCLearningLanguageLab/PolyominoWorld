@@ -31,8 +31,6 @@ class Shape:
                         'magenta': (1., -1., 1.),
 
                         'grey': (0., 0., 0.),
-                        'silver': (-0.5, -0.5, -0.5),
-                        'teal': (0, 0.5, 0.5)
                         }
 
     master_action_list = ['rest', 'move', 'rotate', 'flip']

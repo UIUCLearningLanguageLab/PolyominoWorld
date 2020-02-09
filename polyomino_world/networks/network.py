@@ -33,19 +33,23 @@ class MlNet(nn.Module):
         self.model_directory = None
         self.performance_list = None
         self.training_time = None
+        self.hidden_actf = None
 
         self.criterion = nn.MSELoss()
         self.criterion2 = nn.MSELoss(reduction='none')
         self.sigmoid = nn.Sigmoid().float()
+        self.tanh = nn.Tanh().float()
+        self.relu = nn.ReLU().float()
 
     def init_model(self, x_type, y_type, training_set,
-                   hidden_size, optimizer, learning_rate, weight_init, processor):
+                   hidden_size, hidden_actf, optimizer, learning_rate, weight_init, processor):
 
         self.x_type = x_type
         self.y_type = y_type
         self.training_set = training_set
         self.optimizer = optimizer
         self.hidden_size = hidden_size
+        self.hidden_actf = hidden_actf
         self.learning_rate = learning_rate
         self.weight_init = weight_init
         self.processor = processor
@@ -94,6 +98,8 @@ class MlNet(nn.Module):
                 self.input_size = int(value)
             elif parameter == 'hidden_size:':
                 self.hidden_size = int(value)
+            elif parameter == 'hidden_actf:':
+                self.hidden_actf = value
             elif parameter == 'output_size:':
                 self.output_size = int(value)
             elif parameter == 'optimizer:':
@@ -120,9 +126,25 @@ class MlNet(nn.Module):
 
     def forward_item(self, x):
         z_h = self.h_x(x.float())
-        h = self.sigmoid(z_h)
+        if self.hidden_actf == 'tanh':
+            h = self.tanh(z_h)
+        elif self.hidden_actf == 'sigmoid':
+            h = self.tanh(z_h)
+        elif self.hidden_actf == 'relu':
+            h = self.relu(z_h)
+        else:
+            print("ERROR: Improper hidden activation function")
+            raise RuntimeError
+            #sys.exit()
         z_o = self.y_h(h)
-        o = self.sigmoid(z_o)
+
+        if self.y_type == 'FeatureVector':
+            o = self.sigmoid(z_o)
+        elif self.y_type == 'WorldState':
+            o = self.tanh(z_o)
+        else:
+            print("ERROR: y-type not recognized")
+            sys.exit()
         return o, h
 
     def test_item(self, x, y):
@@ -211,6 +233,7 @@ class MlNet(nn.Module):
         f.write("y_type: {}\n".format(self.y_type))
         f.write("input_size: {}\n".format(self.input_size))
         f.write("hidden_size: {}\n".format(self.hidden_size))
+        f.write("hidden_actf: {}\n".format(self.hidden_actf))
         f.write("output_size: {}\n".format(self.output_size))
         f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
