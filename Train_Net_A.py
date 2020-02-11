@@ -21,7 +21,7 @@ def main():
 
     training_file = 'w8-8_s9_c8_0_100_0.csv'
     test_file = 'w8-8_s9_c8_0_10_0.csv'
-    network_directory = 'WS_WS_2020_2_9_12_9_14'
+    network_directory = 'WS_WS_2020_2_9_10_44_25'
 
     training_set = dataset.DataSet(training_file, None, included_features, processor)
     test_set = dataset.DataSet(test_file, None, included_features, processor)

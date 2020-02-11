@@ -7,7 +7,7 @@ import numpy as np
 def main():
     np.set_printoptions(precision=3, suppress=True)
     dataset_filename = 'w8-8_s9_c8_0_10_0.csv'
-    model = 'WS_WS_2020_2_9_12_9_14'
+    model = 'WS_WS_2020_2_9_10_44_25'
     included_features = [1, 1, 1, 0]
     processor = 'CPU'
 

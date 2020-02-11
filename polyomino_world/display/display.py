@@ -21,7 +21,7 @@ class Display:
         self.square_size = config.Display.cell_size
 
         self.height = 900
-        self.width = 1440
+        self.width = 1200
 
         self.root = tk.Tk()
         self.root.title("Polyomino World")
