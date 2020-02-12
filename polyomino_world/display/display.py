@@ -97,7 +97,7 @@ class Display:
         self.draw_world('world_input', rgb_matrix)
 
         # draw the input layer for the current x
-        self.draw_world_layer('world_input_layer', self.the_dataset.num_rows, rgb_matrix, 'input')
+        self.draw_world_layer('world_input_layer', rgb_matrix)
 
         # draw the hidden layer for the current x
         self.draw_hidden_layer(h)
@@ -109,7 +109,7 @@ class Display:
             current_o = o.detach().numpy()
             rgb_matrix = current_o.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_columns))
             self.draw_world('world_output', rgb_matrix)
-            self.draw_world_layer('world_output_layer', self.the_dataset.num_rows, rgb_matrix, 'output')
+            self.draw_world_layer('world_output_layer', rgb_matrix)
         else:
             print("ERROR: Network y_type {} not recognized".format(self.the_network.y_type))
             sys.exit()
@@ -131,94 +131,103 @@ class Display:
                                                      j * size + start_y,
                                                      (i + 1) * size + start_x,
                                                      (j + 1) * size + start_y,
-                                                     fill=color, outline=color)
+                                                     fill=color, outline=color, tag="w{},{}".format(i, j))
 
-    def draw_world_layer(self, layer_type, num_rows, rgb_matrix, layer):
+    def draw_world_layer(self, layer_type, rgb_matrix):
+        # get the starting x,y position
         start_x = self.position_dict[layer_type][0]
         start_y = self.position_dict[layer_type][1]
-        size = 14
 
+        # get the tag header
+        if layer_type == 'world_input_layer':
+            tag_header = "i"
+        elif layer_type == 'world_output_layer':
+            tag_header = 'o'
+        else:
+            print("ERROR: Unrecognized layer type")
+            raise RuntimeError
+
+        # decide how big the units should be, based on their number
+        if self.the_dataset.num_rows > 8:
+            size = 10
+        else:
+            size = 14
+
+        # Write the layer name
         self.network_canvas.create_text(start_x+50, start_y-20, text=self.position_dict[layer_type][2],
                                         font="Arial 20 bold", fill='white')
-        self.network_canvas.create_text(start_x-20, start_y+50, text="Red", font="Arial 14 bold", fill='white')
-        self.network_canvas.create_text(start_x-29, start_y+180, text="Green", font="Arial 14 bold", fill='white')
-        self.network_canvas.create_text(start_x-23, start_y+310, text="Blue", font="Arial 14 bold", fill='white')
 
+        color_label_list = ['Red', 'Green', 'Blue']
+
+        # if it is an input layer, create the bias unit
+        if layer_type == 'world_input_layer':
+            self.network_canvas.create_text(start_x - 30, start_y + 20,
+                                            text="Bias", font="Arial 14 bold", fill='white')
+            bias_tag = tag_header + "_bias"
+            if self.selected_unit == bias_tag:
+                outline_color = 'yellow'
+            else:
+                outline_color = 'black'
+            self.network_canvas.create_rectangle(start_x, start_y + 13, start_x + size, start_y + size + 13,
+                                                 fill='red', outline=outline_color, tag=bias_tag)
+
+        # draw the world layer
         unit_counter = 0
-        grid_size = self.the_dataset.num_rows + self.the_dataset.num_columns
-        for i in range(self.the_dataset.num_rows):
-            for j in range(self.the_dataset.num_columns):
-                if layer == 'input':
-                    red_tag = "i_" + str(unit_counter)
-                    green_tag = "i_" + str(unit_counter + grid_size)
-                    blue_tag = "i_" + str(unit_counter + grid_size*2)
-                elif layer == 'output':
-                    red_tag = "o_" + str(unit_counter)
-                    green_tag = "o_" + str(unit_counter + grid_size)
-                    blue_tag = "o_" + str(unit_counter + grid_size*2)
-                else:
-                    print("ERROR: Unrecognized layer type")
-                    raise RuntimeError
-                unit_counter += 1
+        grid_spacing = 10
+        grid_size = self.the_dataset.num_rows * size + grid_spacing
 
-                r_color = self.network_hex_color(rgb_matrix[0, i, j])
-                g_color = self.network_hex_color(rgb_matrix[1, i, j])
-                b_color = self.network_hex_color(rgb_matrix[2, i, j])
+        for k in range(3):
+            self.network_canvas.create_text(start_x - 30, start_y + 100 + (k*grid_size),
+                                            text="{}".format(color_label_list[k]).rjust(5),
+                                            font="Arial 14 bold", fill='white')
+            for i in range(self.the_dataset.num_rows):
+                for j in range(self.the_dataset.num_columns):
+                    the_tag = tag_header + str(unit_counter)
+                    fill_color = self.network_hex_color(rgb_matrix[k, i, j])
 
-                if self.selected_unit == red_tag:
-                    o_color = 'yellow'
-                else:
-                    o_color = 'black'
+                    if self.selected_unit == the_tag:
+                        outline_color = 'yellow'
+                    else:
+                        outline_color = 'black'
 
-                self.network_canvas.create_rectangle(i * size + start_x,
-                                                     j * size + start_y,
-                                                     (i + 1) * size + start_x,
-                                                     (j + 1) * size + start_y,
-                                                     fill=r_color, outline=o_color, tag=red_tag)
-
-                if self.selected_unit == green_tag:
-                    o_color = 'yellow'
-                else:
-                    o_color = 'black'
-
-                self.network_canvas.create_rectangle(i * size + start_x,
-                                                     j * size + start_y + num_rows*size + 10,
-                                                     (i + 1) * size + start_x,
-                                                     (j + 1) * size + start_y + num_rows*size + 10,
-                                                     fill=g_color, outline=o_color, tag=green_tag)
-
-                if self.selected_unit == blue_tag:
-                    o_color = 'yellow'
-                else:
-                    o_color = 'black'
-
-                self.network_canvas.create_rectangle(i * size + start_x,
-                                                     j * size + start_y + 2*num_rows*size + 20,
-                                                     (i + 1) * size + start_x,
-                                                     (j + 1) * size + start_y + 2*num_rows*size + 20,
-                                                     fill=b_color, outline=o_color, tag=blue_tag)
+                    self.network_canvas.create_rectangle(i * size + start_x,
+                                                         j * size + start_y + (k*grid_size) + 50,
+                                                         (i + 1) * size + start_x,
+                                                         (j + 1) * size + start_y + (k*grid_size) + 50,
+                                                         fill=fill_color, outline=outline_color, tag=the_tag)
+                    unit_counter += 1
 
     def draw_hidden_layer(self, h):
-        startx = 500
-        starty = 40
+        start_x = 480
+        start_y = 20
         size = 20
         spacing = 2
         hiddens_per_column = 8
 
-        self.network_canvas.create_text(startx+50, starty-20, text="Hidden Layer", font="Arial 20 bold", fill='white')
+        self.network_canvas.create_text(start_x - 30, start_y + 90,
+                                        text="Bias", font="Arial 14 bold", fill='white')
+        bias_tag = "h_bias"
+        if self.selected_unit == bias_tag:
+            outline_color = 'yellow'
+        else:
+            outline_color = 'black'
+        self.network_canvas.create_rectangle(start_x, start_y + 80, start_x + size, start_y + size + 80,
+                                             fill='red', outline=outline_color, tag=bias_tag)
+
+        self.network_canvas.create_text(start_x+80, start_y, text="Hidden Layer", font="Arial 20 bold", fill='white')
         for i in range(self.the_network.hidden_size):
             the_tag = "h" + str(i + 1)
-            y1 = starty + (size + spacing) * i
-            fcolor = self.network_hex_color(h[i])
+            y1 = start_y + (size + spacing) * i
+            fill_color = self.network_hex_color(h[i])
             if self.selected_unit == the_tag:
-                bcolor = 'yellow'
+                border_color = 'yellow'
             else:
-                bcolor = 'black'
-            self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size, fill=fcolor, outline=bcolor,
-                                                 tags=the_tag)
+                border_color = 'black'
+            self.network_canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
+                                                 fill=fill_color, outline=border_color, tags=the_tag)
             if (i+1) % hiddens_per_column == 0:
-                startx += size + spacing
-                starty -= hiddens_per_column * (size + spacing)
+                start_x += size + spacing
+                start_y -= hiddens_per_column * (size + spacing)
 
     def draw_feature_layer(self, o):
         start_x = self.position_dict['feature_output_layer'][0]
@@ -236,27 +245,28 @@ class Display:
             outputs = o[indexes[0]:indexes[1]+1].clone().detach().numpy()
             softmax = outputs / outputs.sum()
 
-            for i in range(len(outputs)):
-                the_tag = feature_type + str(i + 1)
-                the_label = included_feature_list[i]
-                fcolor = self.network_hex_color(o[i])
+            for j in range(len(outputs)):
+                the_tag = feature_type + str(j + 1)
+                the_label = included_feature_list[j]
+                fill_color = self.network_hex_color(outputs[j])
                 if self.selected_unit == the_tag:
-                    bcolor = 'yellow'
+                    outline_color = 'yellow'
                 else:
-                    bcolor = 'black'
+                    outline_color = 'black'
 
-                startx = self.position_dict[feature_type][0]
-                starty = self.position_dict[feature_type][1]
+                start_x = self.position_dict[feature_type][0]
+                start_y = self.position_dict[feature_type][1]
 
-                y1 = starty + (size + spacing) * i
-                self.network_canvas.create_rectangle(startx, y1, startx + size, y1 + size,
-                                                     fill=fcolor, outline=bcolor, tags=the_tag)
-                self.network_canvas.create_text(startx - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
+                y1 = start_y + (size + spacing) * i
+                self.network_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size,
+                                                     fill=fill_color, outline=outline_color, tags=the_tag)
+                self.network_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
                                                 fill='white')
                 value = "{:0.1f}%".format(100 * softmax[i])
                 bar_size = round(100 * softmax[i])
-                self.network_canvas.create_rectangle(startx + 50, y1 + 4, startx + 50 + bar_size, y1 + 16, fill='blue')
-                self.network_canvas.create_text(startx + 200, y1 + 10 + 2, text=value, font="Arial 12 bold",
+                self.network_canvas.create_rectangle(start_x + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
+                                                     fill='blue')
+                self.network_canvas.create_text(start_x + 200, y1 + 10 + 2, text=value, font="Arial 12 bold",
                                                 fill='white')
 
     def draw_weights(self):
@@ -277,72 +287,102 @@ class Display:
                 self.draw_yh_weights()
 
     def draw_hx_weights(self):
-        index = int(self.selected_unit[1:])-1
+        print("Selected unit:", self.selected_unit)
 
-        if self.selected_unit[0] == 'i':
-            startx = 90
-            starty = 70
+        if self.selected_unit == 'i_bias':
+            bias_tensor = self.the_network.h_x.bias
+            weight_vector = bias_tensor.detach().numpy()
+            start_x = 90
+            start_y = 70
             size = 17
             spacing = 1
-            weight_vector = np.copy(self.the_network.h_x[:, index])
-            for i in range(len(weight_vector)):
-                color = self.network_hex_color(weight_vector[i])
-                x1 = startx
-                y1 = starty + (size + spacing) * i
-                self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-                print(i, x1, y1, x1 + size, y1 + size)
-                if i == 9:
-                    print("HERE")
-                    startx += size + spacing
-                    starty -= 10 * (size + spacing)
+        else:
+            index = int(self.selected_unit[1:]) - 1
+            h_x_tensor_matrix = self.the_network.h_x.weight
+            h_x_matrix = h_x_tensor_matrix.detach().numpy()
+            if self.selected_unit[0] == 'i':
+                weight_vector = np.copy(h_x_matrix[:, index])
+                start_x = 90
+                start_y = 70
+                size = 17
+                spacing = 1
+            elif self.selected_unit == 'o':
+                weight_vector = np.copy(h_x_matrix[index, :])
+                start_x = 90
+                start_y = 70
+                size = 17
+                spacing = 1
+            else:
+                raise RuntimeError
 
-        elif self.selected_unit[0] == 'h':
-            startx = 30
-            starty = 70
-            size = 30
-            spacing = 1
-            weight_vector = np.copy(self.the_network.h_x[index, :])
-            weight_matrix = weight_vector.reshape((5, 5))
-            for i in range(weight_matrix.shape[0]):
-                for j in range(weight_matrix.shape[1]):
-                    color = self.network_hex_color(weight_matrix[i, j])
+        hidden_units_per_column = 8
+        for i in range(self.the_network.hidden_size):
+            y1 = start_y + (size + spacing) * i
+            fill_color = self.network_hex_color(weight_vector[i])
 
-                    x1 = startx + (size + spacing) * i
-                    y1 = starty + (size + spacing) * j
-                    try:
-                        self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-                    except:
-                        print(weight_matrix[i, j], color)
+            self.weight_canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
+                                                 fill=fill_color, outline='black')
+            if (i+1) % hidden_units_per_column == 0:
+                start_x += size + spacing
+                start_y -= hidden_units_per_column * (size + spacing)
+
+        # if self.selected_unit[0] == 'i':
+        #     for i in range(len(weight_vector)):
+        #         color = self.network_hex_color(weight_vector[i])
+        #         x1 = start_x
+        #         y1 = start_y + (size + spacing) * i
+        #         self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
+        #         if i == 9:
+        #             start_x += size + spacing
+        #             start_y -= 10 * (size + spacing)
+        #
+        # elif self.selected_unit[0] == 'h':
+        #     weight_matrix = weight_vector.reshape((5, 5))
+        #     for i in range(weight_matrix.shape[0]):
+        #         for j in range(weight_matrix.shape[1]):
+        #             color = self.network_hex_color(weight_matrix[i, j])
+        #
+        #             x1 = start_x + (size + spacing) * i
+        #             y1 = start_y + (size + spacing) * j
+        #             try:
+        #                 self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
+        #             except RuntimeError as e:
+        #                 print(e)
+        #                 print(weight_matrix[i, j], color)
 
     def draw_yh_weights(self):
         index = int(self.selected_unit[1:])-1
 
         if self.selected_unit[0] == 'h':
-            startx = 330
-            starty = 65
+            start_x = 330
+            start_y = 65
             size = 18
             spacing = 1
-            weight_vector = np.copy(self.the_network.o_h[:, index])
+            y_h_tensor_matrix = self.the_network.y_h.weight
+            y_h_matrix = y_h_tensor_matrix.detach().numpy()
+            weight_vector = np.copy(y_h_matrix[:, index])
             for i in range(weight_vector.shape[0]):
                 color = self.network_hex_color(weight_vector[i])
-                x1 = startx
-                y1 = starty + (size + spacing) * i
+                x1 = start_x
+                y1 = start_y + (size + spacing) * i
                 self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
 
         elif self.selected_unit[0] == 'o':
-            startx = 330
-            starty = 65
+            start_x = 330
+            start_y = 65
             size = 18
             spacing = 1
-            weight_vector = np.copy(self.the_network.o_h[index, :])
+            y_h_tensor_matrix = self.the_network.y_h.weight
+            y_h_matrix = y_h_tensor_matrix.detach().numpy()
+            weight_vector = np.copy(y_h_matrix[index, :])
             for i in range(weight_vector.shape[0]):
                 color = self.network_hex_color(weight_vector[i])
-                x1 = startx
-                y1 = starty + (size + spacing) * i
+                x1 = start_x
+                y1 = start_y + (size + spacing) * i
                 self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
                 if i == 9:
-                    startx += size + spacing
-                    starty -= 10 * (size + spacing)
+                    start_x += size + spacing
+                    start_y -= 10 * (size + spacing)
 
     def next(self):
         if self.i < self.the_dataset.num_events:
@@ -369,6 +409,7 @@ class Display:
 
     def network_click(self, event):
         the_tag = self.get_tags(event)
+        print("Click on: ", the_tag)
         if the_tag is not None:
             if the_tag == self.selected_unit:
                 self.selected_unit = None
