@@ -61,11 +61,7 @@ class Display:
 
         self.the_dataset.create_xy(self.the_network, False, False)
 
-        self.position_dict = {'shape': (800, 60, 'Shape Outputs'),
-                              'size': (800, 300, 'Size Outputs'),
-                              'color': (1200, 60, 'Color Outputs'),
-                              'action': (1200, 300, 'Action Outputs'),
-                              'feature_output_layer': (1000, 20, 'Feature Output Layer'),
+        self.position_dict = {'feature_output_layer': (900, 20, 'Feature Output Layer'),
                               'world_input': (20, 120, 'World Input'),
                               'world_input_layer': (280, 40, 'Input Layer'),
                               'world_output': (1000, 120, 'World Output'),
@@ -202,7 +198,7 @@ class Display:
         start_y = 20
         size = 20
         spacing = 2
-        hiddens_per_column = 8
+        hidden_units_per_column = 8
 
         self.network_canvas.create_text(start_x - 30, start_y + 90,
                                         text="Bias", font="Arial 14 bold", fill='white')
@@ -225,9 +221,9 @@ class Display:
                 border_color = 'black'
             self.network_canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
                                                  fill=fill_color, outline=border_color, tags=the_tag)
-            if (i+1) % hiddens_per_column == 0:
+            if (i+1) % hidden_units_per_column == 0:
                 start_x += size + spacing
-                start_y -= hiddens_per_column * (size + spacing)
+                start_y -= hidden_units_per_column * (size + spacing)
 
     def draw_feature_layer(self, o):
         start_x = self.position_dict['feature_output_layer'][0]
@@ -241,9 +237,10 @@ class Display:
         for i in range(self.the_dataset.num_included_feature_types):
             feature_type = self.the_dataset.included_feature_type_list[i]
             included_feature_list = self.the_dataset.feature_list_dict[feature_type]
+            num_features = len(included_feature_list)
             indexes = self.the_dataset.included_fv_indexes[i]
             outputs = o[indexes[0]:indexes[1]+1].clone().detach().numpy()
-            softmax = outputs / outputs.sum()
+            soft_max = outputs / outputs.sum()
 
             for j in range(len(outputs)):
                 the_tag = feature_type + str(j + 1)
@@ -254,65 +251,68 @@ class Display:
                 else:
                     outline_color = 'black'
 
-                start_x = self.position_dict[feature_type][0]
-                start_y = self.position_dict[feature_type][1]
+                x1 = start_x
+                y1 = start_y + ((size + spacing) * i) + 20 + (j*size+spacing)
 
-                y1 = start_y + (size + spacing) * i
-                self.network_canvas.create_rectangle(start_x, y1, start_x + size, y1 + size,
+                self.network_canvas.create_rectangle(x1, y1,
+                                                     x1 + size, y1 + size,
                                                      fill=fill_color, outline=outline_color, tags=the_tag)
                 self.network_canvas.create_text(start_x - 60, y1 + 10 + 2, text=the_label, font="Arial 14 bold",
                                                 fill='white')
-                value = "{:0.1f}%".format(100 * softmax[i])
-                bar_size = round(100 * softmax[i])
-                self.network_canvas.create_rectangle(start_x + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
+                value = "{:0.1f}%".format(100 * soft_max[i])
+                bar_size = round(100 * soft_max[i])
+                self.network_canvas.create_rectangle(x1 + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
                                                      fill='blue')
-                self.network_canvas.create_text(start_x + 200, y1 + 10 + 2, text=value, font="Arial 12 bold",
+                self.network_canvas.create_text(x1 + 200, y1 + 10 + 2, text=value, font="Arial 12 bold",
                                                 fill='white')
+                num_features += 1
 
     def draw_weights(self):
         self.weight_canvas.delete("all")
-        self.weight_canvas.create_text(230, 25, text="Selected Unit: {}".format(self.selected_unit),
+        self.weight_canvas.create_text(self.width/2, 25, text="Weight Display".format(self.selected_unit),
                                        font="Arial 20 bold", fill='white')
+        self.weight_canvas.create_text(self.width/2, 60, text="Selected Unit: {}".format(self.selected_unit),
+                                       font="Arial 14 bold", fill='white')
         if self.selected_unit is not None:
             if self.selected_unit[0] == 'i':
-                self.weight_canvas.create_text(100, 50, text="Input-->Hidden Weights", font="Arial 11", fill='white')
-                self.draw_hx_weights()
+                self.draw_to_h_weights()
             elif self.selected_unit[0] == 'h':
-                self.weight_canvas.create_text(100, 50, text="Input-->Hidden Weights", font="Arial 11", fill='white')
-                self.weight_canvas.create_text(350, 50, text="Hidden-->Output Weights", font="Arial 11", fill='white')
-                self.draw_hx_weights()
-                self.draw_yh_weights()
+                self.draw_from_h_weights()
             elif self.selected_unit[0] == 'o':
-                self.weight_canvas.create_text(350, 50, text="Hidden-->Output Weights", font="Arial 11", fill='white')
-                self.draw_yh_weights()
+                self.draw_to_h_weights()
 
-    def draw_hx_weights(self):
+    def draw_to_h_weights(self):
         print("Selected unit:", self.selected_unit)
+
+        start_x = 480
+        start_y = 20
+        size = 20
+        spacing = 2
 
         if self.selected_unit == 'i_bias':
             bias_tensor = self.the_network.h_x.bias
             weight_vector = bias_tensor.detach().numpy()
-            start_x = 90
-            start_y = 70
-            size = 17
-            spacing = 1
+            self.weight_canvas.create_text(self.width / 2 - 20, start_y + 110,
+                                           text="Input Bias --> Hidden Weights".format(self.selected_unit),
+                                           font="Arial 12", fill='white')
         else:
             index = int(self.selected_unit[1:]) - 1
-            h_x_tensor_matrix = self.the_network.h_x.weight
-            h_x_matrix = h_x_tensor_matrix.detach().numpy()
             if self.selected_unit[0] == 'i':
+                h_x_tensor_matrix = self.the_network.h_x.weight
+                h_x_matrix = h_x_tensor_matrix.detach().numpy()
                 weight_vector = np.copy(h_x_matrix[:, index])
-                start_x = 90
-                start_y = 70
-                size = 17
-                spacing = 1
-            elif self.selected_unit == 'o':
-                weight_vector = np.copy(h_x_matrix[index, :])
-                start_x = 90
-                start_y = 70
-                size = 17
-                spacing = 1
+                self.weight_canvas.create_text(self.width / 2 - 20, start_y + 110,
+                                               text="{} --> Hidden Weights".format(self.selected_unit),
+                                               font="Arial 12", fill='white')
+            elif self.selected_unit[0] == 'o':
+                y_h_tensor_matrix = self.the_network.y_h.weight
+                y_h_matrix = y_h_tensor_matrix.detach().numpy()
+                weight_vector = np.copy(y_h_matrix[index, :])
+                self.weight_canvas.create_text(self.width / 2 - 20, start_y + 110,
+                                               text="Hidden Weights --> {}".format(self.selected_unit),
+                                               font="Arial 12", fill='white')
             else:
+                print("Bad Selected Unit")
                 raise RuntimeError
 
         hidden_units_per_column = 8
@@ -321,68 +321,82 @@ class Display:
             fill_color = self.network_hex_color(weight_vector[i])
 
             self.weight_canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
-                                                 fill=fill_color, outline='black')
+                                                fill=fill_color, outline='black')
             if (i+1) % hidden_units_per_column == 0:
                 start_x += size + spacing
                 start_y -= hidden_units_per_column * (size + spacing)
 
-        # if self.selected_unit[0] == 'i':
-        #     for i in range(len(weight_vector)):
-        #         color = self.network_hex_color(weight_vector[i])
-        #         x1 = start_x
-        #         y1 = start_y + (size + spacing) * i
-        #         self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-        #         if i == 9:
-        #             start_x += size + spacing
-        #             start_y -= 10 * (size + spacing)
-        #
-        # elif self.selected_unit[0] == 'h':
-        #     weight_matrix = weight_vector.reshape((5, 5))
-        #     for i in range(weight_matrix.shape[0]):
-        #         for j in range(weight_matrix.shape[1]):
-        #             color = self.network_hex_color(weight_matrix[i, j])
-        #
-        #             x1 = start_x + (size + spacing) * i
-        #             y1 = start_y + (size + spacing) * j
-        #             try:
-        #                 self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-        #             except RuntimeError as e:
-        #                 print(e)
-        #                 print(weight_matrix[i, j], color)
+    def draw_from_h_weights(self):
+        print("Selected unit:", self.selected_unit)
 
-    def draw_yh_weights(self):
-        index = int(self.selected_unit[1:])-1
+        start_x1 = self.position_dict['world_input_layer'][0]
+        start_y1 = self.position_dict['world_input_layer'][1] - 50
+        start_x2 = self.position_dict['world_output_layer'][0]
+        start_y2 = self.position_dict['world_output_layer'][1] - 50
+        if self.the_dataset.num_rows > 8:
+            size = 10
+        else:
+            size = 14
 
-        if self.selected_unit[0] == 'h':
-            start_x = 330
-            start_y = 65
-            size = 18
-            spacing = 1
+        if self.selected_unit == 'h_bias':
+            bias_tensor = self.the_network.y_h.bias
+            weight_vector = bias_tensor.detach().numpy()
+            y_h_rgb_matrix = weight_vector.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_columns))
+            h_x_rgb_matrix = None
+
+        else:
+            self.weight_canvas.create_text(start_x1 + 50, start_y1 + 35,
+                                           text="Input-->{} Weights".format(self.selected_unit).rjust(5),
+                                           font="Arial 12", fill='white')
+
+            self.weight_canvas.create_text(start_x2 + 50, start_y2 + 35,
+                                           text="{}-->Output Weights".format(self.selected_unit).rjust(5),
+                                           font="Arial 12", fill='white')
+            index = int(self.selected_unit[1:]) - 1
+            h_x_tensor_matrix = self.the_network.h_x.weight
+            h_x_matrix = h_x_tensor_matrix.detach().numpy()
+            print("shape", h_x_matrix.shape)
+            h_x_weight_vector = np.copy(h_x_matrix[index, :])
+            h_x_rgb_matrix = h_x_weight_vector.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_columns))
+
             y_h_tensor_matrix = self.the_network.y_h.weight
             y_h_matrix = y_h_tensor_matrix.detach().numpy()
-            weight_vector = np.copy(y_h_matrix[:, index])
-            for i in range(weight_vector.shape[0]):
-                color = self.network_hex_color(weight_vector[i])
-                x1 = start_x
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
+            y_h_weight_vector = np.copy(y_h_matrix[:, index])
+            y_h_rgb_matrix = y_h_weight_vector.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_columns))
 
-        elif self.selected_unit[0] == 'o':
-            start_x = 330
-            start_y = 65
-            size = 18
-            spacing = 1
-            y_h_tensor_matrix = self.the_network.y_h.weight
-            y_h_matrix = y_h_tensor_matrix.detach().numpy()
-            weight_vector = np.copy(y_h_matrix[index, :])
-            for i in range(weight_vector.shape[0]):
-                color = self.network_hex_color(weight_vector[i])
-                x1 = start_x
-                y1 = start_y + (size + spacing) * i
-                self.weight_canvas.create_rectangle(x1, y1, x1 + size, y1 + size, fill=color)
-                if i == 9:
-                    start_x += size + spacing
-                    start_y -= 10 * (size + spacing)
+        # draw the world layer
+        unit_counter = 0
+        grid_spacing = 10
+        grid_size = self.the_dataset.num_rows * size + grid_spacing
+
+        color_label_list = ['red', 'green', 'blue']
+        for k in range(3):
+            if h_x_rgb_matrix is not None:
+                self.weight_canvas.create_text(start_x1 - 30, start_y1 + 100 + (k * grid_size),
+                                               text="{}".format(color_label_list[k]).rjust(5),
+                                               font="Arial 14 bold", fill='white')
+
+            self.weight_canvas.create_text(start_x2 - 30, start_y2 + 100 + (k * grid_size),
+                                           text="{}".format(color_label_list[k]).rjust(5),
+                                           font="Arial 14 bold", fill='white')
+
+            for i in range(self.the_dataset.num_rows):
+                for j in range(self.the_dataset.num_columns):
+                    if h_x_rgb_matrix is not None:
+                        fill_color1 = self.network_hex_color(h_x_rgb_matrix[k, i, j])
+                        self.weight_canvas.create_rectangle(i * size + start_x1,
+                                                            j * size + start_y1 + (k * grid_size) + 50,
+                                                            (i + 1) * size + start_x1,
+                                                            (j + 1) * size + start_y1 + (k * grid_size) + 50,
+                                                            fill=fill_color1, outline='black')
+
+                    fill_color2 = self.network_hex_color(y_h_rgb_matrix[k, i, j])
+                    self.weight_canvas.create_rectangle(i * size + start_x2,
+                                                        j * size + start_y2 + (k * grid_size) + 50,
+                                                        (i + 1) * size + start_x2,
+                                                        (j + 1) * size + start_y2 + (k * grid_size) + 50,
+                                                        fill=fill_color2, outline='black')
+                    unit_counter += 1
 
     def next(self):
         if self.i < self.the_dataset.num_events:
