@@ -1,5 +1,4 @@
 from polyomino_world import config
-from polyomino_world.world import shapes
 from polyomino_world.world import world
 import random
 import torch
@@ -128,7 +127,7 @@ class DataSet:
 
         self.master_shape_position_list = []
         self.master_shape_label_list = []
-        self.test_world = world.World(self.master_shape_list, ['black'], 4, 4, None, 1, 1, 1)
+        self.test_world = world.World(self.master_shape_list, ['black'], 4, 4, None, 1, 1, 1, None)
 
         shape_counter = 0
         for i in range(len(self.master_shape_list)):  # num of shape types/size

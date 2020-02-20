@@ -8,7 +8,8 @@ class World:
 
     def __init__(self, shape_list, color_list,
                  num_rows, num_columns, custom_bounds,
-                 num_types, num_sequences_per_type, num_events_per_sequence):
+                 num_types, num_sequences_per_type, num_events_per_sequence,
+                 background_color):
 
         self.shape_list = shape_list
         self.color_list = color_list
@@ -22,6 +23,9 @@ class World:
         self.num_types = num_types
         self.num_sequences_per_type = num_sequences_per_type
         self.num_events_per_sequence = num_events_per_sequence
+
+        self.background_color = background_color
+        self.current_background_color = None
 
         self.world_name = None
         self.file_name = None
@@ -92,6 +96,17 @@ class World:
                         self.reset_world()
                         self.event_counter = 0
 
+                        if self.background_color == 'random':
+                            self.current_background_color = (random.uniform(-1, 1),
+                                                             random.uniform(-1, 1),
+                                                             random.uniform(-1, 1))
+                        else:
+                            if self.background_color in config.Shape.color_value_dict:
+                                self.current_background_color = config.Shape.color_value_dict[self.background_color]
+                            else:
+                                print("Background Color {} not in config.Shape.color_value_dict".format(self.background_color))
+                                raise RuntimeError
+
                         shape_name = self.shape_list[i]
                         shape_color = self.color_list[j]
                         self.add_shape_to_world(shape_name, shape_counter, shape_color)
@@ -154,18 +169,18 @@ class World:
         r_string = ""
         g_string = ""
         b_string = ""
-
+        # i dont know why this didnt update
         save_list = []
         for i in range(self.num_rows):
             for j in range(self.num_columns):
                 if (i, j) in self.occupied_cell_dict:
                     shape_id = self.occupied_cell_dict[(i, j)]
                     color = self.shape_dict[shape_id].color
+                    values = config.Shape.color_value_dict[color]
                     save_list.append((shape_id, color))
                 else:
-                    color = 'grey'
+                    values = self.current_background_color
 
-                values = config.Shape.color_value_dict[color]
                 r_string += "{:s},".format(str(values[0]))
                 g_string += "{:s},".format(str(values[1]))
                 b_string += "{:s},".format(str(values[2]))

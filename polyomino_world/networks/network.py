@@ -135,7 +135,6 @@ class MlNet(nn.Module):
         else:
             print("ERROR: Improper hidden activation function")
             raise RuntimeError
-            #sys.exit()
         z_o = self.y_h(h)
 
         if self.y_type == 'FeatureVector':
