@@ -34,7 +34,7 @@ class Shape:
                         }
 
     master_action_list = ['rest', 'move', 'rotate', 'flip']
-    action_prob_list = [.25, .25, .25, .25]
+    action_prob_list = [.0, 1.0, .0, .0] # [.25, .25, .25, .25]
 
     master_feature_type_size_dict = {'shape': len(master_shape_list),
                                      'size': len(master_size_list),

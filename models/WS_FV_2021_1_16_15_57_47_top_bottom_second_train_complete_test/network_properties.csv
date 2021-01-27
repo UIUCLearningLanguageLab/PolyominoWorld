@@ -1,0 +1,13 @@
+network_name: WS_FV_2021_1_16_15_57_47_top_bottom_second_train_complete_test
+x_type: WorldState
+y_type: FeatureVector
+input_size: 192
+hidden_size: 32
+hidden_actf: tanh
+output_size: 21
+optimizer: SGD
+learning_rate: 0.2
+weight_init: 1e-05
+training_set: w8-8_s9_c8_0_100_1_train_top.csv
+current_epoch: 2000
+training_time: 12531.388011217117

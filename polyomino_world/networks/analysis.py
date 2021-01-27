@@ -48,7 +48,7 @@ def train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate, s
             start_time = time.time()
             evaluate_network(net, training_set, test_set, verbose)
             net.save_network_properties()
-            net.save_network_weights()
+            net.save_network_weights(net.current_epoch)
             net.save_network_performance()
 
     net.save_network_states(training_set)

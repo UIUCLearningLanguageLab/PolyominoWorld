@@ -25,8 +25,8 @@ class Display:
         self.root = tk.Tk()
         self.root.title("Polyomino World")
 
-        self.network_frame = tk.Frame(self.root, height=self.height/2-10, width=self.width, bd=0, padx=0, pady=0)
-        self.weight_frame = tk.Frame(self.root, height=self.height/2-10, width=self.width, bd=0, padx=0, pady=0)
+        self.network_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
+        self.weight_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
         self.button_frame = tk.Frame(self.root, height=20, bg="white", width=self.width, bd=0, padx=0, pady=0)
 
         self.button_frame.pack()

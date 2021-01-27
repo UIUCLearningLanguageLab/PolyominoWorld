@@ -127,14 +127,28 @@ class DataSet:
 
         self.master_shape_position_list = []
         self.master_shape_label_list = []
-        self.test_world = world.World(self.master_shape_list, ['black'], 4, 4, None, 1, 1, 1, None)
+        current_variant_list = [[0],[0,1],[0,1],[0,1,2,3],[0],[0,1],[0,1,2,3],[0,1,2,3,4,5,6,7],[0,1,2,3]]
+        current_variant_list0 = [[0],[0],[0],[0],[0],[0],[0],[0],[1]]
+        current_variant_list1 = [[0],[0],[0],[0,1],[0],[0],[0,1],[0,1,2,3],[0,1]]
+        current_variant_list2 = [[0],[1],[1],[2,3],[0],[1],[2,3],[4,5,6,7],[2,3]]
+        current_variant_dict1 = {'monomino':[0],
+                             'domino':[0], 
+                             'tromino1':[0],
+                             'tromino2':[0,1],
+                             'tetromino1':[0], 
+                             'tetromino2':[0], 
+                             'tetromino3':[0,1], 
+                             'tetromino4':[0,1,2,3], 
+                             'tetromino5':[0,1]}
+        self.test_world = world.World(self.master_shape_list, ['black'], 4, 4, None, 1, 1, 1, None,current_variant_list)
 
         shape_counter = 0
         for i in range(len(self.master_shape_list)):  # num of shape types/size
             self.test_world.reset_world()
             shape_name = self.master_shape_list[i]
             shape_color = 'black'
-            self.test_world.add_shape_to_world(shape_name, shape_counter, shape_color)
+            current_variant = current_variant_dict1[shape_name]
+            self.test_world.add_shape_to_world(shape_name, shape_counter, shape_color, current_variant)
             current_shape = self.test_world.current_shape_list[-1]
             for j in range(current_shape.num_variants):
                 active_cells = current_shape.active_cell_dict[j]
@@ -145,7 +159,9 @@ class DataSet:
         self.sequence_list = []
         self.num_events = 0
         sequence_data = []
-        f = open('data/' + self.world_state_filename)
+        f = open('data/' + self.world_state_filename) 
+        # f = open('data/' + 'w8-8_s1_c8_0_100_1_second_train_one_shape.csv') 
+        # f = open('data/' + 'w8-8_s9_c1_0_100_1_second_train_red_color.csv') 
         for line in f:
             self.num_events += 1
             data = (line.strip().strip('\n').strip()).split(',')

@@ -6,9 +6,9 @@ import numpy as np
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
-    dataset_filename = 'w8-8_s9_c8_0_10_1.csv'
-    model1 = 'WS_FV_2020_2_16_12_34_34'
-    model2 = 'WS_WS_2020_2_9_10_44_25'
+    dataset_filename = 'w8-8_s9_c8_0_10_1_test_bottom.csv' #'w8-8_s9_c8_0_20_1.csv' # w8-8_s9_c8_0_100_1_first_half_variant_train
+    model1 = 'WS_FV_2021_1_25_9_29_20_top_bottom_train_top_test_full_first_stage_check'  # 'WS_FV_2020_2_16_12_34_34'
+    model2 = 'WS_FV_2021_1_24_18_7_12_top_bottom_train_top_test_bottom_first_stage' # 'WS_WS_2020_2_9_10_44_25'
     included_features = [1, 1, 1, 0]
     processor = 'CPU'
 

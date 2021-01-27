@@ -116,7 +116,7 @@ class MlNet(nn.Module):
                 self.training_set = dataset.DataSet(value, None, included_features, processor)
         params_file.close()
 
-        weight_file = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
+        weight_file = "models/" + self.net_name + "/weights/epoch 1000.csv".format(self.current_epoch)
         weight_file = open(weight_file, 'rb')
         weights_list = pickle.load(weight_file)
         weight_file.close()
@@ -190,7 +190,7 @@ class MlNet(nn.Module):
             print("Y Type not recognized in directory creation")
             sys.exit()
 
-        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(x_type, y_type,
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}_top_bottom_train_top_test_full_first_stage_check".format(x_type, y_type,
                                                          self.start_datetime[0],
                                                          self.start_datetime[1],
                                                          self.start_datetime[2],
@@ -238,6 +238,7 @@ class MlNet(nn.Module):
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
         f.write("training_set: {}\n".format(self.training_set.world_state_filename))
+        # may need adding testing set
         f.write("current_epoch: {}\n".format(self.current_epoch))
         f.write("training_time: {}".format(self.training_time))
         f.close()
@@ -253,12 +254,26 @@ class MlNet(nn.Module):
         pickle.dump(network_state_list, outfile)
         outfile.close()
 
-    def save_network_weights(self):
-        file_location = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
-        outfile = open(file_location, 'wb')
-        weights_list = [self.h_x, self.y_h]
-        pickle.dump(weights_list, outfile)
-        outfile.close()
+    # def save_network_weights(self):
+    #     file_location = "models/" + self.net_name + "/weights.csv".format(self.current_epoch)
+    #     outfile = open(file_location, 'wb')
+    #     weights_list = [self.h_x, self.y_h]
+    #     pickle.dump(weights_list, outfile)
+    #     outfile.close()
+
+    def save_network_weights(self, current_epoch):
+        folder_name = "models/" + self.net_name + "/weights"
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+        file_name = 'epoch {}.csv'.format(current_epoch)
+        # file = os.path.join(folder_name, file_name)
+        # os.makedirs(file)
+        file = os.path.expanduser(folder_name+'/'+file_name)
+        with open(file, 'wb') as f:
+            weights_list = [self.h_x, self.y_h]
+            pickle.dump(weights_list, f)
+        f.close()
+
 
     def save_network_performance(self):
         file_location = "models/" + self.net_name + "/performance.csv"

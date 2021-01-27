@@ -31,41 +31,30 @@ class Shape:
     def init_shape(self, id_number, color):
         self.id_number = id_number
         self.color = color
+        # print("shape name: {}    variant_list: {}\n".format(self.name, self.variant_list))
         self.current_variant = random.choice(self.variant_list)
+        # print("current_variant: {}\n".format(self.current_variant))
         self.active_cell_list = self.active_cell_dict[self.current_variant]
         self.get_dimensions()
         self.action_probs = np.array(config.Shape.action_prob_list)
-        self.determine_initial_position()
+        position, active_world_cells = self.determine_initial_position()
+        return position, active_world_cells
 
     def determine_initial_position(self):
-        placed = False
-        try_counter = 1
-        while not placed:
-            if try_counter > 100:
-                print("Failed to place object after 100 tries")
-                break
-            else:
-                all_cells_empty = True
-                if self.custom_bounds is not None:
-                    position = [random.randint(self.custom_bounds[0], min(self.the_world.num_columns-self.dimensions[0], self.custom_bounds[1])),
-                                random.randint(self.custom_bounds[2], min(self.the_world.num_rows-self.dimensions[1], self.custom_bounds[3]))]
-                else:
-                    position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
-                                random.randint(0, self.the_world.num_rows-self.dimensions[1])]
 
-                active_world_cells = self.get_active_world_cells(position)
-                for i in range(len(active_world_cells)):
-                    if active_world_cells[i] in self.the_world.occupied_cell_dict:
-                        all_cells_empty = False
-                if all_cells_empty:
-                    self.position = position
-                    self.active_world_cell_list = active_world_cells
-                    for cell in self.active_world_cell_list:
-                        self.the_world.occupied_cell_dict[cell] = self.id_number
-                    placed = True
-                else:
-                    print("Failed to place shape due to occupied cell")
-                try_counter += 1
+        active_world_cells = []#added
+        if self.custom_bounds is not None:
+            position = [random.randint(self.custom_bounds[0], min(self.the_world.num_columns-self.dimensions[0], self.custom_bounds[1])),
+                        random.randint(self.custom_bounds[2], min(self.the_world.num_rows-self.dimensions[1], self.custom_bounds[3]))]
+        else:
+            position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
+                        random.randint(0, self.the_world.num_rows-self.dimensions[1])]
+
+        # checks to make sure theres not already a shape in that spot
+        active_world_cells = self.get_active_world_cells(position)
+
+        return position, active_world_cells  # added
+
 
     def get_active_world_cells(self, position):
         active_world_cell_list = []
@@ -124,7 +113,7 @@ class Shape:
     def move(self, direction):
         new_position = [self.position[0] + direction[0], self.position[1] + direction[1]]
         new_active_world_cell_list = self.get_active_world_cells(new_position)
-        legal_position = self.check_legal_position(new_active_world_cell_list, "move")
+        legal_position = self.the_world.check_legal_position(new_active_world_cell_list, self.id_number)
         if legal_position:
             self.commit_action("move", self.current_variant, new_position, new_active_world_cell_list)
         return legal_position
@@ -137,7 +126,7 @@ class Shape:
         for i in range(self.size):
             new_cell = (new_active_cell_list[i][0] + self.position[0], new_active_cell_list[i][1] + self.position[1])
             new_active_world_cell_list.append(new_cell)
-        legal_position = self.check_legal_position(new_active_world_cell_list, "rotate")
+        legal_position = self.the_world.check_legal_position(new_active_world_cell_list, self.id_number)
         if legal_position:
             self.commit_action("rotate", new_variant, self.position, new_active_world_cell_list)
         return legal_position
@@ -149,7 +138,7 @@ class Shape:
         for i in range(self.size):
             new_cell = (new_active_cell_list[i][0] + self.position[0], new_active_cell_list[i][1] + self.position[1])
             new_active_world_cell_list.append(new_cell)
-        legal_position = self.check_legal_position(new_active_world_cell_list, "flip")
+        legal_position = self.the_world.check_legal_position(new_active_world_cell_list, self.id_number)
         if legal_position:
             self.commit_action("flip", new_variant, self.position, new_active_world_cell_list)
         return legal_position
@@ -157,20 +146,6 @@ class Shape:
     def rest(self):
         self.commit_action("rest", self.current_variant, self.position, self.active_world_cell_list)
         return True
-
-    def check_legal_position(self, active_world_cell_list, action_choice):
-        legal_position = True
-        for cell in active_world_cell_list:
-            if (cell[0] < 0) or (cell[1] < 0) or (cell[0] > self.the_world.num_columns-1) or (cell[1] > self.the_world.num_rows-1):
-                legal_position = False
-            if self.custom_bounds:
-                if(cell[0] < self.custom_bounds[0]) or (cell[1] < self.custom_bounds[2]) or (cell[0] > self.custom_bounds[1]) or (cell[1] > self.custom_bounds[3]):
-                    legal_position = False
-            if cell in self.the_world.occupied_cell_dict:
-                shape_id = self.the_world.occupied_cell_dict[cell]
-                if shape_id != self.id_number:
-                    legal_position = False
-        return legal_position
 
     def commit_action(self, action_choice, current_variant, position, new_active_world_cell_list):
         for cell in self.active_world_cell_list:
