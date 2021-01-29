@@ -9,13 +9,14 @@ class World:
     def __init__(self, shape_list, color_list,
                  num_rows, num_columns, custom_bounds,
                  num_types, num_sequences_per_type, num_events_per_sequence,
-                 background_color, custom_variant_list):
+                 background_color, custom_variant_list, name=None):
 
         self.shape_list = shape_list
         self.color_list = color_list
         self.shape_list_size = len(self.shape_list)
         self.color_list_size = len(self.color_list)
         self.custom_variant_list = custom_variant_list
+        self.name = name
 
         self.num_rows = num_rows
         self.num_columns = num_columns
@@ -71,6 +72,10 @@ class World:
                                                                self.num_types, self.num_sequences_per_type,
                                                                self.num_events_per_sequence)
 
+
+        if self.name is not None:
+            self.world_name += '_' + self.name
+
         self.file_name = "data/" + self.world_name + ".csv"
         outfile = open(self.file_name, 'w')
         outfile.close()
@@ -115,7 +120,7 @@ class World:
                         # print("unique_shape_id: ",unique_shape_id,"shape_counter: ", shape_counter, "\n")
                         current_custom_variant_list = self.custom_variant_list[unique_shape_id]
 
-                        print("OCD in generate_world", self.occupied_cell_dict)
+                        #print("OCD in generate_world", self.occupied_cell_dict)
                         self.add_shape_to_world(shape_name, shape_counter, shape_color, current_custom_variant_list)
 
                         self.save_world_state(self.file_name)

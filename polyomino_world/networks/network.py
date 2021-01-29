@@ -116,7 +116,7 @@ class MlNet(nn.Module):
                 self.training_set = dataset.DataSet(value, None, included_features, processor)
         params_file.close()
 
-        weight_file = "models/" + self.net_name + "/weights/epoch 1000.csv".format(self.current_epoch)
+        weight_file = "models/" + self.net_name + "/weights/epoch {}.csv".format(self.current_epoch)
         weight_file = open(weight_file, 'rb')
         weights_list = pickle.load(weight_file)
         weight_file.close()
