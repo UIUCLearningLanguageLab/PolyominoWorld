@@ -1,0 +1,42 @@
+from polyomino_world.networks import dataset, network, analysis
+from polyomino_world.world import world
+import numpy as np
+from polyomino_world import config
+
+
+def main():
+    np.set_printoptions(precision=4, suppress=True)
+
+    hidden_size = 16
+    hidden_activation_function = 'tanh'
+    learning_rate = 0.3
+    num_epochs = 100
+    weight_init = 0.00001
+    output_freq = 25
+    verbose = False
+    x_type = 'WorldState'
+    y_type = 'FeatureVector'  # 'WorldState'
+    included_features = [1, 1, 1, 0]  # Include: Shape, Size, Color, Action
+    shuffle_sequences = True
+    shuffle_events = False
+    processor = 'CPU'
+    optimizer = 'SGD'
+
+    training_file = "w8-8_s9_c8_location-all_10_0_allpossible_8x8_topbottom.csv"
+    test_file = "w8-8_s9_c8_location-all_10_0_allpossible_8x8_topbottom.csv"
+
+    training_set = dataset.DataSet(training_file, None, included_features, processor)
+    test_set = dataset.DataSet(test_file, None, included_features, processor)
+
+    net = network.MlNet()
+    # line 35 if starting a new model, line 37 if adding to an existing one
+
+    net.init_model(x_type, y_type, training_set,
+                   hidden_size, hidden_activation_function, optimizer, learning_rate, weight_init, processor)
+    # net.load_model(network_directory, included_features, processor)
+
+    analysis.train_a(net, training_set, test_set, num_epochs, optimizer, learning_rate,
+                     shuffle_sequences, shuffle_events, output_freq, verbose)
+
+
+main()

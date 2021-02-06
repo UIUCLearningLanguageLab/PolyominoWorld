@@ -237,7 +237,7 @@ class MlNet(nn.Module):
         f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
-        f.write("training_set: {}\n".format(self.training_set.world_state_filename))
+        f.write("training_set: {}\n".format(self.training_set.dataset_name))
         # may need adding testing set
         f.write("current_epoch: {}\n".format(self.current_epoch))
         f.write("training_time: {}".format(self.training_time))
