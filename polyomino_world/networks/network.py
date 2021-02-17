@@ -42,7 +42,7 @@ class MlNet(nn.Module):
         self.relu = nn.ReLU().float()
 
     def init_model(self, x_type, y_type, training_set,
-                   hidden_size, hidden_actf, optimizer, learning_rate, weight_init, processor):
+                   hidden_size, hidden_actf, optimizer, learning_rate, weight_init, processor, traning_info_dict):
 
         self.x_type = x_type
         self.y_type = y_type
@@ -54,6 +54,7 @@ class MlNet(nn.Module):
         self.weight_init = weight_init
         self.processor = processor
         self.input_size = training_set.world_size
+        self.info_dict = traning_info_dict
 
         if self.y_type == 'WorldState':
             self.output_size = training_set.world_size
@@ -116,7 +117,7 @@ class MlNet(nn.Module):
                 self.training_set = dataset.DataSet(value, None, included_features, processor)
         params_file.close()
 
-        weight_file = "models/" + self.net_name + "/weights/epoch 1000.csv".format(self.current_epoch)
+        weight_file = "models/" + self.net_name + "/weights/epoch {}.csv".format(self.current_epoch)
         weight_file = open(weight_file, 'rb')
         weights_list = pickle.load(weight_file)
         weight_file.close()
@@ -190,7 +191,7 @@ class MlNet(nn.Module):
             print("Y Type not recognized in directory creation")
             sys.exit()
 
-        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}_top_bottom_train_top_test_full_first_stage_check".format(x_type, y_type,
+        self.net_name = "{}_{}_{}_{}_{}_{}_{}_{}".format(x_type, y_type,
                                                          self.start_datetime[0],
                                                          self.start_datetime[1],
                                                          self.start_datetime[2],
@@ -223,6 +224,7 @@ class MlNet(nn.Module):
         f.close()
 
         self.save_network_properties()
+        self.save_model_info()
 
     def save_network_properties(self):
         file_location = "models/" + self.net_name + "/network_properties.csv"
@@ -237,10 +239,25 @@ class MlNet(nn.Module):
         f.write("optimizer: {}\n".format(self.optimizer))
         f.write("learning_rate: {}\n".format(self.learning_rate))
         f.write("weight_init: {}\n".format(self.weight_init))
-        f.write("training_set: {}\n".format(self.training_set.world_state_filename))
+        f.write("training_set: {}\n".format(self.training_set.dataset_name))
         # may need adding testing set
         f.write("current_epoch: {}\n".format(self.current_epoch))
         f.write("training_time: {}".format(self.training_time))
+        f.close()
+
+    def save_model_info(self):
+        file_location = "models/" + self.net_name + "/model_info.csv"
+        f = open(file_location, 'w')
+        f.write("size: {}\n".format(self.info_dict["size"]))
+        f.write("colors: {}\n".format(self.info_dict["colors"]))
+        f.write("shapes: {}\n".format(self.info_dict["shapes"]))
+        f.write("variants: {}\n".format(self.info_dict["variants"]))
+        f.write("background: {}\n".format(self.info_dict["background"]))
+        f.write("num_events: {}\n".format(self.info_dict["num_events"]))
+        f.write("num_instances: {}\n".format(self.info_dict["num_instances"]))
+        f.write("location_type: {}\n".format(self.info_dict["location_type"]))
+        f.write("random_seeds: {}\n".format(self.info_dict["random_seeds"]))
+
         f.close()
 
     def save_network_states(self, dataset):

@@ -1,4 +1,5 @@
 import random
+import sys
 import numpy as np
 from polyomino_world import config
 
@@ -24,39 +25,41 @@ class Shape:
 
         self.action_list = config.Shape.master_action_list
         self.action_choice = self.action_list[0]
-        self.action_probs = None
+        self.action_probabilities = None
         self.flip_dict = None
         self.rotation_dict = None
 
-    def init_shape(self, id_number, color):
+    def init_shape(self, id_number, color, variant):
         self.id_number = id_number
         self.color = color
         # print("shape name: {}    variant_list: {}\n".format(self.name, self.variant_list))
-        self.current_variant = random.choice(self.variant_list)
-        # print("current_variant: {}\n".format(self.current_variant))
+        if variant is None:
+            self.current_variant = random.choice(self.variant_list)
+        else:
+            if variant in self.variant_list:
+                self.current_variant = variant
+            else:
+                print("ERROR: Variant not in shape variant list")
+                sys.exit(2)
+
         self.active_cell_list = self.active_cell_dict[self.current_variant]
         self.get_dimensions()
-        self.action_probs = np.array(config.Shape.action_prob_list)
-        position, active_world_cells = self.determine_initial_position()
-        return position, active_world_cells
+        self.action_probabilities = np.array(config.Shape.action_prob_list)
 
-    def determine_initial_position(self):
-
-        active_world_cells = []#added
-        if self.custom_bounds is not None:
-            position = [random.randint(self.custom_bounds[0], min(self.the_world.num_columns-self.dimensions[0], self.custom_bounds[1])),
-                        random.randint(self.custom_bounds[2], min(self.the_world.num_rows-self.dimensions[1], self.custom_bounds[3]))]
+    def set_start_position(self, position):
+        if self.active_cell_list is not None:
+            self.position = position
+            self.active_world_cell_list = self.get_active_world_cells(position)
         else:
-            position = [random.randint(0, self.the_world.num_columns-self.dimensions[0]),
-                        random.randint(0, self.the_world.num_rows-self.dimensions[1])]
-
-        # checks to make sure theres not already a shape in that spot
-        active_world_cells = self.get_active_world_cells(position)
-
-        return position, active_world_cells  # added
-
+            print("Cannot set position of uninitialized shape")
+            sys.exit()
 
     def get_active_world_cells(self, position):
+        """
+            takes the position, and uses the active_cell_list to compute the cells in the world that this shape
+            should occupy
+            :return: active_world_cell_list
+        """
         active_world_cell_list = []
         for i in range(len(self.active_cell_list)):
             new_cell = (self.active_cell_list[i][0] + position[0],
@@ -65,6 +68,9 @@ class Shape:
         return active_world_cell_list
 
     def get_dimensions(self):
+        """
+            figures out the the shape's width and height given its current variant
+        """
         if self.size == 1:
             height = 1
             width = 1
@@ -85,26 +91,21 @@ class Shape:
         self.dimensions = (width, height)
 
     def take_turn(self):
-
         done = False
         try_counter = 0
         while not done:
             if try_counter > 100:
                 print("Failed to flip or rotate after 100 tries")
                 break
-
-            action_choice = np.random.choice(self.action_list, 1, p=self.action_probs)
+            action_choice = np.random.choice(self.action_list, 1, p=self.action_probabilities)
             if action_choice == 'rest':
                 done = self.rest()
-
             elif action_choice == 'move':
                 direction = random.choice([(0, 1), (0, -1), (-1, 0), (1, 0)])
                 done = self.move(direction)
-
             elif action_choice == 'rotate':
                 direction = random.choice([0, 1])
                 done = self.rotate(direction)
-
             elif action_choice == 'flip':
                 direction = random.choice([0, 1])
                 done = self.flip(direction)
@@ -219,7 +220,7 @@ class Tromino2(Shape):
     def __init__(self, the_world):
         super().__init__(the_world)
 
-        self.name = "tromino2" # L
+        self.name = "tromino2"  # L
         self.size = 3
 
         self.num_variants = 4

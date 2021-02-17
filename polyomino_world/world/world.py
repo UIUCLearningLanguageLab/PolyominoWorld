@@ -8,20 +8,22 @@ class World:
 
     def __init__(self, shape_list, color_list,
                  num_rows, num_columns, custom_bounds,
-                 num_types, num_sequences_per_type, num_events_per_sequence,
-                 background_color, custom_variant_list):
+                 location_type, num_sequences_per_type, num_events_per_sequence,
+                 background_color, custom_variant_list, name, random_seed_list):
 
         self.shape_list = shape_list
         self.color_list = color_list
         self.shape_list_size = len(self.shape_list)
         self.color_list_size = len(self.color_list)
         self.custom_variant_list = custom_variant_list
+        self.name = name
+        self.random_seed_list = random_seed_list
 
         self.num_rows = num_rows
         self.num_columns = num_columns
         self.custom_bounds = custom_bounds
 
-        self.num_types = num_types
+        self.location_type = location_type
         self.num_sequences_per_type = num_sequences_per_type
         self.num_events_per_sequence = num_events_per_sequence
 
@@ -60,22 +62,18 @@ class World:
 
     def init_world(self):
 
-        if self.num_types == 0:
-            self.world_name = "w{}-{}_s{}_c{}_{}_{}_{}".format(self.num_rows, self.num_columns,
-                                                               len(self.shape_list), len(self.color_list),
-                                                               self.num_types, self.num_sequences_per_type,
-                                                               self.num_events_per_sequence)
-        else:
-            self.world_name = "w{}-{}_s{}_c{}_{}_{}_{}".format(self.num_rows, self.num_columns,
-                                                               self.num_types, self.num_types,
-                                                               self.num_types, self.num_sequences_per_type,
-                                                               self.num_events_per_sequence)
-
-        self.file_name = "data/" + self.world_name + ".csv"
-        outfile = open(self.file_name, 'w')
-        outfile.close()
-
         self.sequence_counter = 0
+
+        if self.background_color == 'random':
+            self.current_background_color = (random.uniform(-1, 1),
+                                             random.uniform(-1, 1),
+                                             random.uniform(-1, 1))
+        else:
+            if self.background_color in config.Shape.color_value_dict:
+                self.current_background_color = config.Shape.color_value_dict[self.background_color]
+            else:
+                print("Color {} not in config.Shape.color_value_dict".format(self.background_color))
+                raise RuntimeError
 
         self.reset_world()
 
@@ -88,152 +86,139 @@ class World:
 
         shape_counter = 0
 
-        if self.num_types == 0:
-            for i in range(len(self.shape_list)):  # num of shape types/size
-                for j in range(len(self.color_list)):  # num of colors
+        if self.location_type == "random":
+            random_idx = 0
+            for i in range(len(self.shape_list)):  # num of shape types/size 9
+                for j in range(len(self.color_list)):  # num of colors 8
+                    for k in range(self.num_sequences_per_type): # 10
+                        shape_placed = False
+                        
+                        try_counter = 0
 
-                    for k in range(self.num_sequences_per_type):
+                        while not shape_placed:
 
-                        self.reset_world()
-                        self.event_counter = 0
+                            self.reset_world()
+                            self.event_counter = 0
 
-                        if self.background_color == 'random':
-                            self.current_background_color = (random.uniform(-1, 1),
-                                                             random.uniform(-1, 1),
-                                                             random.uniform(-1, 1))
-                        else:
-                            if self.background_color in config.Shape.color_value_dict:
-                                self.current_background_color = config.Shape.color_value_dict[self.background_color]
-                            else:
-                                print("Background Color {} not in config.Shape.color_value_dict".format(self.background_color))
-                                raise RuntimeError
+                            shape_name = self.shape_list[i]
+                            shape = self.master_shape_dict[shape_name]
 
-                        shape_name = self.shape_list[i]
-                        shape_color = self.color_list[j]
+                            shape_color = self.color_list[j]
+                            random.seed(self.random_seed_list[random_idx])
+                            variant = random.choice(self.custom_variant_list[i])
+                            random_idx += 1
+                            shape.init_shape(shape_counter, shape_color, variant)
+                            position = self.choose_random_start_position(shape.dimensions, random_idx, random_idx+1)
+                            random_idx += 2
+                            shape.set_start_position(position)
 
-                        unique_shape_id = i # shape_counter % len(self.shape_list)
-                        # print("unique_shape_id: ",unique_shape_id,"shape_counter: ", shape_counter, "\n")
-                        current_custom_variant_list = self.custom_variant_list[unique_shape_id]
+                            if self.check_if_position_legal(shape.active_world_cell_list):
+                                self.add_shape_to_world(shape)
+                                self.save_world_state()
+                                shape_counter += 1
+                                shape_placed = True
 
-                        print("OCD in generate_world", self.occupied_cell_dict)
-                        self.add_shape_to_world(shape_name, shape_counter, shape_color, current_custom_variant_list)
+                            try_counter += 1
 
-                        self.save_world_state(self.file_name)
-                        shape_counter += 1
+                            if try_counter > 100:
+                                print("Failed to place after 100 tries")
+                                break
+                        
+                        if shape_placed:
+                            for m in range(self.num_events_per_sequence):
+                                self.next_turn()
+                                self.save_world_state()
+                                self.event_counter += 1
 
-                        for m in range(self.num_events_per_sequence):
-                            self.next_turn()
-                            self.save_world_state(self.file_name)
-                            self.event_counter += 1
+                            self.sequence_counter += 1
 
-                        self.sequence_counter += 1
-
-        elif self.num_types > 0:
-            for i in range(self.num_types):
-                for j in range(self.num_sequences_per_type):
-                    self.init_world()
-                    shape_name = random.choice(self.shape_list)
-                    shape_color = random.choice(self.color_list)
-                    self.add_shape_to_world(shape_name, shape_counter, shape_color)
-                    self.save_world_state(self.file_name)
-                    shape_counter += 1
-
-                    for k in range(self.num_events_per_sequence):
-                        self.next_turn()
-                        self.save_world_state(self.file_name)
+        elif self.location_type == "all":
+            for i in range(len(self.color_list)):  # num of colors
+                shape_color = self.color_list[i]
+                for j in range(len(self.shape_list)):  # num of shape types/size
+                    shape_name = self.shape_list[j]
+                    current_custom_variant_list = self.custom_variant_list[j]
+                    for k in range(len(current_custom_variant_list)):
+                        variant = current_custom_variant_list[k]
+                        for x in range(self.num_rows):
+                            for y in range(self.num_columns):
+                                self.reset_world()
+                                self.event_counter = 0
+                                position = (x, y)
+                                shape = self.master_shape_dict[shape_name]
+                                shape.init_shape(shape_counter, shape_color, variant)
+                                shape.set_start_position(position)
+                                if self.check_if_position_legal(shape.active_world_cell_list):
+                                    self.add_shape_to_world(shape)
+                                    self.save_world_state()
+                                    shape_counter += 1
 
         else:
             print("ERROR: Num Types must be >= 0")
             sys.exit()
 
+    def choose_random_start_position(self, dimensions, seed1, seed2):
+        position = []
+        if self.custom_bounds is not None:
+            random.seed(seed1)
+            position.append(random.randint(self.custom_bounds[0],
+                                       min(self.num_columns-dimensions[0], self.custom_bounds[1])))
+            random.seed(seed2)
+            position.append(random.randint(self.custom_bounds[2],
+                                       min(self.num_rows-dimensions[1], self.custom_bounds[3])))
+        else:
+            random.seed(seed1)
+            position.append(random.randint(0, self.num_columns-dimensions[0]))
+            random.seed(seed2)
+            position.append(random.randint(0, self.num_rows-dimensions[1]))
 
-    def check_location_empty(self, active_world_cells):
-        all_cells_empty = True
-        for i in range(len(active_world_cells)):
-            if active_world_cells[i] in self.occupied_cell_dict:
-                all_cells_empty = False
-        return all_cells_empty
+        return position
 
-
-    def check_legal_position(self, active_world_cell_list, test_id_number):
+    def check_if_position_legal(self, active_world_cell_list):
         legal_position = True
         for cell in active_world_cell_list:
             if (cell[0] < 0) or (cell[1] < 0) or (cell[0] > self.num_columns-1) or (cell[1] > self.num_rows-1):
                 legal_position = False
             if self.custom_bounds:
-                if(cell[0] < self.custom_bounds[0]) or (cell[1] < self.custom_bounds[2]) or (cell[0] > self.custom_bounds[1]) or (cell[1] > self.custom_bounds[3]):
+                if(cell[0] < self.custom_bounds[0]) or \
+                  (cell[1] < self.custom_bounds[2]) or \
+                  (cell[0] > self.custom_bounds[1]) or \
+                  (cell[1] > self.custom_bounds[3]):
                     legal_position = False
             if cell in self.occupied_cell_dict:
-                existing_shape_id = self.occupied_cell_dict[cell]
-                if existing_shape_id != test_id_number:
-                    legal_position = False
+                legal_position = False
         return legal_position
 
-    def add_shape_to_world(self, shape_name, shape_id_counter, color, current_custom_variant_list):
-        shape_placed = False
-        shape = self.master_shape_dict[shape_name] # may be not here
-        #print("OCD Before while loop", self.occupied_cell_dict)
-
-        try_counter = 0
-        while not shape_placed:
-
-            shape = self.master_shape_dict[shape_name]
-            shape.variant_list = current_custom_variant_list
-            position, active_world_cell_list = shape.init_shape(shape_id_counter, color)
-            all_cells_empty = self.check_location_empty(active_world_cell_list)
-            legal_position = self.check_legal_position(active_world_cell_list, shape.id_number)
-
-            if all_cells_empty:
-                if legal_position:
-                    shape.position = position
-                    shape.active_world_cell_list = active_world_cell_list
-                    for cell in active_world_cell_list:
-                        self.occupied_cell_dict[cell] = shape.id_number
-                    self.current_shape_list.append(shape)
-                    self.shape_dict[shape_id_counter] = shape
-                    shape_placed = True
-                else:
-                    print("Failed to place shape due to illegal position")
-            else:
-                print("Failed to place shape due occupied position")
-
-            try_counter += 1
-
-            if try_counter > 100:
-                print("Failed to place after 100 tries")
-                break
-
-            #print("OCD in while loop", self.occupied_cell_dict)
-   
-        # print("in add_shape_to_world: id:{}   name: {}   varaint: {}  variant_list: {}  position: {}\n".format(shape_id_counter, shape.name, shape.current_variant, shape.variant_list, shape.position))
-
+    def add_shape_to_world(self, current_shape):
+        for cell in current_shape.active_world_cell_list:
+            self.occupied_cell_dict[cell] = current_shape.id_number
+            self.current_shape_list.append(current_shape)
+            self.shape_dict[current_shape.id_number] = current_shape
 
     def next_turn(self):
         for i in range(self.shapes_per_image):
             self.current_shape_list[i].take_turn()
-            # print("in next_turn: id: {}  name: {}  variant: {}\n".format(self.current_shape_list[i].id_number, self.current_shape_list[i].name, self.current_shape_list[i].current_variant))
 
-    def save_world_state(self, file_name):
+    def save_world_state(self):
+
         self.test_counter += 1
-
-        outfile = open(file_name, 'a')
         output_string = "{},{},".format(self.sequence_counter, self.event_counter)
 
         current_shape = self.current_shape_list[0]
-        # print("in save_world_state: id:{}   name: {}   varaint: {}  variant_list: {}  position: {}\n".format(current_shape.id_number, current_shape.name, current_shape.current_variant, current_shape.variant_list, current_shape.position))
         for i in range(self.shapes_per_image):
-            output_string += "{},{},{},{},{},{},{},".format(current_shape.name,
-                                                            current_shape.size,
-                                                            current_shape.color,
-                                                            current_shape.current_variant,
-                                                            current_shape.position[0],
-                                                            current_shape.position[1],
-                                                            current_shape.action_choice)
+            output_string += "{},{},{},{},{},{},{},{},".format(current_shape.id_number,
+                                                               current_shape.name,
+                                                               current_shape.size,
+                                                               current_shape.color,
+                                                               current_shape.current_variant,
+                                                               current_shape.position[0],
+                                                               current_shape.position[1],
+                                                               current_shape.action_choice)
 
         r_string = ""
         g_string = ""
         b_string = ""
-        # i dont know why this didnt update
+
         save_list = []
         for i in range(self.num_rows):
             for j in range(self.num_columns):
@@ -253,4 +238,22 @@ class World:
             i += 1
 
         output_string += r_string[:-1] + "," + g_string[:-1] + "," + b_string[:-1] + '\n'
-        outfile.write(output_string)
+        self.history_list.append(output_string)
+
+    def print_world_history(self):
+        self.world_name = "w{}-{}_s{}_c{}_location-{}_{}_{}".format(self.num_rows, self.num_columns,
+                                                            len(self.shape_list), len(self.color_list),
+                                                            self.location_type, self.num_sequences_per_type,
+                                                            self.num_events_per_sequence)
+
+        if self.name is not None:
+            self.world_name += '_' + self.name
+
+        self.file_name = "data/" + self.world_name + ".csv"
+
+        # TODO check to make sure this file doesnt exist already, if it does, print an error and quit
+
+        outfile = open(self.file_name, 'w')
+        for entry in self.history_list:
+            outfile.write(entry)
+        outfile.close()
