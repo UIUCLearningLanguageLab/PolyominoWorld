@@ -46,7 +46,7 @@ def evaluate_classifier(net: Network,
 
     res = {}
 
-    for event in dataset.generate_samples():
+    for event in dataset.generate_events():
 
         x = event.get_x(net.params.x_type)
         y = event.get_y(net.params.y_type)
@@ -80,7 +80,7 @@ def evaluate_autoassociator(net: Network,
 
 
     # for each item in the dataset
-    for event in dataset.generate_samples():
+    for event in dataset.generate_events():
         event: Event
         # get x and y
         x = event.get_x(self.params.x_type)

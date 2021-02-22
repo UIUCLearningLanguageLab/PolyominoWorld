@@ -85,7 +85,7 @@ def main(param2val):
 
         # train
         net.train()
-        for event in data_train.generate_samples():
+        for event in data_train.generate_events():
 
             x = event.get_x(net.params.x_type)
             y = event.get_y(net.params.y_type)
@@ -109,7 +109,7 @@ def main(param2val):
                                         start_time)
 
     # save network weights for visualizing later
-    torch.save(net.state_dict, save_path / 'model.pt')
+    torch.save(net.state_dict(), save_path / 'model.pt')
 
     # prepare collected data for returning to Ludwig (which saves data to shared drive)
     res: List[pd.Series] = []

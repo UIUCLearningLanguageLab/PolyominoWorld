@@ -4,34 +4,38 @@ This module contains logic necessary for creating the interactive visualization 
 
 
 import tkinter as tk
-import sys
-from polyominoworld import configs
 from tkinter import ttk
+import sys
+from typing import List
+
+from polyominoworld.dataset import DataSet
+from polyominoworld.network import Network
+from polyominoworld import configs
+from polyominoworld.helpers import FeatureVector, FeatureLabel
 
 
 class Display:
 
-    def __init__(self, the_dataset, the_network):
+    def __init__(self,
+                 data: DataSet,
+                 net: Network,
+                 ):
 
-        # todo all loading logic must be removed and re-implemented not that Ludwig is used,
-        #  and torch objects are saved directly to binary files
+        self.data = data
+        self.net = net
 
-        raise NotImplementedError
+        self.xs = [event.get_x(net.params.x_type) for event in self.data.generate_events()]
 
-        self.the_dataset = the_dataset
-        self.the_network = the_network
-        self.i = 0  # currently active item in the dataset
-        self.current_x = None
-        self.current_y = None
+        self.x_id = 0  # currently active item in the dataset
         self.selected_unit = None
 
-        self.square_size = configs.Display.cell_size
+        self.square_size = configs.Display.square_size
 
         self.height = 900
         self.width = 1200
 
         self.root = tk.Tk()
-        self.root.title("Polyomino World")
+        self.root.title("PolyominoWorld")
 
         self.network_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
         self.weight_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
@@ -52,8 +56,8 @@ class Display:
         self.i_label = tk.Label(self.button_frame, text="Current Item:", bg='white', fg='black')
         self.i_label.pack(side=tk.LEFT)
 
-        i = tk.StringVar(self.root, value=self.i)
-        self.i_entry = tk.Entry(self.button_frame, width=6, textvariable=i, relief='flat', borderwidth=0)
+        x_id = tk.StringVar(self.root, value=self.x_id)
+        self.i_entry = tk.Entry(self.button_frame, width=6, textvariable=x_id, relief='flat', borderwidth=0)
         self.i_entry.pack(side=tk.LEFT)
 
         ttk.Style().configure("TButton", padding=0, relief="flat", background="#EEEEEE", foreground='black')
@@ -65,8 +69,6 @@ class Display:
         self.next_button.pack(side=tk.LEFT, padx=4)
         self.quit_button = ttk.Button(self.button_frame, text="Quit", width=8, command=sys.exit)
         self.quit_button.pack(side=tk.LEFT, padx=4)
-
-        self.the_dataset.create_xy(self.the_network, False, False)
 
         self.position_dict = {'World State': (20, 120, "World State"),
                               'Predicted World State': (1000, 120, "Predicted World State"),
@@ -86,14 +88,14 @@ class Display:
 
     def update_current_item(self):
         self.i_entry.delete(0, tk.END)  # deletes the current value
-        self.i_entry.insert(0, self.i)  # inserts new value assigned by 2nd parameter
-        x = self.the_dataset.x[self.i].clone()
+        self.i_entry.insert(0, self.x_id)  # inserts new value assigned by 2nd parameter
+        x = self.xs[self.x_id].clone()
         return x
 
     def draw_window(self):
 
         x = self.update_current_item()
-        o, h = self.the_network.forward_item(x)
+        o, h = self.net.forward(x, return_h=True)
 
         self.network_canvas.delete("all")
         self.weight_canvas.delete("all")
@@ -108,14 +110,13 @@ class Display:
         self.draw_hidden_layer(self.network_canvas, h, 1, 'Hidden Layer Activations')
 
         # draw the output layer for the current x
-        if self.the_network.y_type == 'features':
+        if self.net.params.y_type == 'features':
             self.draw_feature_layer(self.network_canvas, o.detach().numpy(), 'Predicted Feature Activations')
-        elif self.the_network.y_type == 'world':
+        elif self.net.params.y_type == 'world':
             self.draw_world(self.network_canvas, o.detach().numpy(), 'Predicted World State')
             self.draw_world_layer(self.network_canvas, o.detach().numpy(), None, 'Predicted World Layer Activations')
         else:
-            print("ERROR: Network y_type {} not recognized".format(self.the_network.y_type))
-            sys.exit()
+            raise AttributeError("Network y_type {} not recognized".format(self.net.params.y_type))
 
         # if a unit is selected, draw the weights to/from the unit
         if self.selected_unit is not None:
@@ -143,9 +144,9 @@ class Display:
                                                                           selected_unit_info[1]),
                                            font="Arial 14 bold", fill='white')
             if index == 'bias':
-                weights = self.the_network.h_x.bias.detach().numpy()
+                weights = self.net.h_x.bias.detach().numpy()
             else:
-                weight_matrix = self.the_network.h_x.weight.detach().numpy()
+                weight_matrix = self.net.h_x.weight.detach().numpy()
                 weights = weight_matrix[:, index]
             self.draw_hidden_layer(self.weight_canvas, weights, None, 'Hidden Layer Weights')
 
@@ -156,18 +157,18 @@ class Display:
                                                text="input-->h{} weights".format(selected_unit_info[1]),
                                                font="Arial 14 bold", fill='white')
                 index = int(selected_unit_info[1])
-                h_x_weight_matrix = self.the_network.h_x.weight.detach().numpy()
+                h_x_weight_matrix = self.net.h_x.weight.detach().numpy()
                 h_x_weight_vector = h_x_weight_matrix[index, :]
-                h_x_bias_vector = self.the_network.h_x.bias.detach().numpy()
+                h_x_bias_vector = self.net.h_x.bias.detach().numpy()
                 h_x_bias = h_x_bias_vector[index]
-                y_h_weight_matrix = self.the_network.y_h.weight.detach().numpy()
+                y_h_weight_matrix = self.net.y_h.weight.detach().numpy()
                 y_h_weight_vector = y_h_weight_matrix[:, index]
                 self.draw_world_layer(self.weight_canvas, h_x_weight_vector, h_x_bias, 'World Layer Weights')
             else:
-                y_h_weight_vector = self.the_network.y_h.bias.detach().numpy()
-            if self.the_network.y_type == 'world':
+                y_h_weight_vector = self.net.y_h.bias.detach().numpy()
+            if self.net.params.y_type == 'world':
                 self.draw_world_layer(self.weight_canvas, y_h_weight_vector, None, 'Predicted World Layer Weights')
-            elif self.the_network.y_type == 'features':
+            elif self.net.params.y_type == 'features':
                 self.draw_feature_layer(self.weight_canvas, y_h_weight_vector, 'Predicted Feature Weights')
 
             self.weight_canvas.create_text(900, 20,
@@ -181,219 +182,237 @@ class Display:
                                                                           selected_unit_info[1]),
                                            font="Arial 14 bold", fill='white')
 
-            weight_matrix = self.the_network.y_h.weight.detach().numpy()
+            weight_matrix = self.net.y_h.weight.detach().numpy()
             weights = weight_matrix[index, :]
             self.draw_hidden_layer(self.weight_canvas, weights, None, 'Hidden Layer Weights')
 
         self.root.update()
 
-    def draw_world(self, the_canvas, x, condition):
+    def draw_world(self, canvas, x, condition):
         start_x = self.position_dict[condition][0]
         start_y = self.position_dict[condition][1]
         title = self.position_dict[condition][2]
 
-        rgb_matrix = x.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_cols))
+        rgb_matrix = x.reshape((3, configs.World.num_rows, configs.World.num_cols))
         size = 20
 
-        the_canvas.create_text(start_x + 40, start_y - 20,
-                               text="{}".format(title),
-                               font="Arial 16 bold", fill='white')
+        canvas.create_text(start_x + 40, start_y - 20,
+                           text="{}".format(title),
+                           font="Arial 16 bold", fill='white')
 
         unit_counter = 0
-        for i in range(self.the_dataset.num_rows):
-            for j in range(self.the_dataset.num_cols):
-                the_tag = self.create_tag_name(condition, unit_counter, False)
+        for i in range(configs.World.num_rows):
+            for j in range(configs.World.num_cols):
+                tag = self.create_tag_name(condition, unit_counter, False)
                 color = self.rgb_to_hex(rgb_matrix[0, i, j], rgb_matrix[1, i, j], rgb_matrix[2, i, j])
-                the_canvas.create_rectangle(i * size + start_x,
-                                            j * size + start_y,
-                                            (i + 1) * size + start_x,
-                                            (j + 1) * size + start_y,
-                                            fill=color, outline=color, tag=the_tag)
+                canvas.create_rectangle(i * size + start_x,
+                                        j * size + start_y,
+                                        (i + 1) * size + start_x,
+                                        (j + 1) * size + start_y,
+                                        fill=color, outline=color, tag=tag)
                 unit_counter += 1
 
-    def draw_world_layer(self, the_canvas, layer, bias, condition):
+    def draw_world_layer(self, canvas, layer, bias, condition):
         # get the starting x,y position
         start_x = self.position_dict[condition][0]
         start_y = self.position_dict[condition][1]
         title = self.position_dict[condition][2]
 
         # decide how big the units should be, based on their number
-        if self.the_dataset.num_rows > 8:
+        if configs.World.num_rows > 8:
             size = 10
         else:
             size = 14
 
         # Write the layer name
-        the_canvas.create_text(start_x+50, start_y-20,
-                               text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x+50, start_y-20,
+                           text=title, font="Arial 20 bold", fill='white')
 
         color_label_list = ['Red', 'Green', 'Blue']
 
         # if it is an input layer, create the bias unit
         if bias is not None:
-            the_canvas.create_text(start_x - 30, start_y+10,
-                                   text="Bias".format(title), font="Arial 14 bold", fill='white')
+            canvas.create_text(start_x - 30, start_y+10,
+                               text="Bias".format(title), font="Arial 14 bold", fill='white')
             bias_tag = self.create_tag_name(condition, None, True)
             if self.selected_unit == bias_tag:
                 outline_color = 'yellow'
             else:
                 outline_color = 'black'
-            the_canvas.create_rectangle(start_x, start_y+3, start_x + size, start_y + size + 3,
-                                        fill='red', outline=outline_color, tag=bias_tag)
+            canvas.create_rectangle(start_x, start_y+3, start_x + size, start_y + size + 3,
+                                    fill='red', outline=outline_color, tag=bias_tag)
 
         # draw the world layer
         unit_counter = 0
-        grid_size = self.the_dataset.num_rows * size + 10
-        rgb_matrix = layer.reshape((3, self.the_dataset.num_rows, self.the_dataset.num_cols))
+        grid_size = configs.World.num_rows * size + 10
+        rgb_matrix = layer.reshape((3, configs.World.num_rows, configs.World.num_cols))
         for k in range(3):
-            the_canvas.create_text(start_x - 30, start_y + 90 + (k*grid_size),
-                                   text="{}".format(color_label_list[k]).rjust(5),
-                                   font="Arial 14 bold", fill='white')
-            for i in range(self.the_dataset.num_rows):
-                for j in range(self.the_dataset.num_cols):
-                    the_tag = self.create_tag_name(condition, unit_counter, False)
+            canvas.create_text(start_x - 30, start_y + 90 + (k*grid_size),
+                               text="{}".format(color_label_list[k]).rjust(5),
+                               font="Arial 14 bold", fill='white')
+            for i in range(configs.World.num_rows):
+                for j in range(configs.World.num_cols):
+                    tag = self.create_tag_name(condition, unit_counter, False)
                     fill_color = self.network_hex_color(rgb_matrix[k, i, j])
 
-                    if self.selected_unit == the_tag:
+                    if self.selected_unit == tag:
                         outline_color = 'yellow'
                     else:
                         outline_color = 'black'
 
-                    the_canvas.create_rectangle(i * size + start_x,
-                                                j * size + start_y + (k*grid_size) + 30,
-                                                (i + 1) * size + start_x,
-                                                (j + 1) * size + start_y + (k*grid_size) + 30,
-                                                fill=fill_color, outline=outline_color, tag=the_tag)
+                    canvas.create_rectangle(i * size + start_x,
+                                            j * size + start_y + (k*grid_size) + 30,
+                                            (i + 1) * size + start_x,
+                                            (j + 1) * size + start_y + (k*grid_size) + 30,
+                                            fill=fill_color, outline=outline_color, tag=tag)
                     unit_counter += 1
 
-    def draw_hidden_layer(self, the_canvas, h, bias, condition):
+    def draw_hidden_layer(self,
+                          canvas,
+                          h,
+                          bias,
+                          condition,
+                          size: int = configs.Display.hidden_layer_size,
+                          spacing: int = configs.Display.hidden_layer_spacing,
+                          ):
         start_x = self.position_dict[condition][0]
         start_y = self.position_dict[condition][1]
         title = self.position_dict[condition][2]
-        size = 20
-        spacing = 2
+
         hidden_units_per_column = 8
 
         if bias is not None:
-            the_canvas.create_text(start_x - 30, start_y + 90,
-                                   text="Bias", font="Arial 14 bold", fill='white')
+            canvas.create_text(start_x - 30, start_y + 90,
+                               text="Bias", font="Arial 14 bold", fill='white')
             bias_tag = self.create_tag_name(condition, None, True)
             if self.selected_unit == bias_tag:
                 outline_color = 'yellow'
             else:
                 outline_color = 'black'
-            the_canvas.create_rectangle(start_x, start_y + 80, start_x + size, start_y + size + 80,
-                                        fill='red', outline=outline_color, tag=bias_tag)
+            canvas.create_rectangle(start_x, start_y + 80, start_x + size, start_y + size + 80,
+                                    fill='red', outline=outline_color, tag=bias_tag)
 
-        the_canvas.create_text(start_x+80, start_y,
-                               text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x+80, start_y,
+                           text=title, font="Arial 20 bold", fill='white')
 
         for i in range(len(h)):
-            the_tag = self.create_tag_name(condition, str(i), False)
+            tag = self.create_tag_name(condition, str(i), False)
             y1 = start_y + (size + spacing) * i
             fill_color = self.network_hex_color(h[i])
-            if self.selected_unit == the_tag:
+            if self.selected_unit == tag:
                 border_color = 'yellow'
             else:
                 border_color = 'black'
-            the_canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
-                                        fill=fill_color, outline=border_color, tags=the_tag)
+            canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
+                                    fill=fill_color, outline=border_color, tags=tag)
             if (i+1) % hidden_units_per_column == 0:
                 start_x += size + spacing
                 start_y -= hidden_units_per_column * (size + spacing)
 
-    def draw_feature_layer(self, the_canvas, layer, condition):
+    def draw_feature_layer(self,
+                           canvas,
+                           layer,
+                           condition,
+                           size: int = configs.Display.feature_layer_size,
+                           spacing: int = configs.Display.feature_layer_spacing,
+
+                           ):
         start_x = self.position_dict[condition][0]
         start_y = self.position_dict[condition][1]
         title = self.position_dict[condition][2]
 
-        the_canvas.create_text(start_x, start_y, text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x, start_y, text=title, font="Arial 20 bold", fill='white')
 
-        size = 16
-        spacing = 1
-        num_features = 0
-        for i in range(self.the_dataset.num_included_feature_types):
-            feature_type = self.the_dataset.included_feature_types[i]
-            included_feature_list = self.the_dataset.feature_type2values[feature_type]
-            indexes = self.the_dataset.included_fv_indexes[i]
-            outputs = layer[indexes[0]:indexes[1]+1]
-            soft_max = outputs / outputs.sum()
+        soft_max = layer / layer.sum()  # TODO this is temporary -
+        # softmax was previously calculated only over activations corresponding to a single feature type,
+        # to properly normalize only over features within a type
 
-            for j in range(len(outputs)):
-                the_tag = self.create_tag_name(condition, num_features, False)
-                the_label = included_feature_list[j]
-                fill_color = self.network_hex_color(outputs[j])
-                if self.selected_unit == the_tag:
-                    outline_color = 'yellow'
-                else:
-                    outline_color = 'black'
+        feature_labels: List[FeatureLabel] = FeatureVector.get_feature_labels()
+        assert len(layer) == len(feature_labels)
 
-                x1 = start_x
-                y1 = start_y + ((size + spacing) * num_features) + 20 + (i * 10)
+        previous_feature_type_name = 'n/a'
+        feature_type_id = 0
 
-                the_canvas.create_rectangle(x1, y1, x1 + size, y1 + size,
-                                            fill=fill_color, outline=outline_color, tags=the_tag)
-                the_canvas.create_text(start_x - 60, y1 + 10,
-                                       text="{}".format(the_label).rjust(12),
-                                       font="Arial 12 bold", fill='white')
+        # for each feature
+        for n, feature_label in enumerate(feature_labels):
 
-                if condition == 'Predicted Feature Activations':
-                    value = "{:0.1f}%".format(100 * soft_max[j])
-                    bar_size = round(100 * soft_max[j])
-                    the_canvas.create_rectangle(x1 + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
-                                                fill='blue')
-                    the_canvas.create_text(x1 + 200, y1 + 10 + 2,
-                                           text=value, font="Arial 12 bold", fill='white')
-                num_features += 1
+            # increment feature_type_id only when feature_type (e.g. shape, color) changes
+            if feature_label.type_name != previous_feature_type_name:
+                feature_type_id += 1
+            previous_feature_type_name: str = feature_label.type_name
+
+            tag = self.create_tag_name(condition, n, False)
+            fill_color = self.network_hex_color(layer[n])
+            if self.selected_unit == tag:
+                outline_color = 'yellow'
+            else:
+                outline_color = 'black'
+
+            x1 = start_x
+            y1 = start_y + ((size + spacing) * n) + 20 + (feature_type_id * 10)
+
+            canvas.create_rectangle(x1, y1, x1 + size, y1 + size,
+                                    fill=fill_color, outline=outline_color, tags=tag)
+            canvas.create_text(start_x - 60, y1 + 10,
+                               text="{}".format(feature_label).rjust(12),
+                               font="Arial 12 bold", fill='white')
+
+            if condition == 'Predicted Feature Activations':
+                value = "{:0.1f}%".format(100 * soft_max[n])
+                bar_size = round(100 * soft_max[n])
+                canvas.create_rectangle(x1 + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
+                                        fill='blue')
+                canvas.create_text(x1 + 200, y1 + 10 + 2,
+                                   text=value, font="Arial 12 bold", fill='white')
 
     def next(self):
-        if self.i < self.the_dataset.num_events:
-            self.i += 1
+        if self.x_id < len(self.data):
+            self.x_id += 1
         else:
-            self.i = 0
+            self.x_id = 0
         self.update_current_item()
         self.draw_window()
 
     def previous(self):
-        if self.i > 0:
-            self.i -= 1
+        if self.x_id > 0:
+            self.x_id -= 1
         else:
-            self.i = self.the_dataset.num_events - 1
+            self.x_id = len(self.data) - 1
         self.update_current_item()
         self.draw_window()
 
     def update(self):
         new_i = int(self.i_entry.get())
-        if 0 <= new_i < self.the_dataset.num_events:
-            self.i = new_i
+        if 0 <= new_i < len(self.data):
+            self.x_id = new_i
             self.update_current_item()
             self.draw_window()
 
     def network_click(self, event):
-        the_tag = self.get_tags(event)
-        if the_tag is not None:
-            if the_tag == self.selected_unit:
+        tag = self.get_tags(event)
+        if tag is not None:
+            if tag == self.selected_unit:
                 self.selected_unit = None
                 self.draw_window()
             else:
-                if the_tag[0] == 'i':
-                    self.selected_unit = the_tag
+                if tag[0] == 'i':
+                    self.selected_unit = tag
                     self.draw_window()
-                if the_tag[0] == 'h':
-                    self.selected_unit = the_tag
+                if tag[0] == 'h':
+                    self.selected_unit = tag
                     self.draw_window()
-                if the_tag[0] == 'o':
-                    self.selected_unit = the_tag
+                if tag[0] == 'o':
+                    self.selected_unit = tag
                     self.draw_window()
 
     def get_tags(self, event):
         x, y = event.x, event.y
         ids = self.network_canvas.find_overlapping(x - 5, y - 5, x + 5, y + 5)
         if len(ids) > 0:
-            the_tag = self.network_canvas.itemcget(ids[0], "tags").split()[0]
+            tag = self.network_canvas.itemcget(ids[0], "tags").split()[0]
         else:
-            the_tag = None
-        return the_tag
+            tag = None
+        return tag
 
     @staticmethod
     def rgb_to_hex(r, g, b):
@@ -469,8 +488,8 @@ class Display:
             raise RuntimeError
 
         if bias:
-            the_tag = tag_header + "bias" + tag_footer
+            tag = tag_header + "bias" + tag_footer
         else:
-            the_tag = tag_header + str(index) + tag_footer
+            tag = tag_header + str(index) + tag_footer
 
-        return the_tag
+        return tag

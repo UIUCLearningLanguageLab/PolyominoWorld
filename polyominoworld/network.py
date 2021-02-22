@@ -63,7 +63,10 @@ class Network(torch.nn.Module):
         self.y_x.weight.data.uniform_(-self.params.weight_init, self.params.weight_init)
         self.y_x.bias.data.uniform_(-self.params.weight_init, self.params.weight_init)
 
-    def forward(self, x):
+    def forward(self,
+                x: torch.tensor,
+                return_h: bool = False,  # for visualisation
+                ) -> torch.tensor:
         if self.has_hidden_layer:
             z_h = self.h_x(x)
             h = self.hidden_act(z_h)
@@ -75,5 +78,11 @@ class Network(torch.nn.Module):
             o = self.output_act(z_o)
         else:
             o = z_o
+
+        if return_h:
+            if self.has_hidden_layer:
+                return o, h
+            else:
+                raise RuntimeError('Requested hidden state, but net does not have hidden layer')
 
         return o

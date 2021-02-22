@@ -25,7 +25,11 @@ class PrintOptions:
 
 
 class Display:
-    cell_size = 20
+    square_size = 20
+    feature_layer_size = 40
+    feature_layer_spacing = 4
+    hidden_layer_size = 40
+    hidden_layer_spacing = 4
 
 
 class Evaluation:

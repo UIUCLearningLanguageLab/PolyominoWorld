@@ -93,6 +93,16 @@ class WorldVector:
 
 
 @dataclass(frozen=True)
+class FeatureLabel:
+
+    type_name: str = field()
+    value_name: str = field()
+
+    def __str__(self):
+        return f'{self.type_name}-{self.value_name}'
+
+
+@dataclass(frozen=True)
 class FeatureVector:
     """
     features, e.g. shape encoded in a vector.
@@ -111,6 +121,23 @@ class FeatureVector:
             res += len(values)
         return res
 
+    @classmethod  # this function should be callable without instantiating the class
+    def get_feature_labels(cls) -> List[FeatureLabel]:
+        """return names of features, one for each output in feature vector.
+
+        note: each feature is named by concatenating:
+         - the name of the feature type (e.g. shape)
+         - the name of the feature value (e.g. red)
+         """
+
+        res = []
+        for feature_type in configs.World.feature_type2values:
+            feature_values = configs.World.feature_type2values[feature_type]
+            for feature_value in feature_values:
+                label = FeatureLabel(feature_type, feature_value)
+                res.append(label)
+        return res
+
     @property
     def vector(self) -> torch.tensor:
         res = np.hstack(
@@ -125,14 +152,8 @@ class FeatureVector:
         return res
 
     @property
-    def labels(self) -> List[str]:  # the name of each feature (for evaluation)
-        res = []
-        for feature_type in configs.World.feature_type2values:
-            feature_values = configs.World.feature_type2values[feature_type]
-            for feature_value in feature_values:
-                label = f'{feature_type}-{feature_value}'
-                res.append(label)
-        return res
+    def labels(self) -> List[str]:  # the name of each feature as strings (for evaluation, and visualization)
+        return [str(label) for label in self.get_feature_labels()]
 
     @classmethod
     def from_shape(cls,

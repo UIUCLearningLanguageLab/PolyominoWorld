@@ -1,7 +1,6 @@
 import random
 import numpy as np
 from typing import Generator, Tuple, List
-import torch
 
 from polyominoworld import configs
 from polyominoworld.params import Params
@@ -44,8 +43,8 @@ class DataSet:
 
         return res
 
-    def generate_samples(self,
-                         ) -> Generator[Event, None, None]:
+    def generate_events(self,
+                        ) -> Generator[Event, None, None]:
         """a generator that yields events, for training or testing.
          event.x is input vector.
          events.y is target output vector.
@@ -66,4 +65,4 @@ class DataSet:
                 yield event
 
     def __len__(self):
-        return len(list(self.generate_samples()))
+        return len(list(self.generate_events()))

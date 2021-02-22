@@ -47,9 +47,11 @@ if __name__ == '__main__':
 
         # multiple models may exist for the same hyper-parameter configuration - iterate over each
         for path_to_net in param_path.rglob('model.pt'):
+
             # load net
             net = Network(params)
-            net.load_state_dict(torch.load(path_to_net))
+            state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
+            net.load_state_dict(state_dict)
             net.eval()
 
             # visualize
