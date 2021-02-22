@@ -11,7 +11,7 @@ import pandas as pd
 from pathlib import Path
 import torch
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.world import World
@@ -32,10 +32,9 @@ def main(param2val):
         save_path.mkdir(parents=True)
 
     # generate world + load into dataset
-    world_train = World(params)
-    world_valid = World(params)  # for validation/testing
-    data_train = DataSet(world_train.generate_sequences(), params, 'train')
-    data_valid = DataSet(world_valid.generate_sequences(), params, 'valid')
+    world = World(params)
+    data_train = DataSet(world.generate_sequences(), params, 'train')  # TODO currently sequences are the same in test and valid
+    data_valid = DataSet(world.generate_sequences(), params, 'valid')
 
     # network
     net = Network(params)
@@ -66,11 +65,23 @@ def main(param2val):
     else:
         raise AttributeError(f'Invalid arg to optimizer')
 
-    # train loop  # todo eval before training
+    # init
     print("Starting training {}-to-{} model on {} epochs".format(params.x_type, params.y_type, params.num_epochs))
     start_time = time.time()
-    performance_curves_dict = {}  # maps name of a performance curve (e.g. "loss") to a tuple (epoch, performance_value)
-    for epoch in range(params.num_epochs):
+    epoch = 0
+    performance_data: Dict[str, List[Tuple[int, float]]] = {}
+
+    # eval before training
+    evaluate_on_train_and_valid(criterion_all,
+                                data_train,
+                                data_valid,
+                                epoch,
+                                net,
+                                performance_data,
+                                start_time)
+
+    # train loop
+    for epoch in range(1, params.num_epochs + 1):  # start at 1 because evaluation at epoch=0 happens before training
 
         # train
         net.train()
@@ -89,40 +100,57 @@ def main(param2val):
         net.eval()
 
         if epoch % configs.Evaluation.epoch_interval == 0:
-            # collect time data
-            cumulative_time = time.time() - start_time
-            performance_curves_dict.setdefault('seconds', []).append((epoch, cumulative_time))
+            evaluate_on_train_and_valid(criterion_all,
+                                        data_train,
+                                        data_valid,
+                                        epoch,
+                                        net,
+                                        performance_data,
+                                        start_time)
 
-            # compute performance data
-            performances: Dict[str, float] = {}  # store both train and valid data
-            if not configs.Evaluation.skip:
-
-                # for train and valid data
-                for data in [data_train, data_valid]:
-                    # compute performance data
-                    performances_ = evaluate_network(net, data, criterion_all)
-                    performances.update(performances_)
-
-                    # collect performance data for plotting with Ludwig-Viz
-                    for name, val in performances_.items():
-                        performance_curves_dict.setdefault(name, []).append((epoch, val))
-
-            # print
-            print_eval_summary(epoch,
-                               cumulative_time,
-                               performances['cost_avg_train'],
-                               performances['cost_avg_valid'],
-                               )
+    # save network weights for visualizing later
+    torch.save(net.state_dict, save_path / 'model.pt')
 
     # prepare collected data for returning to Ludwig (which saves data to shared drive)
-    performance_curves = []
-    for name, curves in performance_curves_dict.items():
+    res: List[pd.Series] = []
+    for name, curves in performance_data.items():
         print(f'Making pandas series with name={name} and length={len(curves)}', flush=True)
         index, curve = zip(*curves)
         s = pd.Series(curve, index=index)
         s.name = name
-        performance_curves.append(s)
+        res.append(s)
 
     print('Done with job.main', flush=True)
 
-    return performance_curves
+    return res
+
+
+def evaluate_on_train_and_valid(criterion_all,
+                                data_train: DataSet,
+                                data_valid: DataSet,
+                                epoch: int,
+                                net: Network,
+                                performance_data: Dict[str, List[Tuple[int, float]]],
+                                start_time: time.time,
+                                ) -> None:
+    """
+    save performance data to performance_data which will be saved to the shared drive by Ludwig.
+    """
+
+    # collect time data
+    cumulative_time = time.time() - start_time
+    performance_data.setdefault('cumulative_seconds', []).append((epoch, cumulative_time))
+
+    # for train and valid data
+    for data in [data_train, data_valid]:
+
+        # compute and collect performance data for plotting with Ludwig-Viz
+        for name, val in evaluate_network(net, data, criterion_all).items():
+            performance_data.setdefault(name, []).append((epoch, val))
+
+    # print
+    print_eval_summary(epoch,
+                       performance_data['cumulative_seconds'][-1][1],
+                       performance_data['cost_avg_train'][-1][1],
+                       performance_data['cost_avg_valid'][-1][1],
+                       )

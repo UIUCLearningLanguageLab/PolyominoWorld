@@ -30,8 +30,6 @@ class Display:
 
 class Evaluation:
     epoch_interval = 1
-    verbose = False
-    skip = False
 
 
 class World:

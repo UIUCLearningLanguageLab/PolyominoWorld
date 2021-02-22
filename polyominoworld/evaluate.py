@@ -74,7 +74,6 @@ def evaluate_classifier(net: Network,
 def evaluate_autoassociator(net: Network,
                             dataset: DataSet,
                             criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
-                            verbose: bool = configs.Evaluation.verbose,
                             ) -> Dict[str, np.array]:
 
     raise NotImplementedError  # TODO ph february 21 2021
