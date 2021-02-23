@@ -21,7 +21,6 @@ class World:
                  ) -> None:
 
         self.params = params
-        self.bounds = configs.World.bounds
 
         self.actions = [a for a, p in self.params.actions_and_probabilities]
         self.action_probabilities = [p for a, p in self.params.actions_and_probabilities]
@@ -29,28 +28,27 @@ class World:
         # init/reset world by starting with no active cell
         self.active_cell2color: Dict[WorldCell, RGB] = {}
 
-    def reset_world(self):
-        """must be called before the start of each new sequence"""
-        self.active_cell2color = {}
-
     def generate_sequences(self) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
 
         res = []
 
         # for each possible color
-        for color in configs.World.color2rgb:
+        for color in configs.World.color2rgb:  # TODO specify which colors to use in params.py
+
+            if color == self.params.bg_color:
+                continue
 
             # for each user-requested shape, variant combination
             for shape_name, variants in self.params.shapes_and_variants:
                 for variant in variants:
 
                     # for each possible location
-                    for x in range(configs.World.num_rows):
-                        for y in range(configs.World.num_cols):
+                    for pos_x in range(configs.World.max_y):
+                        for pos_y in range(configs.World.max_x):
 
                             # make shape
-                            position = (x, y)
+                            position = (pos_x, pos_y)
                             shape = self._make_shape(color, position, shape_name, variant)
 
                             if not self._is_shape_legal(shape):
@@ -98,8 +96,6 @@ class World:
     def _make_sequence(self, shape):
         """a sequence of events that involve a single shape"""
 
-        self.reset_world()
-
         events = []
         for event_id in range(self.params.num_events_per_sequence):
 
@@ -110,6 +106,7 @@ class World:
             # calculate new active world cells + update occupied cells
             new_active_world_cells = self._calc_active_world_cells(shape)
             self._update_active_cells(new_active_world_cells, shape.color)
+            assert len(self.active_cell2color) == shape.size
 
             # collect event that resulted from action
             events.append(
@@ -136,29 +133,28 @@ class World:
         compute the cells in the world that this shape would occupy
         """
         res = []
-        for active_shape_cell in shape.active_cells:
-            res.append(WorldCell(x=active_shape_cell.x + shape.pos_x,
-                                 y=active_shape_cell.y + shape.pos_y))
+        for cell in shape.active_cells:
+            res.append(WorldCell(x=cell.x + shape.pos_x,
+                                 y=cell.y + shape.pos_y))
+
+        assert len(res) == shape.size
         return res
 
     def _is_shape_legal(self,
                         shape: shapes.Shape,
                         ) -> bool:
+        """
+        note: because only one shape can occupy world at any time,
+         the only requirement for legality is being within bounds of the world
+        """
 
         for cell in self._calc_active_world_cells(shape):
 
-            if (cell.x < 0) or (cell.y < 0) or \
-                    (cell.x > configs.World.num_cols - 1) or (cell.y > configs.World.num_rows - 1):
-                return False
-
-            if self.bounds:
-                if(cell.x < self.bounds[0]) or \
-                        (cell.y < self.bounds[2]) or \
-                        (cell.x > self.bounds[1]) or \
-                        (cell.y > self.bounds[3]):
-                    return False
-
-            if cell in self.active_cell2color:
+            # not legal if out of bounds
+            if (cell.x < 0) or \
+                    (cell.y < 0) or \
+                    (cell.x > configs.World.max_x - 1) or \
+                    (cell.y > configs.World.max_y - 1):
                 return False
 
         return True
@@ -189,7 +185,7 @@ class World:
                              color: RGB,
                              ) -> None:
 
-        self.active_cell2color = {}
+        self.active_cell2color.clear()
 
         for cell in world_cells:
             self.active_cell2color[cell] = color

@@ -28,27 +28,14 @@ class DataSet:
         self.params = params
         self.name = name
 
-        # colors
-        self.master_color_labels = [color for color in configs.World.color2rgb if color != 'grey']
-        self.color_rgb_matrix = self.make_color_rgb_matrix()
-
         print(f'Initialized {self.name} dataset with {len(self.sequences):,} sequences')
 
-    def make_color_rgb_matrix(self):
-        """create a num_colors x 3 matrix, with the RGB values for each color"""
-        res = np.zeros([len(self.master_color_labels), 3], float)
-        for n, color in enumerate(self.master_color_labels):
-            rgb = configs.World.color2rgb[color]
-            res[n] = rgb
-
-        return res
-
-    def generate_events(self,
-                        ) -> Generator[Event, None, None]:
-        """a generator that yields events, for training or testing.
-         event.x is input vector.
-         events.y is target output vector.
-         """
+    def get_events(self,
+                   ) -> List[Event]:
+        """
+        return list of events, for training, testing, visualisation, etc.
+        """
+        res = []
 
         if self.params.shuffle_sequences:
             random.shuffle(self.sequences)
@@ -61,8 +48,9 @@ class DataSet:
 
             # for each event
             for event in sequence.events:
+                res.append(event)
 
-                yield event
+        return res
 
     def __len__(self):
-        return len(list(self.generate_events()))
+        return len(list(self.get_events()))

@@ -7,11 +7,12 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 from typing import List
+import numpy as np
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld import configs
-from polyominoworld.helpers import FeatureVector, FeatureLabel
+from polyominoworld.helpers import FeatureVector, FeatureLabel, Event
 
 
 class Display:
@@ -23,40 +24,41 @@ class Display:
 
         self.data = data
         self.net = net
+        self.net.eval()
 
-        self.xs = [event.get_x(net.params.x_type) for event in self.data.generate_events()]
+        self.events: List[Event] = self.data.get_events()
 
-        self.x_id = 0  # currently active item in the dataset
+        self.event_id = 0  # currently active item in the dataset
         self.selected_unit = None
 
-        self.square_size = configs.Display.square_size
-
-        self.height = 900
-        self.width = 1200
+        self.height = configs.Display.height
+        self.width = configs.Display.width
 
         self.root = tk.Tk()
         self.root.title("PolyominoWorld")
 
-        self.network_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
-        self.weight_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, bd=0, padx=0, pady=0)
-        self.button_frame = tk.Frame(self.root, height=20, bg="white", width=self.width, bd=0, padx=0, pady=0)
+        kw_args = {'bd': 10, 'padx': 0, 'pady': 0}
+
+        self.network_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, **kw_args)
+        self.weight_frame = tk.Frame(self.root, height=(self.height/2)-10, width=self.width, **kw_args)
+        self.button_frame = tk.Frame(self.root, height=20, bg=configs.Display.color_bg, width=self.width, **kw_args)
 
         self.button_frame.pack()
         self.network_frame.pack()
         self.weight_frame.pack()
 
-        self.network_canvas = tk.Canvas(self.network_frame, height=self.height/2, width=self.width,
-                                        bd=5, bg='#333333', highlightthickness=0, relief='ridge')
-        self.weight_canvas = tk.Canvas(self.network_frame, height=self.height/2, width=self.width,
-                                       bd=5, bg="#333333", highlightthickness=0, relief='ridge')
-        self.network_canvas.pack()
-        self.weight_canvas.pack()
-        self.network_canvas.bind("<Button-1>", self.network_click)
+        self.canvas_net = tk.Canvas(self.network_frame, height=self.height / 2, width=self.width,
+                                    bd=5, bg='#333333', highlightthickness=0, relief='ridge')
+        self.canvas_weights = tk.Canvas(self.network_frame, height=self.height / 2, width=self.width,
+                                        bd=5, bg="#333333", highlightthickness=0, relief='ridge')
+        self.canvas_net.pack()
+        self.canvas_weights.pack()
+        self.canvas_net.bind("<Button-1>", self.network_click)
 
-        self.i_label = tk.Label(self.button_frame, text="Current Item:", bg='white', fg='black')
+        self.i_label = tk.Label(self.button_frame, text="Current Item:", bg=configs.Display.color_bg_button, fg='black')
         self.i_label.pack(side=tk.LEFT)
 
-        x_id = tk.StringVar(self.root, value=self.x_id)
+        x_id = tk.StringVar(self.root, value=self.event_id)
         self.i_entry = tk.Entry(self.button_frame, width=6, textvariable=x_id, relief='flat', borderwidth=0)
         self.i_entry.pack(side=tk.LEFT)
 
@@ -70,51 +72,45 @@ class Display:
         self.quit_button = ttk.Button(self.button_frame, text="Quit", width=8, command=sys.exit)
         self.quit_button.pack(side=tk.LEFT, padx=4)
 
-        self.position_dict = {'World State': (20, 120, "World State"),
-                              'Predicted World State': (1000, 120, "Predicted World State"),
-
-                              'World Layer Activations': (280, 40, "Input Layer"),
-                              'Predicted World Layer Activations': (800, 10, "Output Layer"),
-                              'World Layer Weights': (280, 40, ""),
-                              'Predicted World Layer Weights': (800, 40, ""),
-
-                              'Predicted Feature Activations': (900, 20, "Output Layer"),
-                              'Predicted Feature Weights': (900, 20, ""),
-
-                              'Hidden Layer Activations': (520, 20, "Hidden Layer"),
-                              'Hidden Layer Weights': (520, 20, "")
-                              }
+        self.condition2position = configs.Display.condition2position
         self.draw_window()
 
-    def update_current_item(self):
+    def update_event(self):
         self.i_entry.delete(0, tk.END)  # deletes the current value
-        self.i_entry.insert(0, self.x_id)  # inserts new value assigned by 2nd parameter
-        x = self.xs[self.x_id].clone()
-        return x
+        self.i_entry.insert(0, self.event_id)  # inserts new value assigned by 2nd parameter
+        event = self.events[self.event_id]
+        return event
 
     def draw_window(self):
 
-        x = self.update_current_item()
-        o, h = self.net.forward(x, return_h=True)
+        event = self.update_event()
 
-        self.network_canvas.delete("all")
-        self.weight_canvas.delete("all")
+        print()
+        print(event)
+
+        x = event.get_x(self.net.params.x_type)
+        o, h = self.net.forward(x, return_h=True)
+        x = x.detach().numpy()
+        o = o.detach().numpy()
+
+        self.canvas_net.delete("all")
+        self.canvas_weights.delete("all")
 
         # draw the world for the current x
-        self.draw_world(self.network_canvas, x, 'World State')
+        self.draw_world(self.canvas_net, event.world_vector, 'World State')
 
-        # draw the input layer for the current x
-        self.draw_world_layer(self.network_canvas, x, 1, 'World Layer Activations')
+        # draw the input layer for the current x  (separates world by color channels)
+        self.draw_world_layer(self.canvas_net, event.world_vector.as_3d(), 1, 'World Layer Activations')
 
         # draw the hidden layer for the current x
-        self.draw_hidden_layer(self.network_canvas, h, 1, 'Hidden Layer Activations')
+        self.draw_hidden_layer(self.canvas_net, h, 1, 'Hidden Layer Activations')
 
         # draw the output layer for the current x
         if self.net.params.y_type == 'features':
-            self.draw_feature_layer(self.network_canvas, o.detach().numpy(), 'Predicted Feature Activations')
+            self.draw_feature_layer(self.canvas_net, o, 'Predicted Feature Activations')
         elif self.net.params.y_type == 'world':
-            self.draw_world(self.network_canvas, o.detach().numpy(), 'Predicted World State')
-            self.draw_world_layer(self.network_canvas, o.detach().numpy(), None, 'Predicted World Layer Activations')
+            self.draw_world(self.canvas_net, o, 'Predicted World State')
+            self.draw_world_layer(self.canvas_net, o, None, 'Predicted World Layer Activations')
         else:
             raise AttributeError("Network y_type {} not recognized".format(self.net.params.y_type))
 
@@ -133,29 +129,29 @@ class Display:
 
         # if the selected unit is an input, hidden, or output activation unit, erase canvas and draw title
         if (selected_unit_info[0] in ('i', 'o', 'h')) and (selected_unit_info[2] == 'activations'):
-            self.weight_canvas.delete("all")
-            self.weight_canvas.create_text(self.width / 2, 25, text="Weight Display",
-                                           font="Arial 20 bold", fill='white')
+            self.canvas_weights.delete("all")
+            self.canvas_weights.create_text(self.width / 2, 25, text="Weight Display",
+                                            font=configs.Display.font_xl, fill=configs.Display.color_text_fill)
 
         # if selected unit is an input activation, draw weights to hidden layer
         if selected_unit_info[0] == 'i' and selected_unit_info[2] == 'activations':
-            self.weight_canvas.create_text(self.width / 2, 60,
-                                           text="{}{}-->h weights".format(selected_unit_info[0],
-                                                                          selected_unit_info[1]),
-                                           font="Arial 14 bold", fill='white')
+            self.canvas_weights.create_text(self.width / 2, 60,
+                                            text="{}{}-->h weights".format(selected_unit_info[0],
+                                                                           selected_unit_info[1]),
+                                            font=configs.Display.font_s, fill=configs.Display.color_text_fill)
             if index == 'bias':
                 weights = self.net.h_x.bias.detach().numpy()
             else:
                 weight_matrix = self.net.h_x.weight.detach().numpy()
                 weights = weight_matrix[:, index]
-            self.draw_hidden_layer(self.weight_canvas, weights, None, 'Hidden Layer Weights')
+            self.draw_hidden_layer(self.canvas_weights, weights, None, 'Hidden Layer Weights')
 
         # if selected unit is a hidden unit, draw weights to input and output layer
         elif selected_unit_info[0] == 'h':
             if selected_unit_info[1] != 'bias':
-                self.weight_canvas.create_text(320, 30,
-                                               text="input-->h{} weights".format(selected_unit_info[1]),
-                                               font="Arial 14 bold", fill='white')
+                self.canvas_weights.create_text(320, 30,
+                                                text="input-->h{} weights".format(selected_unit_info[1]),
+                                                font=configs.Display.font_s, fill=configs.Display.color_text_fill)
                 index = int(selected_unit_info[1])
                 h_x_weight_matrix = self.net.h_x.weight.detach().numpy()
                 h_x_weight_vector = h_x_weight_matrix[index, :]
@@ -163,107 +159,122 @@ class Display:
                 h_x_bias = h_x_bias_vector[index]
                 y_h_weight_matrix = self.net.y_h.weight.detach().numpy()
                 y_h_weight_vector = y_h_weight_matrix[:, index]
-                self.draw_world_layer(self.weight_canvas, h_x_weight_vector, h_x_bias, 'World Layer Weights')
+                self.draw_world_layer(self.canvas_weights, h_x_weight_vector, h_x_bias, 'World Layer Weights')
             else:
                 y_h_weight_vector = self.net.y_h.bias.detach().numpy()
             if self.net.params.y_type == 'world':
-                self.draw_world_layer(self.weight_canvas, y_h_weight_vector, None, 'Predicted World Layer Weights')
+                self.draw_world_layer(self.canvas_weights, y_h_weight_vector, None, 'Predicted World Layer Weights')
             elif self.net.params.y_type == 'features':
-                self.draw_feature_layer(self.weight_canvas, y_h_weight_vector, 'Predicted Feature Weights')
+                self.draw_feature_layer(self.canvas_weights, y_h_weight_vector, 'Predicted Feature Weights')
 
-            self.weight_canvas.create_text(900, 20,
-                                           text="h{}-->output weights".format(selected_unit_info[1]),
-                                           font="Arial 14 bold", fill='white')
+            self.canvas_weights.create_text(900, 20,
+                                            text="h{}-->output weights".format(selected_unit_info[1]),
+                                            font=configs.Display.font_s, fill=configs.Display.color_text_fill)
 
         # if selected unit is an output unit, draw weights to hidden layer
         elif selected_unit_info[0] == 'o':
-            self.weight_canvas.create_text(self.width / 2, 60,
-                                           text="{}{}-->h weights".format(selected_unit_info[0],
-                                                                          selected_unit_info[1]),
-                                           font="Arial 14 bold", fill='white')
+            self.canvas_weights.create_text(self.width / 2, 60,
+                                            text="{}{}-->h weights".format(selected_unit_info[0],
+                                                                           selected_unit_info[1]),
+                                            font=configs.Display.font_s, fill=configs.Display.color_text_fill)
 
             weight_matrix = self.net.y_h.weight.detach().numpy()
             weights = weight_matrix[index, :]
-            self.draw_hidden_layer(self.weight_canvas, weights, None, 'Hidden Layer Weights')
+            self.draw_hidden_layer(self.canvas_weights, weights, None, 'Hidden Layer Weights')
 
         self.root.update()
 
-    def draw_world(self, canvas, x, condition):
-        start_x = self.position_dict[condition][0]
-        start_y = self.position_dict[condition][1]
-        title = self.position_dict[condition][2]
+    def draw_world(self,
+                   canvas,
+                   world_vector,
+                   condition,
+                   rectangle_size: int = configs.Display.world_rectangle_size,
+                   ):
+        """draws the 'raw' world, with RGB values combined"""
 
-        rgb_matrix = x.reshape((3, configs.World.num_rows, configs.World.num_cols))
-        size = 20
+        start_x = self.condition2position[condition][0]
+        start_y = self.condition2position[condition][1]
+        title = self.condition2position[condition][2]
+
+        rgb_array = world_vector.as_3d()  # 3d array, (rgb, y coord, x coord)
 
         canvas.create_text(start_x + 40, start_y - 20,
                            text="{}".format(title),
-                           font="Arial 16 bold", fill='white')
+                           font=configs.Display.font_m, fill=configs.Display.color_text_fill)
 
         unit_counter = 0
-        for i in range(configs.World.num_rows):
-            for j in range(configs.World.num_cols):
+        for pos_x in range(configs.World.max_y):
+            for pos_y in range(configs.World.max_x):
                 tag = self.create_tag_name(condition, unit_counter, False)
-                color = self.rgb_to_hex(rgb_matrix[0, i, j], rgb_matrix[1, i, j], rgb_matrix[2, i, j])
-                canvas.create_rectangle(i * size + start_x,
-                                        j * size + start_y,
-                                        (i + 1) * size + start_x,
-                                        (j + 1) * size + start_y,
+                color = self.rgb_to_hex(rgb_array[0, pos_x, pos_y],
+                                        rgb_array[1, pos_x, pos_y],
+                                        rgb_array[2, pos_x, pos_y])
+                canvas.create_rectangle(pos_x * rectangle_size + start_x,
+                                        pos_y * rectangle_size + start_y,
+                                        (pos_x + 1) * rectangle_size + start_x,
+                                        (pos_y + 1) * rectangle_size + start_y,
                                         fill=color, outline=color, tag=tag)
                 unit_counter += 1
 
-    def draw_world_layer(self, canvas, layer, bias, condition):
-        # get the starting x,y position
-        start_x = self.position_dict[condition][0]
-        start_y = self.position_dict[condition][1]
-        title = self.position_dict[condition][2]
+    def draw_world_layer(self,
+                         canvas,
+                         layer,
+                         bias,
+                         condition,
+                         rectangle_size: int = configs.Display.world_layer_rectangle_size,
+                         grid_size=configs.Display.world_grid_size,
+                         ):
+        """draw the world separated by RGB color channel"""
 
-        # decide how big the units should be, based on their number
-        if configs.World.num_rows > 8:
-            size = 10
-        else:
-            size = 14
+        # get the x,y position in the display
+        start_x = self.condition2position[condition][0]
+        start_y = self.condition2position[condition][1]
+        title = self.condition2position[condition][2]
 
         # Write the layer name
-        canvas.create_text(start_x+50, start_y-20,
-                           text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x + 50, start_y - 20,
+                           text=title, font=configs.Display.font_xl, fill=configs.Display.color_text_fill)
 
         color_label_list = ['Red', 'Green', 'Blue']
 
         # if it is an input layer, create the bias unit
         if bias is not None:
-            canvas.create_text(start_x - 30, start_y+10,
-                               text="Bias".format(title), font="Arial 14 bold", fill='white')
+            canvas.create_text(start_x - 30, start_y + 10,
+                               text="Bias".format(title), font=configs.Display.font_s, fill=configs.Display.color_text_fill)
             bias_tag = self.create_tag_name(condition, None, True)
             if self.selected_unit == bias_tag:
                 outline_color = 'yellow'
             else:
                 outline_color = 'black'
-            canvas.create_rectangle(start_x, start_y+3, start_x + size, start_y + size + 3,
+            canvas.create_rectangle(start_x, start_y + 3, start_x + rectangle_size, start_y + rectangle_size + 3,
                                     fill='red', outline=outline_color, tag=bias_tag)
 
         # draw the world layer
         unit_counter = 0
-        grid_size = configs.World.num_rows * size + 10
-        rgb_matrix = layer.reshape((3, configs.World.num_rows, configs.World.num_cols))
+
+        if layer.ndim != 3:
+            rgb_array = layer.reshape((3, configs.World.max_x, configs.World.max_y))
+        else:
+            rgb_array = layer  # when visualizing the world
+
         for k in range(3):
             canvas.create_text(start_x - 30, start_y + 90 + (k*grid_size),
                                text="{}".format(color_label_list[k]).rjust(5),
-                               font="Arial 14 bold", fill='white')
-            for i in range(configs.World.num_rows):
-                for j in range(configs.World.num_cols):
+                               font=configs.Display.font_s, fill=configs.Display.color_text_fill)
+            for pos_x in range(configs.World.max_x):
+                for pos_j in range(configs.World.max_y):
                     tag = self.create_tag_name(condition, unit_counter, False)
-                    fill_color = self.network_hex_color(rgb_matrix[k, i, j])
+                    fill_color = self.network_hex_color(rgb_array[k, pos_x, pos_j])
 
                     if self.selected_unit == tag:
                         outline_color = 'yellow'
                     else:
                         outline_color = 'black'
 
-                    canvas.create_rectangle(i * size + start_x,
-                                            j * size + start_y + (k*grid_size) + 30,
-                                            (i + 1) * size + start_x,
-                                            (j + 1) * size + start_y + (k*grid_size) + 30,
+                    canvas.create_rectangle(pos_x * rectangle_size + start_x,
+                                            pos_j * rectangle_size + start_y + (k * grid_size) + 30,
+                                            (pos_x + 1) * rectangle_size + start_x,
+                                            (pos_j + 1) * rectangle_size + start_y + (k * grid_size) + 30,
                                             fill=fill_color, outline=outline_color, tag=tag)
                     unit_counter += 1
 
@@ -272,60 +283,62 @@ class Display:
                           h,
                           bias,
                           condition,
-                          size: int = configs.Display.hidden_layer_size,
+                          rectangle_size: int = configs.Display.hidden_layer_rectangle_size,
                           spacing: int = configs.Display.hidden_layer_spacing,
                           ):
-        start_x = self.position_dict[condition][0]
-        start_y = self.position_dict[condition][1]
-        title = self.position_dict[condition][2]
+        start_x = self.condition2position[condition][0]
+        start_y = self.condition2position[condition][1]
+        title = self.condition2position[condition][2]
 
         hidden_units_per_column = 8
 
         if bias is not None:
             canvas.create_text(start_x - 30, start_y + 90,
-                               text="Bias", font="Arial 14 bold", fill='white')
+                               text="Bias", font=configs.Display.font_s, fill=configs.Display.color_text_fill)
             bias_tag = self.create_tag_name(condition, None, True)
             if self.selected_unit == bias_tag:
                 outline_color = 'yellow'
             else:
                 outline_color = 'black'
-            canvas.create_rectangle(start_x, start_y + 80, start_x + size, start_y + size + 80,
+            canvas.create_rectangle(start_x, start_y + 80, start_x + rectangle_size, start_y + rectangle_size + 80,
                                     fill='red', outline=outline_color, tag=bias_tag)
 
-        canvas.create_text(start_x+80, start_y,
-                           text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x + 80, start_y,
+                           text=title, font=configs.Display.font_xl, fill=configs.Display.color_text_fill)
 
         for i in range(len(h)):
             tag = self.create_tag_name(condition, str(i), False)
-            y1 = start_y + (size + spacing) * i
+            y1 = start_y + (rectangle_size + spacing) * i
             fill_color = self.network_hex_color(h[i])
             if self.selected_unit == tag:
                 border_color = 'yellow'
             else:
                 border_color = 'black'
-            canvas.create_rectangle(start_x, y1 + 120, start_x + size, y1 + size + 120,
+            canvas.create_rectangle(start_x, y1 + 120, start_x + rectangle_size, y1 + rectangle_size + 120,
                                     fill=fill_color, outline=border_color, tags=tag)
             if (i+1) % hidden_units_per_column == 0:
-                start_x += size + spacing
-                start_y -= hidden_units_per_column * (size + spacing)
+                start_x += rectangle_size + spacing
+                start_y -= hidden_units_per_column * (rectangle_size + spacing)
 
     def draw_feature_layer(self,
                            canvas,
                            layer,
                            condition,
-                           size: int = configs.Display.feature_layer_size,
+                           rectangle_size: int = configs.Display.feature_layer_rectangle_size,
                            spacing: int = configs.Display.feature_layer_spacing,
 
                            ):
-        start_x = self.position_dict[condition][0]
-        start_y = self.position_dict[condition][1]
-        title = self.position_dict[condition][2]
+        start_x = self.condition2position[condition][0]
+        start_y = self.condition2position[condition][1]
+        title = self.condition2position[condition][2]
 
-        canvas.create_text(start_x, start_y, text=title, font="Arial 20 bold", fill='white')
+        canvas.create_text(start_x, start_y, text=title, font=configs.Display.font_xl, fill=configs.Display.color_text_fill)
 
-        soft_max = layer / layer.sum()  # TODO this is temporary -
+        logits = np.clip(layer, 0, None)   # TODO how to handle logits best for visualisation?
         # softmax was previously calculated only over activations corresponding to a single feature type,
-        # to properly normalize only over features within a type
+        # to properly normalize over features within a type.
+        # but this distorts the relative differences in the original logits.
+        # for now, plot logits as-is, but prevent negative activations, to de-clutter display.
 
         feature_labels: List[FeatureLabel] = FeatureVector.get_feature_labels()
         assert len(layer) == len(feature_labels)
@@ -349,43 +362,43 @@ class Display:
                 outline_color = 'black'
 
             x1 = start_x
-            y1 = start_y + ((size + spacing) * n) + 20 + (feature_type_id * 10)
+            y1 = start_y + ((rectangle_size + spacing) * n) + 20 + (feature_type_id * 10)
 
-            canvas.create_rectangle(x1, y1, x1 + size, y1 + size,
+            canvas.create_rectangle(x1, y1, x1 + rectangle_size, y1 + rectangle_size,
                                     fill=fill_color, outline=outline_color, tags=tag)
             canvas.create_text(start_x - 60, y1 + 10,
                                text="{}".format(feature_label).rjust(12),
-                               font="Arial 12 bold", fill='white')
+                               font=configs.Display.font_xs, fill=configs.Display.color_text_fill)
 
             if condition == 'Predicted Feature Activations':
-                value = "{:0.1f}%".format(100 * soft_max[n])
-                bar_size = round(100 * soft_max[n])
+                value = "{:0.1f}".format(100 * logits[n])
+                bar_size = round(100 * logits[n])
                 canvas.create_rectangle(x1 + 50, y1 + 4, start_x + 50 + bar_size, y1 + 16,
                                         fill='blue')
                 canvas.create_text(x1 + 200, y1 + 10 + 2,
-                                   text=value, font="Arial 12 bold", fill='white')
+                                   text=value, font=configs.Display.font_xs, fill=configs.Display.color_text_fill)
 
     def next(self):
-        if self.x_id < len(self.data):
-            self.x_id += 1
+        if self.event_id < len(self.data):
+            self.event_id += 1
         else:
-            self.x_id = 0
-        self.update_current_item()
+            self.event_id = 0
+        self.update_event()
         self.draw_window()
 
     def previous(self):
-        if self.x_id > 0:
-            self.x_id -= 1
+        if self.event_id > 0:
+            self.event_id -= 1
         else:
-            self.x_id = len(self.data) - 1
-        self.update_current_item()
+            self.event_id = len(self.data) - 1
+        self.update_event()
         self.draw_window()
 
     def update(self):
         new_i = int(self.i_entry.get())
         if 0 <= new_i < len(self.data):
-            self.x_id = new_i
-            self.update_current_item()
+            self.event_id = new_i
+            self.update_event()
             self.draw_window()
 
     def network_click(self, event):
@@ -407,9 +420,9 @@ class Display:
 
     def get_tags(self, event):
         x, y = event.x, event.y
-        ids = self.network_canvas.find_overlapping(x - 5, y - 5, x + 5, y + 5)
+        ids = self.canvas_net.find_overlapping(x - 5, y - 5, x + 5, y + 5)
         if len(ids) > 0:
-            tag = self.network_canvas.itemcget(ids[0], "tags").split()[0]
+            tag = self.canvas_net.itemcget(ids[0], "tags").split()[0]
         else:
             tag = None
         return tag
@@ -484,8 +497,7 @@ class Display:
             tag_header = 'o_'
             tag_footer = '_weights'
         else:
-            print("ERROR: Unrecognized layer type {}".format(title))
-            raise RuntimeError
+            raise RuntimeError("ERROR: Unrecognized layer type {}".format(title))
 
         if bias:
             tag = tag_header + "bias" + tag_footer

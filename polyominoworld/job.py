@@ -85,7 +85,7 @@ def main(param2val):
 
         # train
         net.train()
-        for event in data_train.generate_events():
+        for event in data_train.get_events():
 
             x = event.get_x(net.params.x_type)
             y = event.get_y(net.params.y_type)

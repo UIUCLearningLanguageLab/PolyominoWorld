@@ -32,7 +32,7 @@ class WorldVector:
 
     @classmethod
     def calc_size(cls) -> int:
-        num_cells = configs.World.num_cols * configs.World.num_cols
+        num_cells = configs.World.max_x * configs.World.max_x
         num_color_channels = 3  # rgb
         return num_cells * num_color_channels
 
@@ -60,8 +60,8 @@ class WorldVector:
         """
 
         rgb_vectors = []
-        for pos_x in range(configs.World.num_cols):
-            for pos_y in range(configs.World.num_rows):
+        for pos_x in range(configs.World.max_x):
+            for pos_y in range(configs.World.max_y):
                 cell = WorldCell(pos_x, pos_y)
 
                 # color of shape at cell
@@ -84,12 +84,43 @@ class WorldVector:
 
         return res
 
+    def as_3d(self) -> np.ndarray:
+        """
+        return world vector as 3d array, where first index, of size 3, corresponds to RGB values.
+        the returned array has shape (3, max_x, max_y)
+
+        note: used for visualisation, not training.
+
+        note: column indices should always be considered as  x coordinates,
+        and row indices should always be considered as y coordinates.
+        """
+
+        res = np.zeros((3, configs.World.max_x, configs.World.max_y))
+
+        for pos_x in range(configs.World.max_x):
+            for pos_y in range(configs.World.max_y):
+                cell = WorldCell(pos_x, pos_y)
+
+                # color of shape at cell
+                if cell in self.active_cell2color:
+                    color = self.active_cell2color[cell]
+                    res[:, pos_y, pos_x] = np.array(configs.World.color2rgb[color])
+
+                # color of background
+                else:
+                    res[:, pos_y, pos_x] = self._make_bg_color_vector()
+
+        return res
+
     @classmethod
     def from_world(cls,
                    world,
                    ):
-
-        return cls(world.active_cell2color, world.params.bg_color)
+        """
+        warning: it is extremely important to copy active_cell2color,
+         otherwise it will be linked to the world, and updated whenever the world is updated,
+        """
+        return cls(world.active_cell2color.copy(), world.params.bg_color)
 
 
 @dataclass(frozen=True)
@@ -200,7 +231,8 @@ class Event:
         return self.__dict__[feature_type]
 
     def get_x(self,
-              x_type: str):
+              x_type: str,
+              ) -> torch.tensor:
         if x_type == 'hidden':
             return self.hidden_vector.vector
         elif x_type == 'world':

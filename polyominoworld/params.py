@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 param2requests = {
     'hidden_size': [8, 16],
     'learning_rate': [0.3],
-    'num_epochs': [20],
+    'num_epochs': [10],
 }
 
 
@@ -54,7 +54,7 @@ param2default = {
         ('tetromino5', (0, 1, 2, 3))
     ),
 
-    # TODO currently all locations, colors and shapes are used in all combinations
+    # TODO specify custom colors (instead of all possible colors)
 
     'num_events_per_sequence': 1,  # num of events per sequence
 

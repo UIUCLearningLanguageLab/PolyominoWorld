@@ -25,11 +25,44 @@ class PrintOptions:
 
 
 class Display:
-    square_size = 20
-    feature_layer_size = 40
+    height = 1_800
+    width = 2_000
+
+    world_rectangle_size = 40
+    world_layer_rectangle_size = 20
+    world_grid_size = 200
+    hidden_layer_rectangle_size = 40
+    feature_layer_rectangle_size = 40
+
     feature_layer_spacing = 4
-    hidden_layer_size = 40
     hidden_layer_spacing = 4
+
+    font_xs = "Arial 10 bold"
+    font_s = "Arial 12 bold"
+    font_m = "Arial 14 bold"
+    font_l = "Arial 16 bold"
+    font_xl = "Arial 16 bold"
+
+    # x and y position on the display
+    condition2position = {
+        'World State': (100, 40, "World State"),
+        'Predicted World State': (1000, 120, "Predicted World State"),
+
+        'World Layer Activations': (600, 40, "Input Layer"),
+        'Predicted World Layer Activations': (800, 10, "Output Layer"),
+        'World Layer Weights': (280, 40, ""),
+        'Predicted World Layer Weights': (800, 40, ""),
+
+        'Hidden Layer Activations': (1000, 20, "Hidden Layer"),
+        'Hidden Layer Weights': (1000, 20, ""),
+
+        'Predicted Feature Activations': (1600, 20, "Output Layer"),
+        'Predicted Feature Weights': (1600, 20, ""),
+    }
+
+    color_bg = "white"
+    color_bg_button = 'white'
+    color_text_fill = "white"
 
 
 class Evaluation:
@@ -39,10 +72,11 @@ class Evaluation:
 class World:
     """world hyper-parameters that are not intended to be changed"""
 
-    num_rows = 8
-    num_cols = 8
-    bounds = [0, num_cols,  # x min, x max because columns are typically depicted left-right
-              0, num_rows,  # y min, y max because rows are typically depicted bottom-top
+    # warning: do not change world size when intending to evaluate previous models trained with original size
+    max_x = 8
+    max_y = 8
+    bounds = [0, max_x,  # x min, x max
+              0, max_y,  # y min, y max
               ]
 
     color2rgb = {'black': (-1., -1., -1.),

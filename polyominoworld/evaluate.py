@@ -46,7 +46,7 @@ def evaluate_classifier(net: Network,
 
     res = {}
 
-    for event in dataset.generate_events():
+    for event in dataset.get_events():
 
         x = event.get_x(net.params.x_type)
         y = event.get_y(net.params.y_type)
@@ -78,9 +78,14 @@ def evaluate_autoassociator(net: Network,
 
     raise NotImplementedError  # TODO ph february 21 2021
 
+    color_rgb_matrix = np.zeros([len(self.master_color_labels), 3], float)
+    for n, color in enumerate(self.master_color_labels):
+        rgb = configs.World.color2rgb[color]
+        color_rgb_matrix[n] = rgb
+
 
     # for each item in the dataset
-    for event in dataset.generate_events():
+    for event in dataset.get_events():
         event: Event
         # get x and y
         x = event.get_x(self.params.x_type)
@@ -96,16 +101,16 @@ def evaluate_autoassociator(net: Network,
         # use the output vector to calculate which cells are "on", and what color they are
         color_pred_list = []
         position_pred_list = []
-        min_x = dataset.num_rows + 1
-        min_y = dataset.num_cols + 1
+        min_x = dataset.max_y + 1
+        min_y = dataset.max_x + 1
         for j in range(world_size):
             pred_rgb = np.array([o_vector[j], o_vector[j + world_size], o_vector[j + world_size * 2]])
-            distance_vector = np.linalg.norm(dataset.color_rgb_matrix - pred_rgb, axis=1)
+            distance_vector = np.linalg.norm(color_rgb_matrix - pred_rgb, axis=1)
             pred_index = np.argmin(distance_vector)
             pred_label = dataset.all_color_labels[pred_index]
             if pred_label != 'grey':
                 # todo this may need to be num_columns, not num_rows, depending on how rXc matrix is flattened
-                coordinates = [math.floor(j / dataset.num_rows), j % dataset.num_rows]
+                coordinates = [math.floor(j / dataset.max_y), j % dataset.max_y]
                 if coordinates[0] < min_x:
                     min_x = coordinates[0]
                 if coordinates[1] < min_y:
