@@ -11,7 +11,7 @@ import pandas as pd
 from pathlib import Path
 import torch
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.world import World
@@ -125,7 +125,7 @@ def main(param2val):
     return res
 
 
-def evaluate_on_train_and_valid(criterion_all,
+def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
                                 data_train: DataSet,
                                 data_valid: DataSet,
                                 epoch: int,
@@ -153,4 +153,6 @@ def evaluate_on_train_and_valid(criterion_all,
                        performance_data['cumulative_seconds'][-1][1],
                        performance_data['cost_avg_train'][-1][1],
                        performance_data['cost_avg_valid'][-1][1],
+                       performance_data['acc_avg_train'][-1][1],
+                       performance_data['acc_avg_valid'][-1][1],
                        )

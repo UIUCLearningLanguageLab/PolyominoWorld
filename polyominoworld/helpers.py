@@ -162,16 +162,29 @@ class FeatureVector:
          """
 
         res = []
-        for feature_type in configs.World.feature_type2values:
-            feature_values = configs.World.feature_type2values[feature_type]
-            for feature_value in feature_values:
+        for feature_type, values in configs.World.feature_type2values.items():
+            for feature_value in values:
                 label = FeatureLabel(feature_type, feature_value)
                 res.append(label)
         return res
 
     @property
+    def feature_type2ids(self) -> Dict[str, List[int]]:
+        """
+        dict that maps feature_type to indices into feature vector where features of feature_type are located
+        """
+        res = {}
+        start = 0
+        for feature_type, values in configs.World.feature_type2values.items():
+            stop = start + len(values)
+            res[feature_type] = list(range(start, stop))
+            start += len(values)
+        return res
+
+    @property
     def vector(self) -> torch.tensor:
         res = np.hstack(
+            # order matters: shape, size, color, action
             (self.shape_vector, self.size_vector, self.color_vector, self.action_vector)
         ).astype(np.float32)
 
@@ -181,10 +194,6 @@ class FeatureVector:
             res = res.cuda()
 
         return res
-
-    @property
-    def labels(self) -> List[str]:  # the name of each feature as strings (for evaluation, and visualization)
-        return [str(label) for label in self.get_feature_labels()]
 
     @classmethod
     def from_shape(cls,

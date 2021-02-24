@@ -67,6 +67,7 @@ class Display:
 
 class Evaluation:
     epoch_interval = 1
+    means_only = True  # True if collecting summaries only (e.g. means)
 
 
 class World:
