@@ -58,9 +58,7 @@ param2default = {
         'green',
         'blue',
     ),
-
-    # TODO add position constraint (e.g. bounds)
-
+    'max_position': (4, 4),  # bounds in which shape can occur in world
     'num_events_per_sequence': 1,  # num of events per sequence
 
 }
@@ -93,7 +91,8 @@ class Params:
     bg_color: str
     actions_and_probabilities: Dict[str, float]
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
-    colors: Tuple[str]
+    colors: Tuple[str, ]
+    max_position: Tuple[int, int]
     num_events_per_sequence: int
 
     @classmethod

@@ -22,6 +22,15 @@ class World:
 
         self.params = params
 
+        # check params
+        if self.params.max_position[0] > configs.World.max_x:
+            raise ValueError('Maximum x position must be <= configs.World.max_x')
+        if self.params.max_position[1] > configs.World.max_y:
+            raise ValueError('Maximum y position must be <= configs.World.max_y')
+        for color in self.params.colors:
+            if color not in configs.World.color2rgb:
+                raise ValueError('Color must be in configs.World.color2rgb')
+
         self.actions = [a for a, p in self.params.actions_and_probabilities]
         self.action_probabilities = [p for a, p in self.params.actions_and_probabilities]
 
@@ -43,9 +52,9 @@ class World:
             for shape_name, variants in self.params.shapes_and_variants:
                 for variant in variants:
 
-                    # for each possible location
-                    for pos_x in range(configs.World.max_y):
-                        for pos_y in range(configs.World.max_x):
+                    # for each user-requested location (which may span fewer cells than size of the world)
+                    for pos_x in range(self.params.max_position[0]):
+                        for pos_y in range(self.params.max_position[1]):
 
                             # make shape
                             position = (pos_x, pos_y)
