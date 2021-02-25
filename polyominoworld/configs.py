@@ -9,19 +9,12 @@ class Try:
 
 
 class Training:
-    gpu = False
+    gpu = False  # faster on cpu
 
 
 class ArgCheck:
     x_type = {'world', 'hidden'}
     y_type = {'world', 'features'}
-
-
-class PrintOptions:
-    print_items = True
-    print_confusion_matrices = True
-    def print_red(skk): print("\033[91m {}\033[00m" .format(skk))
-    def print_green(skk): print("\033[92m {}\033[00m" .format(skk))
 
 
 class Display:
@@ -121,3 +114,8 @@ class World:
     }
 
 
+class Figs:
+    lw = 1
+    axlabel_fs = 12
+    leg_fs = 6
+    dpi = 163

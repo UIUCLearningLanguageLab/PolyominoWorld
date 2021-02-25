@@ -80,7 +80,6 @@ python -m flask run
 - prepend `_` to method names to indicate they are used to perform "private" logic, and to distinguish them from methods which may be called externally.
 - add doc strings to functions
 - remove `shape.id_number` and populate active world cells with `shape.color` instead which can be directly used when creating `WorldVector`.
-- remove `detailed_accuracies` and `accuracies` temporarily, to make evaluation logic more development-friendly.
 - consolidate single and multi-layer networks into a single network capable of both.
 
 ## Compatibility

@@ -8,7 +8,7 @@ Note: Ludwig relies on the three dictionaries below to be named as-is. Do not re
 
 """
 from typing import Dict, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 param2requests = {
@@ -53,8 +53,13 @@ param2default = {
         ('tetromino4', (0, 1, 2, 3, 4, 5, 6, 7)),
         ('tetromino5', (0, 1, 2, 3))
     ),
+    'colors': (
+        'red',
+        'green',
+        'blue',
+    ),
 
-    # TODO specify custom colors (instead of all possible colors)
+    # TODO add position constraint (e.g. bounds)
 
     'num_events_per_sequence': 1,  # num of events per sequence
 
@@ -72,23 +77,24 @@ class Params:
     this object is loaded at the start of job.main() by calling Params.from_param2val(),
     and is populated by Ludwig with hyper-parameters corresponding to a single job.
     """
-    hidden_size: int = field(default=param2default['hidden_size'])
-    hidden_activation_function: str = field(default=param2default['hidden_activation_function'])
-    learning_rate: float = field(default=param2default['learning_rate'])
-    num_epochs: int = field(default=param2default['num_epochs'])
-    weight_init: float = field(default=param2default['weight_init'])
-    optimizer: str = field(default=param2default['optimizer'])
-    x_type: str = field(default=param2default['x_type'])
-    y_type: str = field(default=param2default['y_type'])
-    criterion: str = field(default=param2default['criterion'])
+    hidden_size: int
+    hidden_activation_function: str
+    learning_rate: float
+    num_epochs: int
+    weight_init: float
+    optimizer: str
+    x_type: str
+    y_type: str
+    criterion: str
 
-    seed: int = field(default=param2default['seed'])
-    shuffle_sequences: bool = field(default=param2default['shuffle_sequences'])
-    shuffle_events: bool = field(default=param2default['shuffle_events'])
-    bg_color: str = field(default=param2default['bg_color'])
-    actions_and_probabilities: Dict[str, float] = field(default_factory=param2default.get('actions_and_probabilities'))
-    shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]] = field(default_factory=param2default.get('shapes_and_variants'))
-    num_events_per_sequence: int = field(default=param2default['num_events_per_sequence'])
+    seed: int
+    shuffle_sequences: bool
+    shuffle_events: bool
+    bg_color: str
+    actions_and_probabilities: Dict[str, float]
+    shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
+    colors: Tuple[str]
+    num_events_per_sequence: int
 
     @classmethod
     def from_param2val(cls, param2val):

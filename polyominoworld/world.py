@@ -34,7 +34,7 @@ class World:
         res = []
 
         # for each possible color
-        for color in configs.World.color2rgb:  # TODO specify which colors to use in params.py
+        for color in self.params.colors:
 
             if color == self.params.bg_color:
                 continue
