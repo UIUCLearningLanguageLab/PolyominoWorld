@@ -12,15 +12,18 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'hidden_size': [8, 16],
+    'hidden_size': [8],
     'learning_rate': [0.3],
-    'num_epochs': [10],
+    'num_epochs': [1000],
+
+    'load_from_checkpoint': ['param_002'],
 }
 
 
 # default hyper parameters
 param2default = {
     # model
+    'load_from_checkpoint': 'none',
     'hidden_size': 16,
     'hidden_activation_function': 'tanh',
     'learning_rate': 0.3,
@@ -75,6 +78,7 @@ class Params:
     this object is loaded at the start of job.main() by calling Params.from_param2val(),
     and is populated by Ludwig with hyper-parameters corresponding to a single job.
     """
+    load_from_checkpoint: str
     hidden_size: int
     hidden_activation_function: str
     learning_rate: float

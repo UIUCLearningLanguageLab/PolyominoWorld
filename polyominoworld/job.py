@@ -11,7 +11,9 @@ import pandas as pd
 from pathlib import Path
 import torch
 import time
+import numpy as np
 from typing import Dict, List, Tuple, Union
+import random
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.world import World
@@ -38,6 +40,12 @@ def main(param2val):
 
     # network
     net = Network(params)
+    if params.load_from_checkpoint.startswith('param'):  # load weights from previous checkpoint
+        path_tmp = Path(param2val['project_path']) / 'runs' / params.load_from_checkpoint
+        path_cpt = random.choice(list(path_tmp.rglob('**/saves/model.pt')))
+        state_dict = torch.load(path_cpt)
+        net.load_state_dict(state_dict)
+        print(f'Loaded weights from {path_cpt}')
     if configs.Training.gpu:
         if torch.cuda.is_available():
             net.cuda()
@@ -143,6 +151,11 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
 
     # for train and valid data
     for data in [data_train, data_valid]:
+
+        if configs.Evaluation.skip_validation and data.name == 'valid':
+            performance_data.setdefault('cost_avg_valid', []).append((epoch, np.nan))
+            performance_data.setdefault('acc_avg_valid', []).append((epoch, np.nan))
+            continue
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():

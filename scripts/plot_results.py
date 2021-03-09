@@ -29,6 +29,9 @@ CONFIDENCE: float = 0.95
 TITLE = ''
 
 
+param2requests = {'colors': [('red',), ('blue',)]}  # TODO this is where we request which jobs to plot results for
+
+
 # collect summaries
 summaries = []
 project_name = __name__

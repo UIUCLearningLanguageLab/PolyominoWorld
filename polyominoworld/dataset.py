@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from typing import Generator, Tuple, List
+from typing import List
 
 from polyominoworld import configs
 from polyominoworld.params import Params
