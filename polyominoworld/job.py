@@ -139,14 +139,16 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
                                 epoch: int,
                                 net: Network,
                                 performance_data: Dict[str, List[Tuple[int, float]]],
-                                start_time: time.time,
+                                start_time_train: time.time,
                                 ) -> None:
     """
     save performance data to performance_data which will be saved to the shared drive by Ludwig.
     """
 
     # collect time data
-    cumulative_time = time.time() - start_time
+
+    start_time_eval = time.time()
+    cumulative_time = start_time_eval - start_time_train
     performance_data.setdefault('cumulative_seconds', []).append((epoch, cumulative_time))
 
     # for train and valid data
@@ -169,3 +171,4 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
                        performance_data['acc_avg_train'][-1][1],
                        performance_data['acc_avg_valid'][-1][1],
                        )
+    print(f'Evaluation took {time.time() - start_time_eval} seconds')
