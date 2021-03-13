@@ -18,18 +18,18 @@ from polyominoworld.params import param2default, param2requests
 # where to look for results
 LUDWIG_DATA_PATH: Optional[Path] = Path('/media/ludwig_data')
 RUNS_PATH = None  # config.Dirs.runs if using local plot or None if using plot form Ludwig
-PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
+PATTERN: str = 'acc_avg_valid'  # name of performance curve to plot
+Y_LABEL: str = 'Average Train Accuracy'
 
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
 Y_LIMS: Optional[List[float]] = None
-Y_LABEL: str = ''
 CONFIDENCE: float = 0.95
 TITLE = ''
 
 
-param2requests = {'colors': [('red',), ('blue',)]}  # TODO this is where we request which jobs to plot results for
+# param2requests = {'colors': [('red',), ('blue',)]}  # TODO this is where we request which jobs to plot results for
 
 
 # collect summaries

@@ -25,18 +25,14 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                      log_y: bool = False,
                      start_x_at_zero: bool = False,
                      y_grid: bool = False,
-                     plot_max_line: bool = False,
-                     plot_max_lines: bool = False,
                      legend_labels: Union[None, list] = None,
-                     vlines: List[int] = None,
-                     vline: int = None,
                      legend_loc: str = 'lower right',
                      verbose: bool = False,
                      ):
-    # fig
+    # setting up the matplotlib figure and axis
     fig, ax = plt.subplots(figsize=figsize, dpi=configs.Figs.dpi)
     plt.title(title)
-    ax.set_xlabel('Training step (mini batch)', fontsize=configs.Figs.axlabel_fs)
+    ax.set_xlabel('Training step', fontsize=configs.Figs.axlabel_fs)
     ax.set_ylabel(ylabel, fontsize=configs.Figs.axlabel_fs)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -53,7 +49,7 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
     if xlims is not None:
         ax.set_xlim(xlims)
 
-    # palette
+    # palette - assign each configuration a different color
     num_summaries = len(summaries)
     palette = np.asarray(sns.color_palette('hls', num_summaries))
     if palette_ids is not None:
@@ -64,12 +60,13 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
     if legend_labels is not None:
         legend_labels = iter(legend_labels)
 
-    first_r = True
-    first_c = True
-
     # plot summary
     max_ys = []
-    for x, y_mean, h, label, n in summaries:
+    for x, y_mean, h, label, n in summaries:  # there is one summary for each configuration
+
+        # x is a list of x-axis values
+        # y is a list of y-axi values
+        # h is the margin of error around y (resulting in the the 95% confidence interval)
         max_ys.append(max(y_mean))
 
         if legend_labels is not None:
@@ -87,22 +84,14 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
             for mean_i, std_i in zip(y_mean, h):
                 print(f'mean={mean_i:>6.2f} h={std_i:>6.2f}')
 
-        # if passing multiple summaries, do not label all
-        if 'reverse=True' in label and 'shuffle_sentences=True' not in label:
-            color = 'C1'
-            if not first_r:
-                label = '__nolegend__'
-            else:
-                first_r = False
-        elif 'reverse=False' in label and 'shuffle_sentences=True' not in label:
-            color = 'C0'
-            if not first_c:
-                label = '__nolegend__'
-            else:
-                first_c = False
+        # plot the lines
+        ax.plot(x, y_mean, '-',
+                linewidth=configs.Figs.lw,
+                color=color,
+                label=label,  # legend label
+                zorder=3 if n == 8 else 2)
 
-        ax.plot(x, y_mean, '-', linewidth=configs.Figs.lw, color=color,
-                label=label, zorder=3 if n == 8 else 2)
+        # plots the margin of error (shaded region)
         ax.fill_between(x, y_mean + h, y_mean - h, alpha=0.2, color=color)
 
     # legend
@@ -117,22 +106,6 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                    ncol=3,
                    )
 
-    # max line
-    if plot_max_line:
-        ax.axhline(y=max(max_ys), color='grey', linestyle=':', zorder=1)
-    if plot_max_lines:
-        for max_y in max_ys:
-            ax.axhline(y=max_y, color='grey', lw=1, linestyle='-', zorder=1)
-            print('y max={}'.format(max_y))
-    # vertical lines
-    if vlines:
-        for vline in vlines:
-            if vline == 0:
-                continue
-            print(x[-1], vline / len(vlines))
-            ax.axvline(x=x[-1] * (vline / len(vlines)), color='grey', linestyle=':', zorder=1)
-    if vline:
-        ax.axvline(x=vline, color='grey', linestyle=':', zorder=1)
     plt.tight_layout()
     return fig
 

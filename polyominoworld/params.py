@@ -14,7 +14,7 @@ from dataclasses import dataclass
 param2requests = {
     'hidden_size': [8],
     'learning_rate': [0.3],
-    'num_epochs': [10],
+    'num_epochs': [250],
 
     # 'load_from_checkpoint': ['param_002'],
 
