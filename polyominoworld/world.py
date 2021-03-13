@@ -1,5 +1,6 @@
 from typing import Tuple, List, Dict
 import numpy as np
+import itertools
 
 from polyominoworld import configs
 from polyominoworld.params import Params
@@ -8,6 +9,13 @@ from polyominoworld.helpers import Sequence, Event, ShapeState, FeatureVector, W
 
 
 RGB = Tuple[float, float, float]
+
+all_positions = [(x, y) for x, y in itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
+half2positions = {'lower': [(x, y) for x, y in all_positions
+                            if y < configs.World.max_y / 2],
+                  'upper': [(x, y) for x, y in all_positions
+                            if y >= configs.World.max_y / 2]
+                  }
 
 
 class World:
@@ -23,10 +31,6 @@ class World:
         self.params = params
 
         # check params
-        if self.params.max_position[0] > configs.World.max_x:
-            raise ValueError('Maximum x position must be <= configs.World.max_x')
-        if self.params.max_position[1] > configs.World.max_y:
-            raise ValueError('Maximum y position must be <= configs.World.max_y')
         for color in self.params.colors:
             if color not in configs.World.color2rgb:
                 raise ValueError('Color must be in configs.World.color2rgb')
@@ -36,6 +40,23 @@ class World:
 
         # init/reset world by starting with no active cell
         self.active_cell2color: Dict[WorldCell, RGB] = {}
+
+    @staticmethod
+    def _convert_half_to_positions(half: str,
+                                   ) -> List[Tuple[int, int]]:
+        """
+        each half defines a list of allowed positions.
+
+        the world is defined with respect to the origin (0, 0), the bottom, left-most point
+
+        x axis refers to left-right.
+        y axis refers to lower-upper.
+
+        """
+        try:
+            return half2positions[half]
+        except KeyError:
+            raise KeyError('Invalid half')
 
     def generate_sequences(self) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
@@ -53,14 +74,15 @@ class World:
                 for variant in variants:
 
                     # for each user-requested location (which may span fewer cells than size of the world)
-                    for pos_x in range(self.params.max_position[0]):
-                        for pos_y in range(self.params.max_position[1]):
+                    for half in self.params.halves:
+
+                        # for each position in half
+                        for position in self._convert_half_to_positions(half):
 
                             # make shape
-                            position = (pos_x, pos_y)
                             shape = self._make_shape(color, position, shape_name, variant)
 
-                            if not self._is_shape_legal(shape):
+                            if not self._is_shape_legal(shape, half):
                                 continue
 
                             # update occupied cells
@@ -68,7 +90,7 @@ class World:
                                 self.active_cell2color[cell] = shape.color
 
                             # make sequence of events
-                            sequence = self._make_sequence(shape)
+                            sequence = self._make_sequence(shape, half)
                             res.append(sequence)
 
         return res
@@ -102,14 +124,16 @@ class World:
 
         return constructor(color, variant, position)
 
-    def _make_sequence(self, shape):
+    def _make_sequence(self, shape,
+                       half: str,
+                       ):
         """a sequence of events that involve a single shape"""
 
         events = []
         for event_id in range(self.params.num_events_per_sequence):
 
             # find and perform legal action
-            shape_state = self.find_legal_shape_state(shape)
+            shape_state = self.find_legal_shape_state(shape, half)
             shape.update_state(shape_state)
 
             # calculate new active world cells + update occupied cells
@@ -151,13 +175,19 @@ class World:
 
     def _is_shape_legal(self,
                         shape: shapes.Shape,
+                        half: str,
                         ) -> bool:
         """
+        1. check if any (possibly out-of-bounds) cell occupied by the shape is out of bounds.
+        2. check if any (possibly out-of-bounds) cell occupied by the shape crosses half boundary
+
+
         note: because only one shape can occupy world at any time,
          the only requirement for legality is being within bounds of the world
         """
 
         for cell in self._calc_active_world_cells(shape):
+            cell: WorldCell
 
             # not legal if out of bounds
             if (cell.x < 0) or \
@@ -166,10 +196,15 @@ class World:
                     (cell.y > configs.World.max_y - 1):
                 return False
 
+            # check half boundary
+            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in half2positions[half]]:
+                return False
+
         return True
 
     def find_legal_shape_state(self,
                                shape: shapes.Shape,
+                               half: str,
                                ) -> ShapeState:
 
         """find shape state that results in legal position"""
@@ -184,7 +219,7 @@ class World:
             state: ShapeState = shape.get_new_state(action)
 
             # update world and cell if resultant position is legal
-            if self._is_shape_legal(shape):
+            if self._is_shape_legal(shape, half):
                 return state
 
             try_counter += 1

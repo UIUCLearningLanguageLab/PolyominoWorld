@@ -68,6 +68,7 @@ class World:
     """world hyper-parameters that are not intended to be changed"""
 
     # warning: do not change world size when intending to evaluate previous models trained with original size
+    # warning: max_x and max_y must be divisible by two (because world is divided into two halves)
     max_x = 8
     max_y = 8
     bounds = [0, max_x,  # x min, x max

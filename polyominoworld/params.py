@@ -14,9 +14,11 @@ from dataclasses import dataclass
 param2requests = {
     'hidden_size': [8],
     'learning_rate': [0.3],
-    'num_epochs': [1000],
+    'num_epochs': [10],
 
-    'load_from_checkpoint': ['param_002'],
+    # 'load_from_checkpoint': ['param_002'],
+
+    'halves': [('upper', )],
 }
 
 
@@ -61,8 +63,8 @@ param2default = {
         'green',
         'blue',
     ),
-    'max_position': (4, 4),  # bounds in which shape can occur in world
     'num_events_per_sequence': 1,  # num of events per sequence
+    'halves': ('upper', 'lower')
 
 }
 
@@ -96,8 +98,8 @@ class Params:
     actions_and_probabilities: Dict[str, float]
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     colors: Tuple[str, ]
-    max_position: Tuple[int, int]
     num_events_per_sequence: int
+    halves: Tuple[str]
 
     @classmethod
     def from_param2val(cls, param2val):

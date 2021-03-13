@@ -24,7 +24,6 @@ from ludwig.results import gen_param_paths
 LUDWIG_DATA_PATH: Optional[Path] = Path('/media/ludwig_data')
 RUNS_PATH: Optional[Path] = None  # if using local runs or None if using runs from Ludwig
 
-
 if __name__ == '__main__':
 
     project_name = 'PolyominoWorld'
