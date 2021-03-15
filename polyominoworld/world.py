@@ -14,7 +14,8 @@ all_positions = [(x, y) for x, y in itertools.product(range(configs.World.max_x)
 half2positions = {'lower': [(x, y) for x, y in all_positions
                             if y < configs.World.max_y / 2],
                   'upper': [(x, y) for x, y in all_positions
-                            if y >= configs.World.max_y / 2]
+                            if y >= configs.World.max_y / 2],
+                  'all': [(x, y) for x, y in all_positions]
                   }
 
 

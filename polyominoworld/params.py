@@ -12,13 +12,12 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'hidden_size': [8],
-    'learning_rate': [0.3],
-    'num_epochs': [250],
-
-    # 'load_from_checkpoint': ['param_002'],
-
-    'halves': [('upper', )],
+    'hidden_size': [8, 16, 32, 64],
+    'learning_rate': [0.01, 0.10, 0.20, 0.30, 0.40],
+    'weight_init': [0.000001, 0.00001, 0.001, 0.01],
+    'num_epochs': [1000],
+    'optimizer': ['SGD', 'Adam'],
+    'halves': [('all', )],
 }
 
 
@@ -59,12 +58,18 @@ param2default = {
         ('tetromino5', (0, 1, 2, 3))
     ),
     'colors': (
+        'black',
+        'white',
         'red',
-        'green',
         'blue',
+        'green',
+        'yellow',
+        'cyan',
+        'magenta',
+        'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
-    'halves': ('upper', 'lower')
+    'halves': ('upper', 'lower', 'all')
 
 }
 
