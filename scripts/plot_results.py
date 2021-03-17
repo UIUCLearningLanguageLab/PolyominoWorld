@@ -18,6 +18,13 @@ from polyominoworld.params import param2default, param2requests
 # which results to plot
 PATTERN: str = 'cumulative_seconds'  # name of performance curve to plot
 
+# available patterns:
+# {1}_{2}_{3}
+# 1: cost, acc
+# 2: shape, color, size, monomino, ..., red, ..., 1, .....
+# 3: train, valid
+
+
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
@@ -26,8 +33,8 @@ CONFIDENCE: float = 0.95
 TITLE = ''
 
 
-param2requests = {'hidden_size': [8, 16, 32, 64]}  # TODO this is where we request which jobs to plot results for
-
+param2requests['hidden_size'] = [64]
+param2requests['optimizer'] = ['SGD', 'Adam']
 
 # for each job, save a summary, used for plotting
 summaries = []
