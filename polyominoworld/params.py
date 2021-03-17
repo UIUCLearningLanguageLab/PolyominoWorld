@@ -27,8 +27,8 @@ param2default = {
     'load_from_checkpoint': 'none',
     'hidden_size': 16,
     'hidden_activation_function': 'tanh',
-    'learning_rate': 0.3,
-    'num_epochs': 10,
+    'learning_rate': 0.01,
+    'num_epochs': 1000,
     'weight_init': 0.00001,
     'optimizer': 'SGD',
     'x_type': 'world',
@@ -69,7 +69,7 @@ param2default = {
         'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
-    'halves': ('upper', 'lower', 'all')
+    'halves': ('all', )
 
 }
 

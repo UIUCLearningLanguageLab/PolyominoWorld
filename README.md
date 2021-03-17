@@ -30,10 +30,16 @@ To define which jobs will be executed, edit `polyomino_world/params.py`. To run 
 ludwig -r10
 ```
 
-Alternatively, jobs can be run locally:
+Alternatively, jobs can be run locally, and results will be saved on the shared drive:
 
 ```bash
 ludwig --local
+``` 
+
+To develop locally, without moving results to the shared drive:
+
+```bash
+ludwig --isolated
 ``` 
 
 ### Visualizing results
@@ -43,6 +49,10 @@ Clone [LudwigViz](https://github.com/phueb/Ludwig-Viz), navigate to the root dir
 ```bash
 python -m flask run
 ```    
+
+Alternatively, use the provided script, `plot_results.py` in `scripts`. 
+Before results can be plotted, create an environment variable,
+`LUDWIG_MNT` that points to the path where the shared drive is mounted on your machine.
 
 ## Changelog
 
