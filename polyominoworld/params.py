@@ -6,6 +6,14 @@ Any hyper-parameter not overwritten by param2requests will be assigned its defau
 
 Note: Ludwig relies on the three dictionaries below to be named as-is. Do not rename them.
 
+experiment 2a: all colors except 1
+experiment 2b: all shapes except 1
+experiment 2c: upper vs. lower
+experiment 2d: train on half of variants, test on other halves
+
+experiment 3: continue training exp2 models on full data, tracking speed of learning of novel examples
+
+
 """
 from typing import Dict, Tuple
 from dataclasses import dataclass

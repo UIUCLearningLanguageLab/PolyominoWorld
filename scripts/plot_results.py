@@ -18,6 +18,13 @@ from polyominoworld.params import param2default, param2requests
 # which results to plot
 PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
 
+# available patterns:
+# {1}_{2}_{3}
+# 1: cost, acc
+# 2: shape, color, size, monomino, ..., red, ..., 1, .....
+# 3: train, valid
+
+
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
