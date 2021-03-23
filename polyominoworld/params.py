@@ -29,11 +29,11 @@ param2requests = {
 param2default = {
     # model
     'load_from_checkpoint': 'none',
-    'hidden_size': 16,
+    'hidden_size': 64,
     'hidden_activation_function': 'tanh',
-    'learning_rate': 0.01,
+    'learning_rate': 0.4,
     'num_epochs': 1000,
-    'weight_init': 0.00001,
+    'weight_init': 0.001,
     'optimizer': 'SGD',
     'x_type': 'world',
     'y_type': 'features',
