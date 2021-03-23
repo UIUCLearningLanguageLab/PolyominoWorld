@@ -62,7 +62,6 @@ class Display:
 class Evaluation:
     epoch_interval = 50
     means_only = False  # True if collecting summaries only (e.g. means)
-    skip_validation = True  # True will result in evaluation on train data only
 
 
 class World:

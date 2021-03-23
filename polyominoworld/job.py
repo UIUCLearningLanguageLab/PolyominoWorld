@@ -167,11 +167,6 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
     # for train and valid data
     for data in [data_train, data_valid]:
 
-        if configs.Evaluation.skip_validation and data.name == 'valid':
-            performance_data.setdefault('cost_avg_valid', []).append((epoch, np.nan))
-            performance_data.setdefault('acc_avg_valid', []).append((epoch, np.nan))
-            continue
-
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():
             performance_data.setdefault(name, []).append((epoch, val))
