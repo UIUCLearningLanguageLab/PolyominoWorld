@@ -16,7 +16,7 @@ from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'cumulative_seconds'  # name of performance curve to plot
+PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
 
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
@@ -26,8 +26,12 @@ CONFIDENCE: float = 0.95
 TITLE = ''
 
 
-param2requests = {'hidden_size': [8, 16, 32, 64]}  # TODO this is where we request which jobs to plot results for
-
+param2requests = {'hidden_size': [16],
+                  'learning_rate': [0.01, 0.10, 0.20, 0.30, 0.40],
+                  'weight_init': [0.01]}  # TODO this is where we request which jobs to plot results for
+# 8, 16, 32, 64
+# 0.01, 0.10, 0.20, 0.30, 0.40
+#0.000001, 0.00001, 0.001, 0.01
 
 # for each job, save a summary, used for plotting
 summaries = []
