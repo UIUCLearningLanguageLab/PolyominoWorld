@@ -2,6 +2,7 @@
 This module contains settings that control all aspects of the program,
 that are not of direct research interest, e.g. constants, defaults, flow-control, type checking, etc.
 """
+from typing import List
 
 
 class Try:
@@ -93,7 +94,7 @@ class World:
         'flip': [0, 1],
     }
 
-    master_shapes = [
+    master_shapes: List[str] = [
         'monomino',
         'domino',
         'tromino1',
@@ -105,9 +106,9 @@ class World:
         'tetromino5',
     ]
 
-    master_sizes = [1, 2, 3, 4]  # size = number of active cells for a shape
-    master_colors = [c for c in color2rgb]
-    master_actions = [a for a in action2directions]
+    master_sizes: List[str] = [1, 2, 3, 4]  # size = number of active cells for a shape
+    master_colors: List[str] = [c for c in color2rgb]
+    master_actions: List[str] = [a for a in action2directions]
     feature_type2values = {
         'shape': master_shapes,
         'size': master_sizes,

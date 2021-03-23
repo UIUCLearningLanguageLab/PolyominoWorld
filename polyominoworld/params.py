@@ -20,12 +20,8 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'hidden_size': [8, 16, 32, 64],
-    'learning_rate': [0.01, 0.10, 0.20, 0.30, 0.40],
-    'weight_init': [0.000001, 0.00001, 0.001, 0.01],
-    'num_epochs': [1000],
-    'optimizer': ['SGD'],
-    'halves': [('all', )],
+    'leftout_shapes': [('', ), ('monomino',)],
+
 }
 
 
@@ -77,7 +73,10 @@ param2default = {
         'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
-    'halves': ('all', )
+    'halves': ('all', ),
+
+    'leftout_colors': ('',),  # empty string means nothing is leftout
+    'leftout_shapes': ('',),
 
 }
 
@@ -113,6 +112,8 @@ class Params:
     colors: Tuple[str, ]
     num_events_per_sequence: int
     halves: Tuple[str]
+    leftout_colors: Tuple[str]
+    leftout_shapes: Tuple[str]
 
     @classmethod
     def from_param2val(cls, param2val):

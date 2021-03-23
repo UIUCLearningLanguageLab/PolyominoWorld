@@ -59,7 +59,10 @@ class World:
         except KeyError:
             raise KeyError('Invalid half')
 
-    def generate_sequences(self) -> List[Sequence]:
+    def generate_sequences(self,
+                           leftout_colors: Tuple[str],
+                           leftout_shapes: Tuple[str],
+                           ) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
 
         res = []
@@ -67,11 +70,18 @@ class World:
         # for each possible color
         for color in self.params.colors:
 
+            if color in leftout_colors:
+                continue
+
             if color == self.params.bg_color:
                 continue
 
             # for each user-requested shape, variant combination
             for shape_name, variants in self.params.shapes_and_variants:
+
+                if shape_name in leftout_shapes:
+                    continue
+
                 for variant in variants:
 
                     # for each user-requested location (which may span fewer cells than size of the world)

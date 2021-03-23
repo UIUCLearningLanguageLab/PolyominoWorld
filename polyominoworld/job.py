@@ -33,10 +33,23 @@ def main(param2val):
     if not save_path.exists():
         save_path.mkdir(parents=True)
 
-    # generate world + load into dataset
+    # make world
     world = World(params)
-    data_train = DataSet(world.generate_sequences(), params, 'train')  # TODO currently sequences are the same in test and valid
-    data_valid = DataSet(world.generate_sequences(), params, 'valid')
+
+    # make train dataset
+    data_train = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
+                                                  leftout_shapes=params.leftout_shapes),
+                         params,
+                         'train',
+                         )
+
+    # make test/valid dataset
+    leftout_colors_inverse = tuple([c for c in configs.World.master_colors if c not in params.leftout_colors])
+    leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes if c not in params.leftout_shapes])
+    data_valid = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
+                                                  leftout_shapes=leftout_shapes_inverse),
+                         params,
+                         'valid')
 
     # network
     net = Network(params)
