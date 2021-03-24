@@ -40,16 +40,24 @@ def main(param2val):
     data_train = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
                                                   leftout_shapes=params.leftout_shapes),
                          params,
-                         'train',
-                         )
+                         'train')
 
     # make test/valid dataset
-    leftout_colors_inverse = tuple([c for c in configs.World.master_colors if c not in params.leftout_colors])
-    leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes if c not in params.leftout_shapes])
+    if params.leftout_colors:
+        leftout_colors_inverse = tuple([c for c in configs.World.master_colors if c not in params.leftout_colors])
+    else:
+        leftout_colors_inverse = ()
+    if params.leftout_shapes:
+        leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes if c not in params.leftout_shapes])
+    else:
+        leftout_shapes_inverse = ()
     data_valid = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
                                                   leftout_shapes=leftout_shapes_inverse),
                          params,
                          'valid')
+
+    assert data_train.sequences
+    assert data_valid.sequences
 
     # network
     net = Network(params)
@@ -166,10 +174,14 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
 
     # for train and valid data
     for data in [data_train, data_valid]:
+        print(f'Evaluating with {data.name} data')
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():
             performance_data.setdefault(name, []).append((epoch, val))
+
+    print(performance_data['cost_avg_train'][-1][1])
+    print(performance_data['cost_avg_valid'][-1][1])
 
     # print
     print_eval_summary(epoch,
