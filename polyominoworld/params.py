@@ -20,7 +20,17 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'leftout_shapes': [('', ), ('monomino',)],
+    'leftout_shapes': [
+        ('monomino', ),
+        ('domino', ),
+        ('tromino1', ),
+        ('tromino2', ),
+        ('tetromino1', ),
+        ('tetromino2', ),
+        ('tetromino3', ),
+        ('tetromino4', ),
+        ('tetromino5', ),
+    ],
 
 }
 
@@ -32,7 +42,7 @@ param2default = {
     'hidden_size': 64,
     'hidden_activation_function': 'tanh',
     'learning_rate': 0.4,
-    'num_epochs': 1000,
+    'num_epochs': 200,
     'weight_init': 0.001,
     'optimizer': 'SGD',
     'x_type': 'world',
@@ -75,8 +85,8 @@ param2default = {
     'num_events_per_sequence': 1,  # num of events per sequence
     'halves': ('all', ),
 
-    'leftout_colors': ('',),  # empty string means nothing is leftout
-    'leftout_shapes': ('',),
+    'leftout_colors': (),  # empty means nothing is leftout
+    'leftout_shapes': (),
 
 }
 
