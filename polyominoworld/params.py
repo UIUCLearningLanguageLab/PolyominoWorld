@@ -34,7 +34,6 @@ param2requests = {
 
 }
 
-
 # default hyper parameters
 param2default = {
     # model
@@ -94,6 +93,12 @@ param2default = {
 param2debug = {
     'num_epochs': 3,
 }
+
+
+for leftout_colors in param2requests['leftout_colors']:
+    for lc in leftout_colors:
+        if lc == param2default['bg_color']:
+            raise ValueError(f'Cannot leave out bg_color. Remove "{lc}" from leftout_colors.')
 
 
 @dataclass

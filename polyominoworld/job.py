@@ -174,14 +174,10 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
 
     # for train and valid data
     for data in [data_train, data_valid]:
-        print(f'Evaluating with {data.name} data')
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():
             performance_data.setdefault(name, []).append((epoch, val))
-
-    print(performance_data['cost_avg_train'][-1][1])
-    print(performance_data['cost_avg_valid'][-1][1])
 
     # print
     print_eval_summary(epoch,
