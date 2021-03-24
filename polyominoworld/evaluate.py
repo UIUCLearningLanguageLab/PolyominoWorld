@@ -67,13 +67,13 @@ def evaluate_classification(net: Network,
 
         # collect cost for each feature
         for n, feature_label in enumerate(event.feature_vector.get_feature_labels()):
-            performance_name = f'cost_{feature_label}-{dataset.name}'
+            performance_name = f'cost_{feature_label}_{dataset.name}'
             res.setdefault(performance_name, 0.0)
             res[performance_name] += costs_by_feature[n]
 
         # collect accuracy for each feature_type
         for feature_type, o_ids in event.feature_vector.feature_type2ids.items():
-            performance_name = f'acc_{feature_type}-{dataset.name}'
+            performance_name = f'acc_{feature_type}_{dataset.name}'
             res.setdefault(performance_name, 0.0)
             o_restricted = o[o_ids]  # logits restricted to one feature_type
             y_restricted = event.get_y(net.params.y_type)[o_ids]
