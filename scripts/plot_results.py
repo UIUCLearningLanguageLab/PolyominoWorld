@@ -28,14 +28,13 @@ PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
-Y_LIMS: Optional[List[float]] = None
+Y_LIMS: Optional[List[float]] = [0, 1.]
 CONFIDENCE: float = 0.95
 TITLE = ''
 
 
-param2requests = {'hidden_size': [16],
-                  'learning_rate': [0.01, 0.10, 0.20, 0.30, 0.40],
-                  'weight_init': [0.01]}  # TODO this is where we request which jobs to plot results for
+# param2requests
+
 # 8, 16, 32, 64
 # 0.01, 0.10, 0.20, 0.30, 0.40
 #0.000001, 0.00001, 0.001, 0.01

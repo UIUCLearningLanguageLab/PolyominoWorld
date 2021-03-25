@@ -38,10 +38,10 @@ param2requests = {
 param2default = {
     # model
     'load_from_checkpoint': 'none',
-    'hidden_size': 64,
+    'hidden_size': 32,
     'hidden_activation_function': 'tanh',
     'learning_rate': 0.4,
-    'num_epochs': 200,
+    'num_epochs': 300,
     'weight_init': 0.001,
     'optimizer': 'SGD',
     'x_type': 'world',
@@ -82,7 +82,7 @@ param2default = {
         'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
-    'halves': ('all', ),
+    'half': 'all',  # is a string, and can be either "all", "upper", or "lower"
 
     'leftout_colors': (),  # empty means nothing is leftout
     'leftout_shapes': (),
@@ -127,7 +127,7 @@ class Params:
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     colors: Tuple[str, ]
     num_events_per_sequence: int
-    halves: Tuple[str]
+    half: str
     leftout_colors: Tuple[str]
     leftout_shapes: Tuple[str]
 

@@ -84,25 +84,22 @@ class World:
 
                 for variant in variants:
 
-                    # for each user-requested location (which may span fewer cells than size of the world)
-                    for half in self.params.halves:
+                    # for each position in half
+                    for position in self._convert_half_to_positions(self.params.half):
 
-                        # for each position in half
-                        for position in self._convert_half_to_positions(half):
+                        # make shape
+                        shape = self._make_shape(color, position, shape_name, variant)
 
-                            # make shape
-                            shape = self._make_shape(color, position, shape_name, variant)
+                        if not self._is_shape_legal(shape):
+                            continue
 
-                            if not self._is_shape_legal(shape, half):
-                                continue
+                        # update occupied cells
+                        for cell in self._calc_active_world_cells(shape):
+                            self.active_cell2color[cell] = shape.color
 
-                            # update occupied cells
-                            for cell in self._calc_active_world_cells(shape):
-                                self.active_cell2color[cell] = shape.color
-
-                            # make sequence of events
-                            sequence = self._make_sequence(shape, half)
-                            res.append(sequence)
+                        # make sequence of events
+                        sequence = self._make_sequence(shape)
+                        res.append(sequence)
 
         return res
 
@@ -136,7 +133,6 @@ class World:
         return constructor(color, variant, position)
 
     def _make_sequence(self, shape,
-                       half: str,
                        ):
         """a sequence of events that involve a single shape"""
 
@@ -144,7 +140,7 @@ class World:
         for event_id in range(self.params.num_events_per_sequence):
 
             # find and perform legal action
-            shape_state = self.find_legal_shape_state(shape, half)
+            shape_state = self.find_legal_shape_state(shape)
             shape.update_state(shape_state)
 
             # calculate new active world cells + update occupied cells
@@ -186,7 +182,6 @@ class World:
 
     def _is_shape_legal(self,
                         shape: shapes.Shape,
-                        half: str,
                         ) -> bool:
         """
         1. check if any (possibly out-of-bounds) cell occupied by the shape is out of bounds.
@@ -208,14 +203,13 @@ class World:
                 return False
 
             # check half boundary
-            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in half2positions[half]]:
+            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in half2positions[self.params.half]]:
                 return False
 
         return True
 
     def find_legal_shape_state(self,
                                shape: shapes.Shape,
-                               half: str,
                                ) -> ShapeState:
 
         """find shape state that results in legal position"""
@@ -230,7 +224,7 @@ class World:
             state: ShapeState = shape.get_new_state(action)
 
             # update world and cell if resultant position is legal
-            if self._is_shape_legal(shape, half):
+            if self._is_shape_legal(shape):
                 return state
 
             try_counter += 1
