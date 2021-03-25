@@ -74,11 +74,21 @@ class World:
             if color == self.params.bg_color:
                 continue
 
-            # for each user-requested shape, variant combination
+            # for each user-requested shape+variant combination
             for shape_name, variants in self.params.shapes_and_variants:
 
                 if shape_name in leftout_shapes:
                     continue
+
+                # use only half of variants?
+                if self.params.leftout_variants == 'half1':
+                    variants = variants[:max(1, len(variants) // 2)]
+                elif self.params.leftout_variants == 'half2':
+                    variants = variants[len(variants) // 2:]
+                elif self.params.leftout_variants == '':
+                    pass
+                else:
+                    raise AttributeError('Invalid arg to leftout_variants')
 
                 for variant in variants:
 

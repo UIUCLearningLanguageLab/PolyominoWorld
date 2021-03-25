@@ -20,8 +20,8 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'leftout_half': [
-        ''
+    'leftout_variants': [
+        'half1'
     ],
 
 }
@@ -75,6 +75,7 @@ param2default = {
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
 
+    'leftout_variants': '',  # is a string, and can be either "", "half1", or "half2
     'leftout_half': '',  # is a string, and can be either "", "upper", or "lower"
     'leftout_colors': (),  # empty means nothing is leftout
     'leftout_shapes': (),
@@ -120,6 +121,7 @@ class Params:
     colors: Tuple[str, ]
     num_events_per_sequence: int
 
+    leftout_variants: str
     leftout_half: str
     leftout_colors: Tuple[str]
     leftout_shapes: Tuple[str]
