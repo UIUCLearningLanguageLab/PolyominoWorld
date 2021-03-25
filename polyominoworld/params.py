@@ -20,16 +20,8 @@ from dataclasses import dataclass
 
 
 param2requests = {
-    'leftout_shapes': [
-        ('monomino', ),
-        ('domino', ),
-        ('tromino1', ),
-        ('tromino2', ),
-        ('tetromino1', ),
-        ('tetromino2', ),
-        ('tetromino3', ),
-        ('tetromino4', ),
-        ('tetromino5', ),
+    'leftout_half': [
+        ''
     ],
 
 }
@@ -82,8 +74,8 @@ param2default = {
         'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
-    'half': 'all',  # is a string, and can be either "all", "upper", or "lower"
 
+    'leftout_half': '',  # is a string, and can be either "", "upper", or "lower"
     'leftout_colors': (),  # empty means nothing is leftout
     'leftout_shapes': (),
 
@@ -127,7 +119,8 @@ class Params:
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     colors: Tuple[str, ]
     num_events_per_sequence: int
-    half: str
+
+    leftout_half: str
     leftout_colors: Tuple[str]
     leftout_shapes: Tuple[str]
 

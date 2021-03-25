@@ -10,19 +10,14 @@ from polyominoworld.helpers import Sequence, Event, ShapeState, FeatureVector, W
 
 RGB = Tuple[float, float, float]
 
-all_positions = [(x, y) for x, y in itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
-half2positions = {'lower': [(x, y) for x, y in all_positions
-                            if y < configs.World.max_y / 2],
-                  'upper': [(x, y) for x, y in all_positions
-                            if y >= configs.World.max_y / 2],
-                  'all': [(x, y) for x, y in all_positions]
-                  }
-
 
 class World:
     """
     a grid-based world in which sequences of events occur.
     events occur because to actions performed by shapes, e.g. flip, move, rotate
+
+
+    the world is defined with respect to the origin (x=0, y=0), the bottom, left-most point
     """
 
     def __init__(self,
@@ -42,22 +37,25 @@ class World:
         # init/reset world by starting with no active cell
         self.active_cell2color: Dict[WorldCell, RGB] = {}
 
-    @staticmethod
-    def _convert_half_to_positions(half: str,
-                                   ) -> List[Tuple[int, int]]:
-        """
-        each half defines a list of allowed positions.
+        # restrict positions to upper or lower half?
+        self.allowed_positions = self._get_allowed_positions()
 
-        the world is defined with respect to the origin (0, 0), the bottom, left-most point
+    def _get_allowed_positions(self,
+                               ) -> List[Tuple[int, int]]:
 
-        x axis refers to left-right.
-        y axis refers to lower-upper.
+        all_positions = [(x, y) for x, y in
+                         itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
 
-        """
-        try:
-            return half2positions[half]
-        except KeyError:
-            raise KeyError('Invalid half')
+        if self.params.leftout_half == 'upper':
+            return [(x, y) for x, y in all_positions
+                    if y < configs.World.max_y / 2]
+        elif self.params.leftout_half == 'lower':
+            return [(x, y) for x, y in all_positions
+                    if y >= configs.World.max_y / 2]
+        elif self.params.leftout_half == '':
+            return [(x, y) for x, y in all_positions]
+        else:
+            raise AttributeError('Invalid arg to leftout_half')
 
     def generate_sequences(self,
                            leftout_colors: Tuple[str],
@@ -84,8 +82,8 @@ class World:
 
                 for variant in variants:
 
-                    # for each position in half
-                    for position in self._convert_half_to_positions(self.params.half):
+                    # for each position in upper, or lower half, or both halves
+                    for position in self.allowed_positions:
 
                         # make shape
                         shape = self._make_shape(color, position, shape_name, variant)
@@ -203,7 +201,7 @@ class World:
                 return False
 
             # check half boundary
-            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in half2positions[self.params.half]]:
+            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in self.allowed_positions]:
                 return False
 
         return True
