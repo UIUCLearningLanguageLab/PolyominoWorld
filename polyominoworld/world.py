@@ -37,33 +37,21 @@ class World:
         # init/reset world by starting with no active cell
         self.active_cell2color: Dict[WorldCell, RGB] = {}
 
-        # restrict positions to upper or lower half?
-        self.allowed_positions = self._get_allowed_positions()
-
-    def _get_allowed_positions(self,
-                               ) -> List[Tuple[int, int]]:
-
-        all_positions = [(x, y) for x, y in
-                         itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
-
-        if self.params.leftout_half == 'upper':
-            return [(x, y) for x, y in all_positions
-                    if y < configs.World.max_y / 2]
-        elif self.params.leftout_half == 'lower':
-            return [(x, y) for x, y in all_positions
-                    if y >= configs.World.max_y / 2]
-        elif self.params.leftout_half == '':
-            return [(x, y) for x, y in all_positions]
-        else:
-            raise AttributeError('Invalid arg to leftout_half')
+        self.master_positions = [(x, y) for x, y in
+                     itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
 
     def generate_sequences(self,
                            leftout_colors: Tuple[str],
                            leftout_shapes: Tuple[str],
+                           leftout_variants: str,
+                           leftout_positions: List[Tuple[int, int]],
                            ) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
 
         res = []
+
+        # exclude events in which any world cell occupied by a shape appears in leftout position
+        self.leftout_positions = leftout_positions
 
         # for each possible color
         for color in self.params.colors:
@@ -81,11 +69,11 @@ class World:
                     continue
 
                 # use only half of variants?
-                if self.params.leftout_variants == 'half1':
+                if leftout_variants == 'half1':
                     variants = variants[:max(1, len(variants) // 2)]
-                elif self.params.leftout_variants == 'half2':
+                elif leftout_variants == 'half2':
                     variants = variants[len(variants) // 2:]
-                elif self.params.leftout_variants == '':
+                elif leftout_variants == '':
                     pass
                 else:
                     raise AttributeError('Invalid arg to leftout_variants')
@@ -93,7 +81,10 @@ class World:
                 for variant in variants:
 
                     # for each position in upper, or lower half, or both halves
-                    for position in self.allowed_positions:
+                    for position in self.master_positions:
+
+                        if position in leftout_positions:
+                            continue
 
                         # make shape
                         shape = self._make_shape(color, position, shape_name, variant)
@@ -211,7 +202,7 @@ class World:
                 return False
 
             # check half boundary
-            if cell not in [WorldCell(x=pos[0], y=pos[1]) for pos in self.allowed_positions]:
+            if cell in [WorldCell(x=pos[0], y=pos[1]) for pos in self.leftout_positions]:
                 return False
 
         return True

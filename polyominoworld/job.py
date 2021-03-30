@@ -6,12 +6,12 @@ A job consists of :
 - evaluating a network periodically during training
 - saving evaluation data to the shared drive used by Ludwig
 """
+import itertools
 
 import pandas as pd
 from pathlib import Path
 import torch
 import time
-import numpy as np
 from typing import Dict, List, Tuple, Union
 import random
 
@@ -38,21 +38,40 @@ def main(param2val):
 
     # make train dataset
     data_train = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
-                                                  leftout_shapes=params.leftout_shapes),
+                                                  leftout_shapes=params.leftout_shapes,
+                                                  leftout_variants=params.leftout_variants,
+                                                  leftout_positions=get_leftout_positions(params.leftout_half),
+                                                  ),
                          params,
                          'train')
 
-    # make test/valid dataset
+    # handle leftout colors
     if params.leftout_colors:
         leftout_colors_inverse = tuple([c for c in configs.World.master_colors if c not in params.leftout_colors])
     else:
-        leftout_colors_inverse = ()
+        leftout_colors_inverse = ()  # test on all colors if trained on all colors
+    # handle leftout shapes
     if params.leftout_shapes:
         leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes if c not in params.leftout_shapes])
     else:
-        leftout_shapes_inverse = ()
+        leftout_shapes_inverse = ()  # test on all shapes if trained on all shapes
+    # handle leftout variants
+    if params.leftout_variants:
+        leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params.leftout_variants]
+    else:
+        leftout_variants_inverse = ''  # test on all variants if trained on all variants
+    # handle leftout positions
+    if params.leftout_half:
+        leftout_positions_inverse = get_leftout_positions({'upper': 'lower', 'lower': 'upper'}[params.leftout_half])
+    else:
+        leftout_positions_inverse = get_leftout_positions('')  # test on all positions if trained on all positions
+
+    # make test/valid dataset based on what is leftout from training dataset
     data_valid = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
-                                                  leftout_shapes=leftout_shapes_inverse),
+                                                  leftout_shapes=leftout_shapes_inverse,
+                                                  leftout_variants=leftout_variants_inverse,
+                                                  leftout_positions=leftout_positions_inverse,
+                                                  ),
                          params,
                          'valid')
 
@@ -188,3 +207,22 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
                        performance_data['acc_avg_valid'][-1][1],
                        )
     print(f'Evaluation took {time.time() - start_time_eval} seconds')
+
+
+def get_leftout_positions(leftout_half: str,
+                          ) -> List[Tuple[int, int]]:
+    """get positions in world that are in leftout half of the world"""
+
+    all_positions = [(x, y) for x, y in
+                     itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
+
+    if leftout_half == 'lower':
+        return [(x, y) for x, y in all_positions
+                if y < configs.World.max_y / 2]
+    elif leftout_half == 'upper':
+        return [(x, y) for x, y in all_positions
+                if y >= configs.World.max_y / 2]
+    elif leftout_half == '':
+        return []  # nothing is leftout
+    else:
+        raise AttributeError('Invalid arg to leftout_half')
