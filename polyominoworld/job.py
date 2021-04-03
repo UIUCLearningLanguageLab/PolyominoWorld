@@ -82,10 +82,11 @@ def main(param2val):
     net = Network(params)
     if params.load_from_checkpoint.startswith('param'):  # load weights from previous checkpoint
         path_tmp = Path(param2val['project_path']) / 'runs' / params.load_from_checkpoint
+        print(f'Trying to load model from {path_tmp}')
         path_cpt = random.choice(list(path_tmp.rglob('**/saves/model.pt')))
         state_dict = torch.load(path_cpt)
         net.load_state_dict(state_dict)
-        print(f'Loaded weights from {path_cpt}')
+        print(f'Loaded model from {path_cpt}')
     if configs.Training.gpu:
         if torch.cuda.is_available():
             net.cuda()

@@ -21,23 +21,17 @@ PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
 # available patterns:
 # {1}_{2}_{3}
 # 1: cost, acc
-# 2: shape, color, size, monomino, ..., red, ..., 1, .....
+# 2: shape, color, size (for cost and acc); monomino, ..., red, ..., 1, ..... (for cost only)
 # 3: train, valid
+# 4 cumulative_seconds
 
 
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
-Y_LIMS: Optional[List[float]] = [0, 1.]
+Y_LIMS: Optional[List[float]] = [0., 1.]
 CONFIDENCE: float = 0.95
 TITLE = ''
-
-
-# param2requests
-
-# 8, 16, 32, 64
-# 0.01, 0.10, 0.20, 0.30, 0.40
-#0.000001, 0.00001, 0.001, 0.01
 
 # for each job, save a summary, used for plotting
 summaries = []
