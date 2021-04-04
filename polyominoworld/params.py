@@ -22,7 +22,7 @@ import os
 import yaml
 
 try:
-    mnt = os.environ['LUDWIG_MNT']
+    mnt = os.getenv('LUDWIG_MNT', 'media/')
 except KeyError:
     raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
                    'Point it to the location where the shared drive is mounted on your system,'
