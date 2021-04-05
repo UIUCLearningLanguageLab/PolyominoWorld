@@ -48,9 +48,13 @@ def is_exp2(param_path: Path,
 param2requests = {
 
     # this will load an exp2 model, one for each exp3 job
-    'load_from_checkpoint': [p.name for p in runs_path.glob('param_*') if is_exp2(p)],
+    # 'load_from_checkpoint': [p.name for p in runs_path.glob('param_*') if is_exp2(p)],
+
+    'learning_rate': [0.4],
 
 }
+
+print(param2requests)
 
 # default hyper parameters
 param2default = {
