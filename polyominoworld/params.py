@@ -22,7 +22,7 @@ import os
 import yaml
 
 try:
-    mnt = os.getenv('LUDWIG_MNT', 'media/')
+    mnt = os.getenv('LUDWIG_MNT', '/media/')
 except KeyError:
     raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
                    'Point it to the location where the shared drive is mounted on your system,'
@@ -35,26 +35,28 @@ def is_exp2(param_path: Path,
             ) -> bool:
     """is the parameter configuration part of experiment 2?"""
 
+    res = False
+
     # load param2val
     with (param_path / 'param2val.yaml').open('r') as f:
         param2val = yaml.load(f, Loader=yaml.FullLoader)
     # check if at least 1 feature was left out -> if so, configuration is from exp 2
     for k in ['leftout_variants', 'leftout_half', 'leftout_colors', 'leftout_shapes']:
         if param2val[k] not in {'', ()}:
-            return True
-    return False
+            res = True
+
+    print(f'Configuration {param_path.name} is in exp2={res}')
+
+    return res
 
 
 param2requests = {
 
     # this will load an exp2 model, one for each exp3 job
-    # 'load_from_checkpoint': [p.name for p in runs_path.glob('param_*') if is_exp2(p)],
+    'load_from_checkpoint': [p.name for p in runs_path.glob('param_*') if is_exp2(p)],
 
-    'learning_rate': [0.4],
 
 }
-
-print(param2requests)
 
 # default hyper parameters
 param2default = {
