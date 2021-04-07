@@ -10,7 +10,9 @@ create an environment variable "LUDWIG_MNT" that points to the path where ludwig
 
 import torch
 import yaml
+import itertools
 
+from polyominoworld import configs
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld.display import Display
@@ -19,6 +21,26 @@ from polyominoworld.params import Params
 from polyominoworld.params import param2requests, param2default
 
 from ludwig.results import gen_param_paths
+
+
+def get_leftout_positions(leftout_half: str,
+                          ) :
+    """get positions in world that are in leftout half of the world"""
+
+    all_positions = [(x, y) for x, y in
+                     itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
+
+    if leftout_half == 'lower':
+        return [(x, y) for x, y in all_positions
+                if y < configs.World.max_y / 2]
+    elif leftout_half == 'upper':
+        return [(x, y) for x, y in all_positions
+                if y >= configs.World.max_y / 2]
+    elif leftout_half == '':
+        return []  # nothing is leftout
+    else:
+        raise AttributeError('Invalid arg to leftout_half')
+
 
 if __name__ == '__main__':
 
@@ -36,7 +58,11 @@ if __name__ == '__main__':
 
         # re-generate data  the way it was during training
         world = World(params)
-        data = DataSet(world.generate_sequences(), params, name='re-generated')
+        data = DataSet(world.generate_sequences(leftout_colors=('', ),
+                                                leftout_shapes=('', ),
+                                                leftout_variants='',
+                                                leftout_positions=get_leftout_positions(''),
+                                                ), params, name='re-generated')
 
         # multiple models may exist for the same hyper-parameter configuration - iterate over each
         for path_to_net in param_path.rglob('model.pt'):
