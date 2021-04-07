@@ -83,7 +83,9 @@ def main(param2val):
     if params.load_from_checkpoint.startswith('param'):  # load weights from previous checkpoint
         path_tmp = Path(param2val['project_path']) / 'runs' / params.load_from_checkpoint
         print(f'Trying to load model from {path_tmp}')
-        path_cpt = random.choice(list(path_tmp.rglob('**/saves/model.pt')))
+        model_files = list(path_tmp.rglob('**/saves/model.pt'))
+        print(f'Found {len(model_files)} saved models')
+        path_cpt = random.choice(model_files)
         state_dict = torch.load(path_cpt)
         net.load_state_dict(state_dict)
         print(f'Loaded model from {path_cpt}')

@@ -38,7 +38,7 @@ class World:
         self.active_cell2color: Dict[WorldCell, RGB] = {}
 
         self.master_positions = [(x, y) for x, y in
-                     itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
+                                 itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
 
     def generate_sequences(self,
                            leftout_colors: Tuple[str],
@@ -48,10 +48,11 @@ class World:
                            ) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
 
-        res = []
+        print('Leaving out positions:')
+        for p in leftout_positions:
+            print(p)
 
-        # exclude events in which any world cell occupied by a shape appears in leftout position
-        self.leftout_positions = leftout_positions
+        res = []
 
         # for each possible color
         for color in self.params.colors:
@@ -89,7 +90,7 @@ class World:
                         # make shape
                         shape = self._make_shape(color, position, shape_name, variant)
 
-                        if not self._is_shape_legal(shape):
+                        if not self._is_shape_legal(shape, leftout_positions):
                             continue
 
                         # update occupied cells
@@ -97,7 +98,7 @@ class World:
                             self.active_cell2color[cell] = shape.color
 
                         # make sequence of events
-                        sequence = self._make_sequence(shape)
+                        sequence = self._make_sequence(shape, leftout_positions)
                         res.append(sequence)
 
         return res
@@ -132,6 +133,7 @@ class World:
         return constructor(color, variant, position)
 
     def _make_sequence(self, shape,
+                       leftout_positions: List[Tuple[int, int]],
                        ):
         """a sequence of events that involve a single shape"""
 
@@ -139,7 +141,7 @@ class World:
         for event_id in range(self.params.num_events_per_sequence):
 
             # find and perform legal action
-            shape_state = self.find_legal_shape_state(shape)
+            shape_state = self.find_legal_shape_state(shape, leftout_positions)
             shape.update_state(shape_state)
 
             # calculate new active world cells + update occupied cells
@@ -181,6 +183,7 @@ class World:
 
     def _is_shape_legal(self,
                         shape: shapes.Shape,
+                        leftout_positions: List[Tuple[int, int]],
                         ) -> bool:
         """
         1. check if any (possibly out-of-bounds) cell occupied by the shape is out of bounds.
@@ -188,7 +191,8 @@ class World:
 
 
         note: because only one shape can occupy world at any time,
-         the only requirement for legality is being within bounds of the world
+         the only requirement for legality is being within bounds of the world,
+         and not occupying any leftout position
         """
 
         for cell in self._calc_active_world_cells(shape):
@@ -202,13 +206,14 @@ class World:
                 return False
 
             # check half boundary
-            if cell in [WorldCell(x=pos[0], y=pos[1]) for pos in self.leftout_positions]:
+            if cell in [WorldCell(x=pos[0], y=pos[1]) for pos in leftout_positions]:
                 return False
 
         return True
 
     def find_legal_shape_state(self,
                                shape: shapes.Shape,
+                               leftout_positions: List[Tuple[int, int]],
                                ) -> ShapeState:
 
         """find shape state that results in legal position"""
@@ -223,7 +228,7 @@ class World:
             state: ShapeState = shape.get_new_state(action)
 
             # update world and cell if resultant position is legal
-            if self._is_shape_legal(shape):
+            if self._is_shape_legal(shape, leftout_positions):
                 return state
 
             try_counter += 1

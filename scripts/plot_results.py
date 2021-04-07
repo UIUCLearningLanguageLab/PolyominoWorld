@@ -16,7 +16,7 @@ from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
+PATTERN: str = 'cost_shape-tetromino5_train'  # name of performance curve to plot
 
 # available patterns:
 # {1}_{2}_{3}
@@ -24,6 +24,8 @@ PATTERN: str = 'acc_avg_train'  # name of performance curve to plot
 # 2: shape, color, size (for cost and acc); monomino, ..., red, ..., 1, ..... (for cost only)
 # 3: train, valid
 # 4 cumulative_seconds
+
+param2requests['load_from_checkpoint'] = ['none', 'param_039']
 
 
 # figure settings
