@@ -11,12 +11,14 @@ from typing import Optional, List, Tuple
 
 from ludwig.results import gen_param_paths
 
-from polyominoworld.figs import make_summary_fig
+from polyominoworld.figs import make_summary_fig, rank_label_for_legend_order, make_y_label
 from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'cost_shape-tetromino5_train'  # name of performance curve to plot
+PATTERN: str = 'acc_shape_valid'  # name of performance curve to plot
+
+# TODO order legend by shape, or color
 
 # available patterns:
 # {1}_{2}_{3}
@@ -24,8 +26,6 @@ PATTERN: str = 'cost_shape-tetromino5_train'  # name of performance curve to plo
 # 2: shape, color, size (for cost and acc); monomino, ..., red, ..., 1, ..... (for cost only)
 # 3: train, valid
 # 4 cumulative_seconds
-
-param2requests['load_from_checkpoint'] = ['none', 'param_039']
 
 
 # figure settings
@@ -43,31 +43,24 @@ for p, label in gen_param_paths(project_name,
                                 param2default,
                                 runs_path=None,
                                 ludwig_data_path=None,
-                                label_n=True):
+                                label_n=False):
     summary = make_summary(PATTERN, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
     summaries.append(summary)
     print(f'--------------------- End section {p.name}')
     print()
 
 # sort data
-summaries = sorted(summaries, key=lambda s: s[1][-1], reverse=True)
+summaries = sorted(summaries, key=lambda s: rank_label_for_legend_order(s[3]))
 if not summaries:
     raise SystemExit('No data found')
 
-# print to console
-for s in summaries:
-    _, y_mean, y_std, label, n = s
-    print(label)
-    print(y_mean)
-    print(y_std)
-    print()
-
 # plot
 fig = make_summary_fig(summaries,
-                       ylabel=' '.join([i.capitalize() for i in PATTERN.split('_')]),
+                       x_label='Epoch',
+                       y_label=make_y_label(PATTERN),
                        title=TITLE,
                        figsize=FIG_SIZE,
-                       ylims=Y_LIMS,
+                       y_lims=Y_LIMS,
                        legend_labels=LABELS,
                        legend_loc='best',
                        )

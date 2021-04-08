@@ -118,6 +118,6 @@ class World:
 
 class Figs:
     lw = 1
-    axlabel_fs = 12
-    leg_fs = 6
+    ax_label_fs = 14
+    leg_fs = 8
     dpi = 163

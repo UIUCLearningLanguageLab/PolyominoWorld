@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 import seaborn as sns
 import numpy as np
 from typing import List, Tuple, Union
@@ -7,21 +6,29 @@ from typing import List, Tuple, Union
 from polyominoworld import configs
 
 
-def human_format(num, pos):  # pos is required for formatting mpl axis ticklabels
-    magnitude = 0
-    while abs(num) >= 1000:
-        magnitude += 1
-        num /= 1000.0
-    return '{}{}'.format(num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])
+def rank_label_for_legend_order(label:  str,
+                                ) -> int:
+    """assign rank to a label, for ordering labels in figure legend"""
+
+    rank= 100
+
+    for label_part in label.split('\n'):
+        if label_part == 'load_from_checkpoint=none':
+            print('found')
+            rank = 0
+
+    print(f'Assigned label="{label}" rank={rank} in legend order')
+    return rank
 
 
 def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, str, int]],
-                     ylabel: str,
+                     y_label: str,
+                     x_label: str,
                      title: str = '',
                      palette_ids: List[int] = None,
                      figsize: Tuple[int, int] = None,
-                     ylims: List[float] = None,
-                     xlims: List[float] = None,
+                     y_lims: List[float] = None,
+                     x_lims: List[int] = None,
                      log_y: bool = False,
                      start_x_at_zero: bool = False,
                      y_grid: bool = False,
@@ -32,22 +39,21 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
     # setting up the matplotlib figure and axis
     fig, ax = plt.subplots(figsize=figsize, dpi=configs.Figs.dpi)
     plt.title(title)
-    ax.set_xlabel('Training step', fontsize=configs.Figs.axlabel_fs)
-    ax.set_ylabel(ylabel, fontsize=configs.Figs.axlabel_fs)
+    ax.set_xlabel(x_label, fontsize=configs.Figs.ax_label_fs)
+    ax.set_ylabel(y_label, fontsize=configs.Figs.ax_label_fs)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)
-    ax.xaxis.set_major_formatter(FuncFormatter(human_format))
     if y_grid:
         ax.yaxis.grid(True)
-    if ylims is not None:
-        ax.set_ylim(ylims)
+    if y_lims is not None:
+        ax.set_ylim(y_lims)
     if log_y:
         ax.set_yscale('log')
     if start_x_at_zero:
         ax.set_xlim(xmin=0, xmax=summaries[0][0][-1])
-    if xlims is not None:
-        ax.set_xlim(xlims)
+    if x_lims is not None:
+        ax.set_xlim(x_lims)
 
     # palette - assign each configuration a different color
     num_summaries = len(summaries)
@@ -110,7 +116,18 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
     return fig
 
 
-
-
-
-
+def make_y_label(pattern: str,
+                 ) -> str:
+    """make more readable y-axis label for figure"""
+    res = ''
+    for pattern_part in pattern.split('_')[::-1]:
+        try:
+            line = {'acc': 'Accuracy',
+                    'cost': 'Error',
+                    'train': 'Training',
+                    'valid': 'Testing',
+                    }[pattern_part]
+        except KeyError:
+            line = pattern_part
+        res += line.capitalize() + ' '
+    return res
