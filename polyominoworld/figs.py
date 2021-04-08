@@ -10,12 +10,32 @@ def rank_label_for_legend_order(label:  str,
                                 ) -> int:
     """assign rank to a label, for ordering labels in figure legend"""
 
-    rank= 100
+    rank = 100
 
     for label_part in label.split('\n'):
         if label_part == 'load_from_checkpoint=none':
             print('found')
             rank = 0
+
+        # shapes
+        for n, shape in enumerate(configs.World.master_shapes):
+            if shape in label_part:
+                rank = n
+
+        # colors
+        for n, color in enumerate(configs.World.master_colors):
+            if color in label_part:
+                rank = n
+
+        # positions
+        for n, half in enumerate(['lower', 'upper']):
+            if half in label_part:
+                rank = n
+
+        # variants
+        for n, variants in enumerate(['half1', 'half2']):
+            if variants in label_part:
+                rank = n
 
     print(f'Assigned label="{label}" rank={rank} in legend order')
     return rank
@@ -124,8 +144,8 @@ def make_y_label(pattern: str,
         try:
             line = {'acc': 'Accuracy',
                     'cost': 'Error',
-                    'train': 'Training',
-                    'valid': 'Testing',
+                    'train': 'TrainData',
+                    'valid': 'TestData',
                     }[pattern_part]
         except KeyError:
             line = pattern_part
