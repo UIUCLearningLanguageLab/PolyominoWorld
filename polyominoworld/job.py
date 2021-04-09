@@ -6,7 +6,6 @@ A job consists of :
 - evaluating a network periodically during training
 - saving evaluation data to the shared drive used by Ludwig
 """
-import itertools
 
 import pandas as pd
 from pathlib import Path
@@ -16,6 +15,7 @@ from typing import Dict, List, Tuple, Union
 import random
 
 from polyominoworld.dataset import DataSet
+from polyominoworld.utils import get_leftout_positions
 from polyominoworld.world import World
 from polyominoworld.network import Network
 from polyominoworld.params import Params
@@ -212,20 +212,3 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
     print(f'Evaluation took {time.time() - start_time_eval} seconds')
 
 
-def get_leftout_positions(leftout_half: str,
-                          ) -> List[Tuple[int, int]]:
-    """get positions in world that are in leftout half of the world"""
-
-    all_positions = [(x, y) for x, y in
-                     itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
-
-    if leftout_half == 'lower':
-        return [(x, y) for x, y in all_positions
-                if y < configs.World.max_y / 2]
-    elif leftout_half == 'upper':
-        return [(x, y) for x, y in all_positions
-                if y >= configs.World.max_y / 2]
-    elif leftout_half == '':
-        return []  # nothing is leftout
-    else:
-        raise AttributeError('Invalid arg to leftout_half')

@@ -19,17 +19,17 @@ class ArgCheck:
 
 
 class Display:
-    height = 1_800
+    height = 2_000
     width = 2_000
 
     world_rectangle_size = 40
-    world_layer_rectangle_size = 20
+    left_section_rectangle_size = 20
     world_grid_size = 200
-    hidden_layer_rectangle_size = 40
-    feature_layer_rectangle_size = 40
+    middle_section_rectangle_size = 40
+    right_section_rectangle_size = 40
 
-    feature_layer_spacing = 4
-    hidden_layer_spacing = 4
+    right_section_spacing = 4
+    middle_section_spacing = 4
 
     font_xs = "Arial 10 bold"
     font_s = "Arial 12 bold"
@@ -38,20 +38,21 @@ class Display:
     font_xl = "Arial 16 bold"
 
     # x and y position on the display
+    top_offset = 40
     condition2position = {
-        'World State': (100, 40, "World State"),
-        'Predicted World State': (1000, 120, "Predicted World State"),
+        'World State': (100, top_offset, "World State"),
+        'Predicted World State': (1000, top_offset, "Predicted World State"),
 
-        'World Layer Activations': (600, 40, "Input Layer"),
-        'Predicted World Layer Activations': (800, 10, "Output Layer"),
-        'World Layer Weights': (280, 40, ""),
-        'Predicted World Layer Weights': (800, 40, ""),
+        'World Layer Activations': (600, top_offset, "Input Layer"),
+        'Predicted World Layer Activations': (800, top_offset, "Output Layer"),
+        'World Layer Weights': (280, top_offset, ""),
+        'Predicted World Layer Weights': (800, top_offset, ""),
 
-        'Hidden Layer Activations': (1000, 20, "Hidden Layer"),
-        'Hidden Layer Weights': (1000, 20, ""),
+        'Hidden Layer Activations': (1000, top_offset, "Hidden Layer"),
+        'Hidden Layer Weights': (1000, top_offset, ""),
 
-        'Predicted Feature Activations': (1600, 20, "Output Layer"),
-        'Predicted Feature Weights': (1600, 20, ""),
+        'Predicted Feature Activations': (1600, top_offset, "Output Layer"),
+        'Predicted Feature Weights': (1600, top_offset, ""),
     }
 
     color_bg = "white"
