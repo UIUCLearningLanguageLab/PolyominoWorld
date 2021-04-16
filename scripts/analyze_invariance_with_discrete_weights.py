@@ -20,7 +20,6 @@ Notes:
 
 import torch
 import yaml
-import numpy as np
 from itertools import combinations
 import multiprocessing as mp
 
@@ -34,12 +33,12 @@ from polyominoworld.params import param2requests, param2default
 
 from ludwig.results import gen_param_paths
 
+MAX_COMBO_SIZE = 2
 SCALE = 1.1  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 4
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
-REGULAR_PATTERN_IDS = [3, 4, 5, 6, 7, 11, 12, 14, 16, 20, 22, 23, 24, 25, 29, 30, 31][::-1]
-# REGULAR_PATTERN_IDS = [25, 30, 31]
-# REGULAR_PATTERN_IDS = [6, 11]
+REGULAR_PATTERN_IDS = [3, 4, 5, 6, 7, 11, 12, 14, 16, 20, 22, 23, 24, 25, 29, 30, 31]
+REGULAR_PATTERN_IDS = [i for i in range(32)]
 PLOT_WEIGHTS = False
 PLOT_STATES = False
 
@@ -89,10 +88,18 @@ if __name__ == '__main__':
                 largest_avg_res.value = +0.0
                 pool = mp.Pool(NUM_WORKERS,
                                initializer=calc_terms1_and_terms2,
-                               initargs=(q, data, h_x, SCALE, rgb_id, largest_avg_res, PLOT_WEIGHTS, PLOT_STATES))
+                               initargs=(q,
+                                         data,
+                                         h_x,
+                                         SCALE,
+                                         rgb_id,
+                                         largest_avg_res,
+                                         PLOT_WEIGHTS,
+                                         PLOT_STATES,
+                                         ))
 
                 # search all combinations of input weight patterns
-                for combo_size in range(1, len(REGULAR_PATTERN_IDS) + 1):
+                for combo_size in range(1, MAX_COMBO_SIZE + 1):
                     for h_ids in combinations(REGULAR_PATTERN_IDS, combo_size):
                         q.put(h_ids)  # blocks when q is full
 
@@ -101,5 +108,9 @@ if __name__ == '__main__':
                     q.put(None)
                 pool.close()
                 pool.join()
+
+                print(f'best score={largest_avg_res.value:.4f} overall for color={color} ')
+
+                raise SystemExit('Completed first color')
 
         raise SystemExit  # do not keep searching for models - regular pattern ids are defined for first model only

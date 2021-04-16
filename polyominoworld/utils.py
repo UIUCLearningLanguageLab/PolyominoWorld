@@ -43,9 +43,14 @@ def calc_terms1_and_terms2(q: mp.Queue,
     multiple consumers ca be used to find combinations of input weight detectors that result in best "invariance"
     """
 
+    best_h_ids_and_res = [None, 0.0]
+
     while True:
 
         h_ids = q.get()
+
+        if h_ids is None:
+            break
 
         # get set of detectors for single color channel
         detectors = []
@@ -117,4 +122,6 @@ def calc_terms1_and_terms2(q: mp.Queue,
         # update shared memory
         if avg_res > largest_avg_res.value:
             largest_avg_res.value = avg_res
+            best_h_ids_and_res = [h_ids, largest_avg_res.value]
 
+    print(f'best score={best_h_ids_and_res[1]:.4f} for consumer with best h_ids={best_h_ids_and_res[0]}')
