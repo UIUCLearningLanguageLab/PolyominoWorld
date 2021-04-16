@@ -157,6 +157,7 @@ def plot_hidden_weights_analysis(mat: np.array,
                                  y_tick_labels: Optional[List[str]] = None,
                                  x_tick_labels: Optional[List[str]] = None,
                                  title: Optional[str] = None,
+                                 max_x: int = 4,
                                  dpi: int = 192 // 2
                                  ):
     fig, (top, bottom) = plt.subplots(2, 2, figsize=(6, 6), dpi=dpi)
@@ -169,7 +170,10 @@ def plot_hidden_weights_analysis(mat: np.array,
         ax1.imshow(mat,
                    aspect='equal',
                    cmap=plt.get_cmap('jet'),
-                   interpolation='nearest')
+                   interpolation='nearest',
+                   vmin=-max_x,
+                   vmax=+max_x,
+                   )
         # tick labels
         if x_tick_labels is not None and y_tick_labels is not None:
             ax1.set_xticks([n for n, _ in enumerate(x_tick_labels)])
@@ -182,7 +186,7 @@ def plot_hidden_weights_analysis(mat: np.array,
         plt.setp(lines, visible=False)
 
         ax2.hist(mat.flatten(), bins=16)
-        ax2.set_xlim([-4, 4])
+        ax2.set_xlim([-max_x, max_x])
 
     plt.show()
 

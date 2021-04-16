@@ -30,17 +30,16 @@ from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2requests, param2default
+from polyominoworld.figs import plot_hidden_weights_analysis
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 2
+MAX_COMBO_SIZE = 1
 SCALE = 1.1  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 4
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
-REGULAR_PATTERN_IDS = [3, 4, 5, 6, 7, 11, 12, 14, 16, 20, 22, 23, 24, 25, 29, 30, 31]
-REGULAR_PATTERN_IDS = [i for i in range(32)]
+HIDDEN_IDS = [i for i in range(32)]
 PLOT_WEIGHTS = False
-PLOT_STATES = False
 
 if __name__ == '__main__':
 
@@ -82,6 +81,23 @@ if __name__ == '__main__':
                 net.eval()
                 h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
+                if PLOT_WEIGHTS:
+                    for h_id, hi in enumerate(h_x):
+                        # get weights to one color channel only
+                        hi_single_channel = hi.reshape((3, configs.World.max_x, configs.World.max_y))[rgb_id, :, :]
+                        # scale so that modes of hi are aligned with integers in base 1
+                        hi_single_channel_scaled = hi_single_channel * SCALE
+                        # plot
+                        x_tick_labels = [f'x{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[0])]
+                        y_tick_labels = [f'y{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[1])]
+                        plot_hidden_weights_analysis(hi_single_channel_scaled,
+                                                     title=f'pattern{h_id:0>3}',
+                                                     x_tick_labels=x_tick_labels,
+                                                     y_tick_labels=y_tick_labels)
+                        if input('Press Enter to continue'):
+                            continue
+                    raise SystemExit('Done plotting')
+
                 # set up parallel processes that read from queue and save results in shared memory + shared memory
                 q = mp.Queue(maxsize=NUM_WORKERS)
                 largest_avg_res = mp.Value('d')
@@ -94,13 +110,11 @@ if __name__ == '__main__':
                                          SCALE,
                                          rgb_id,
                                          largest_avg_res,
-                                         PLOT_WEIGHTS,
-                                         PLOT_STATES,
                                          ))
 
                 # search all combinations of input weight patterns
                 for combo_size in range(1, MAX_COMBO_SIZE + 1):
-                    for h_ids in combinations(REGULAR_PATTERN_IDS, combo_size):
+                    for h_ids in combinations(HIDDEN_IDS, combo_size):
                         q.put(h_ids)  # blocks when q is full
 
                 # close pool

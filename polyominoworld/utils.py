@@ -34,8 +34,6 @@ def calc_terms1_and_terms2(q: mp.Queue,
                            scale_weights: float,
                            rgb_id: int,
                            largest_avg_res: mp.Value,
-                           plot_weights: bool = False,
-                           plot_states: bool = False,
                            ):
     """
     a consumer that reads input from a queue and saves best results to shared memory.
@@ -63,14 +61,6 @@ def calc_terms1_and_terms2(q: mp.Queue,
             hi_single_channel_discrete = np.rint(hi_single_channel_scaled)
             if h_id in h_ids:
                 detectors.append(hi_single_channel_discrete.flatten())
-            # plot
-            if plot_weights:
-                x_tick_labels = [f'x{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[0])]
-                y_tick_labels = [f'y{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[1])]
-                plot_hidden_weights_analysis(hi_single_channel_scaled,
-                                             title=f'pattern{h_id:0>3}\nregular={h_id in h_ids}',
-                                             x_tick_labels=x_tick_labels,
-                                             y_tick_labels=y_tick_labels)
         detector_mat = np.array(detectors)
 
         # compute states produced by dot product of input and detectors
@@ -107,9 +97,6 @@ def calc_terms1_and_terms2(q: mp.Queue,
             # collect terms
             terms1.append(term1)
             terms2.append(term2)
-            # plot
-            if plot_states:
-                plot_state_analysis(states_mat, title=shape)
 
         # compute result
         res = np.array(terms1) * np.array(terms2)
