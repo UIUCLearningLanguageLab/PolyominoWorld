@@ -48,10 +48,6 @@ class World:
                            ) -> List[Sequence]:
         """generate sequences of events, each with one shape"""
 
-        print('Leaving out positions:')
-        for p in leftout_positions:
-            print(p)
-
         res = []
 
         # for each possible color

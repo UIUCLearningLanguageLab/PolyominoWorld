@@ -275,7 +275,7 @@ class Display:
         if layer.ndim != 3:
             rgb_array = layer.reshape((3, configs.World.max_x, configs.World.max_y))
         else:
-            rgb_array = layer  # when visualizing the world
+            rgb_array = layer  # when visualizing each color channel, the world vector is already reshaped to 3d
 
         # draw world layers split by color
         unit_counter = 0

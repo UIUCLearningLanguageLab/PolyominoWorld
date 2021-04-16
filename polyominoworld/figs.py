@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from polyominoworld import configs
 
@@ -151,3 +151,71 @@ def make_y_label(pattern: str,
             line = pattern_part
         res += line.capitalize() + ' '
     return res
+
+
+def plot_hidden_weights_analysis(mat: np.array,
+                                 y_tick_labels: Optional[List[str]] = None,
+                                 x_tick_labels: Optional[List[str]] = None,
+                                 title: Optional[str] = None,
+                                 dpi: int = 192 // 2
+                                 ):
+    fig, (top, bottom) = plt.subplots(2, 2, figsize=(6, 6), dpi=dpi)
+    if title is not None:
+        plt.title(title)
+
+    for (ax1, ax2), mat in zip([top, bottom],
+                               [mat.round(1), np.rint(mat)]):
+        # heatmap
+        ax1.imshow(mat,
+                   aspect='equal',
+                   cmap=plt.get_cmap('jet'),
+                   interpolation='nearest')
+        # tick labels
+        if x_tick_labels is not None and y_tick_labels is not None:
+            ax1.set_xticks([n for n, _ in enumerate(x_tick_labels)])
+            ax1.set_yticks([n for n, _ in enumerate(y_tick_labels)])
+            ax1.set_xticklabels(x_tick_labels)
+            ax1.set_yticklabels(y_tick_labels)
+        # remove tick lines
+        lines = (ax1.xaxis.get_ticklines() +
+                 ax1.yaxis.get_ticklines())
+        plt.setp(lines, visible=False)
+
+        ax2.hist(mat.flatten(), bins=16)
+        ax2.set_xlim([-4, 4])
+
+    plt.show()
+
+
+def plot_state_analysis(mat: np.array,
+                        y_tick_labels: Optional[List[str]] = None,
+                        x_tick_labels: Optional[List[str]] = None,
+                        title: str = '',
+                        dpi: int = 192 // 2
+                        ):
+    fig, axes = plt.subplots(1, 2, figsize=(6, 6), dpi=dpi)
+
+    # heatmaps
+    for ax, states_name, mat in zip(axes,
+                                    ['total', 'unique'],
+                                    [mat, np.unique(mat, axis=0)]):
+        ax.set_title(title + '\n' + f'num {states_name} states={len(mat)}')
+        ax.imshow(mat,
+                  aspect='equal',
+                  cmap=plt.get_cmap('jet'),
+                  interpolation='nearest')
+        # tick labels
+        if x_tick_labels is not None and y_tick_labels is not None:
+            ax.set_xticks([n for n, _ in enumerate(x_tick_labels)])
+            ax.set_yticks([n for n, _ in enumerate(y_tick_labels)])
+            ax.set_xticklabels(x_tick_labels)
+            ax.set_yticklabels(y_tick_labels)
+        else:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+        # remove tick lines
+        lines = (ax.xaxis.get_ticklines() +
+                 ax.yaxis.get_ticklines())
+        plt.setp(lines, visible=False)
+
+    plt.show()
