@@ -1,25 +1,39 @@
 """
-Plot discretized input weight patterns, separately for each color channel
+Plot detectors, separately for each color channel.
+
+A detector is a pattern of input-hidden weights that covers a single color channel.
 
 """
 
 import torch
 import yaml
-from itertools import combinations
-import multiprocessing as mp
+from pathlib import Path
 
 from polyominoworld import configs
-from polyominoworld.utils import get_leftout_positions, calc_terms1_and_terms2
-from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
-from polyominoworld.world import World
 from polyominoworld.params import Params
-from polyominoworld.params import param2requests, param2default
+from polyominoworld.params import param2default
 from polyominoworld.figs import plot_hidden_weights_analysis
 
 from ludwig.results import gen_param_paths
 
-SCALE = 1.1  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
+SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
+
+
+param2requests = {
+
+    'colors': [(
+        'red',
+        'green',
+        'blue',
+    )],
+
+    'learning_rate': [0.2],
+    'num_epochs': [100],
+    'hidden_size': [16],
+
+
+}
 
 if __name__ == '__main__':
 
@@ -28,6 +42,8 @@ if __name__ == '__main__':
             project_name,
             param2requests,
             param2default,
+            isolated=True,
+            runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings

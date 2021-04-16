@@ -52,8 +52,15 @@ def is_exp2(param_path: Path,
 
 param2requests = {
 
-    # this will load an exp2 model, one for each exp3 job
-    'load_from_checkpoint': [p.name for p in runs_path.glob('param_*') if is_exp2(p)],
+    'colors': [(
+        'red',
+        'green',
+        'blue',
+    )],
+
+    'learning_rate': [0.2],
+    'num_epochs': [100],
+    'hidden_size': [16],
 
 
 }

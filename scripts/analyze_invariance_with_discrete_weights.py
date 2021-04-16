@@ -22,6 +22,7 @@ import torch
 import yaml
 from itertools import combinations
 import multiprocessing as mp
+from pathlib import Path
 
 from polyominoworld import configs
 from polyominoworld.utils import get_leftout_positions, calc_terms1_and_terms2
@@ -29,16 +30,31 @@ from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
-from polyominoworld.params import param2requests, param2default
-from polyominoworld.figs import plot_hidden_weights_analysis
+from polyominoworld.params import param2default
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 3
-SCALE = 1.1  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
+MAX_COMBO_SIZE = 4
+SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 4
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
-HIDDEN_IDS = [i for i in range(32)]
+HIDDEN_IDS = [i for i in range(16)]
+
+
+param2requests = {
+
+    'colors': [(
+        'red',
+        'green',
+        'blue',
+    )],
+
+    'learning_rate': [0.2],
+    'num_epochs': [100],
+    'hidden_size': [16],
+
+
+}
 
 if __name__ == '__main__':
 
@@ -47,6 +63,8 @@ if __name__ == '__main__':
             project_name,
             param2requests,
             param2default,
+            isolated=True,
+            runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings
@@ -106,7 +124,6 @@ if __name__ == '__main__':
                 pool.join()
 
                 print(f'best score={largest_avg_res.value:.4f} overall for color={color} ')
-
-                raise SystemExit('Completed first color')
+                print()
 
         raise SystemExit  # do not keep searching for models - regular pattern ids are defined for first model only

@@ -6,7 +6,6 @@ import multiprocessing as mp
 
 from polyominoworld import configs
 from polyominoworld.dataset import DataSet
-from polyominoworld.figs import plot_hidden_weights_analysis, plot_state_analysis
 
 
 def get_leftout_positions(leftout_half: str,
@@ -33,15 +32,17 @@ def calc_terms1_and_terms2(q: mp.Queue,
                            h_x: np.array,
                            scale_weights: float,
                            rgb_id: int,
-                           largest_avg_res: mp.Value,
+                           score_avg_max: mp.Value,
                            ):
     """
     a consumer that reads input from a queue and saves best results to shared memory.
 
-    multiple consumers ca be used to find combinations of input weight detectors that result in best "invariance"
+    multiple consumers ca be used to find combinations of input weight detectors that result in highest score.
+    the score is related to overlap between shapes of hidden states corresponding to examples of a shape
+
     """
 
-    best_h_ids_and_res = [None, 0.0]
+    best_h_ids_and_best_score = [None, 0.0]
 
     while True:
 
@@ -65,50 +66,39 @@ def calc_terms1_and_terms2(q: mp.Queue,
 
         # compute states produced by dot product of input and detectors
         shape2states = {shape: [] for shape in configs.World.master_shapes}
+        shape2states_other = {shape: [] for shape in configs.World.master_shapes}
         for event in data.get_events():
             # get input from single color channel
             x = event.world_vector.as_3d()[rgb_id].flatten()
             # compute discrete state
-            state = detector_mat @ x
+            state = tuple(detector_mat @ x)
+            # collect
             shape2states[event.shape].append(state)
+            for shape_other in configs.World.master_shapes:
+                if shape_other != event.shape:
+                    shape2states_other[shape_other].append(state)
 
         # analyze states for invariance to rotation and location, for each shape separately
-        terms1 = []
-        terms2 = []
+        scores = []
         for shape, states in sorted(shape2states.items()):
-            states_mat = np.array(states)
-            num_total_states = len(states_mat)
-            unique_states = np.unique(states_mat, axis=0)
-            # term 1: how many non-unique states does shape have?
-            num_unique_states = len(unique_states)
-            num_non_unique_states = num_total_states - num_unique_states
-            term1 = num_non_unique_states / num_total_states
-            # term 2: how many states are not shared by other shapes?
-            num_shared = 0
-            num_comparisons = 0
-            for shape_, states_ in sorted(shape2states.items()):
-                if shape == shape_:
-                    continue
-                for state_i in states:
-                    if tuple(state_i) in [tuple(s) for s in states_]:
-                        num_shared += 1
-                    num_comparisons += 1
-            term2 = (num_comparisons - num_shared) / num_comparisons
-            # collect terms
-            terms1.append(term1)
-            terms2.append(term2)
+            num_states_unique_to_shape = 0
+            for state_i in states:
+                if state_i not in shape2states_other[shape]:
+                    num_states_unique_to_shape += 1
+            score = num_states_unique_to_shape / len(states)
+            # collect
+            scores.append(score)
 
-        # compute result
-        res = np.array(terms1) * np.array(terms2)
-        tmp1 = np.array(terms1).round(2)
-        tmp2 = np.array(terms2).round(2)
-        avg_res = np.mean(res)
-        is_best = ' ' if avg_res < largest_avg_res.value else 'T'
-        print(f'avg={avg_res :.4f} best={is_best} rgb_id={rgb_id} {tmp1} {tmp2} h_ids={h_ids} ')
+        # compute average score
+        score_avg = np.mean(scores)
+        is_best = ' ' if score_avg < score_avg_max.value else 'T'
+        scores_formatted = ' '.join([f'{s:.2f}' for s in scores])
+        if score_avg > score_avg_max.value:
+            print(f'avg={score_avg :.4f} best={is_best} rgb_id={rgb_id} {scores_formatted} h_ids={h_ids} ')
 
         # update shared memory
-        if avg_res > largest_avg_res.value:
-            largest_avg_res.value = avg_res
-            best_h_ids_and_res = [h_ids, largest_avg_res.value]
+        if score_avg > score_avg_max.value:
+            score_avg_max.value = score_avg
+            best_h_ids_and_best_score = [h_ids, score_avg_max.value]
 
-    print(f'best score={best_h_ids_and_res[1]:.4f} for consumer with best h_ids={best_h_ids_and_res[0]}')
+    print(f'best score={best_h_ids_and_best_score[1]:.4f} for consumer with best h_ids={best_h_ids_and_best_score[0]}')
