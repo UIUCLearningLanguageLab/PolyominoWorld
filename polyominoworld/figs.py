@@ -153,40 +153,54 @@ def make_y_label(pattern: str,
     return res
 
 
-def plot_hidden_weights_analysis(mat: np.array,
+def plot_hidden_weights_analysis(arr: np.array,
                                  y_tick_labels: Optional[List[str]] = None,
                                  x_tick_labels: Optional[List[str]] = None,
                                  title: Optional[str] = None,
                                  max_x: int = 4,
                                  dpi: int = 192 // 2
                                  ):
-    fig, (top, bottom) = plt.subplots(2, 2, figsize=(6, 6), dpi=dpi)
+    fig, axes = plt.subplots(3, 4, figsize=(6, 6), dpi=dpi)
     if title is not None:
-        plt.title(title)
+        plt.suptitle(title)
 
-    for (ax1, ax2), mat in zip([top, bottom],
-                               [mat.round(1), np.rint(mat)]):
-        # heatmap
-        ax1.imshow(mat,
-                   aspect='equal',
-                   cmap=plt.get_cmap('jet'),
-                   interpolation='nearest',
-                   vmin=-max_x,
-                   vmax=+max_x,
-                   )
-        # tick labels
-        if x_tick_labels is not None and y_tick_labels is not None:
-            ax1.set_xticks([n for n, _ in enumerate(x_tick_labels)])
-            ax1.set_yticks([n for n, _ in enumerate(y_tick_labels)])
-            ax1.set_xticklabels(x_tick_labels)
-            ax1.set_yticklabels(y_tick_labels)
-        # remove tick lines
-        lines = (ax1.xaxis.get_ticklines() +
-                 ax1.yaxis.get_ticklines())
-        plt.setp(lines, visible=False)
+    for rgb_id, axes_row in enumerate(axes):
 
-        ax2.hist(mat.flatten(), bins=16)
-        ax2.set_xlim([-max_x, max_x])
+        mat_ = arr[rgb_id]  # get detector for single color channel
+
+        ax_pairs = [(axes_row[0], axes_row[1]),
+                    (axes_row[2], axes_row[3])]
+
+        for (ax1, ax2), mat in zip(ax_pairs, [mat_, np.rint(mat_)]):
+
+            ax1.set_title({0: 'red', 1: 'green', 2: 'blue'}[rgb_id])
+            # heatmap
+            ax1.imshow(mat,
+                       aspect='equal',
+                       cmap=plt.get_cmap('jet'),
+                       interpolation='nearest',
+                       vmin=-max_x,
+                       vmax=+max_x,
+                       )
+            # tick labels
+            if x_tick_labels is not None and y_tick_labels is not None:
+                ax1.set_xticks([n for n, _ in enumerate(x_tick_labels)])
+                ax1.set_yticks([n for n, _ in enumerate(y_tick_labels)])
+                ax1.set_xticklabels(x_tick_labels)
+                ax1.set_yticklabels(y_tick_labels)
+            else:
+                ax1.set_xticklabels([])
+                ax1.set_yticklabels([])
+            # remove tick lines
+            lines = (ax1.xaxis.get_ticklines() +
+                     ax1.yaxis.get_ticklines())
+            plt.setp(lines, visible=False)
+
+            ax2.hist(mat.flatten(), bins=16, range=[-max_x, +max_x])
+            ax2.set_xlim([-max_x, max_x])
+            x_ticks = np.arange(-max_x, max_x)
+            ax2.set_xticks(x_ticks)
+            ax2.set_xticklabels(x_ticks)
 
     plt.show()
 

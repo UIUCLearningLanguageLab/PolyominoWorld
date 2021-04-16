@@ -34,12 +34,11 @@ from polyominoworld.figs import plot_hidden_weights_analysis
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 1
+MAX_COMBO_SIZE = 3
 SCALE = 1.1  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 4
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
 HIDDEN_IDS = [i for i in range(32)]
-PLOT_WEIGHTS = False
 
 if __name__ == '__main__':
 
@@ -80,23 +79,6 @@ if __name__ == '__main__':
                 net.load_state_dict(state_dict)
                 net.eval()
                 h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
-
-                if PLOT_WEIGHTS:
-                    for h_id, hi in enumerate(h_x):
-                        # get weights to one color channel only
-                        hi_single_channel = hi.reshape((3, configs.World.max_x, configs.World.max_y))[rgb_id, :, :]
-                        # scale so that modes of hi are aligned with integers in base 1
-                        hi_single_channel_scaled = hi_single_channel * SCALE
-                        # plot
-                        x_tick_labels = [f'x{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[0])]
-                        y_tick_labels = [f'y{i + 1:0>2}' for i in range(hi_single_channel_scaled.shape[1])]
-                        plot_hidden_weights_analysis(hi_single_channel_scaled,
-                                                     title=f'pattern{h_id:0>3}',
-                                                     x_tick_labels=x_tick_labels,
-                                                     y_tick_labels=y_tick_labels)
-                        if input('Press Enter to continue'):
-                            continue
-                    raise SystemExit('Done plotting')
 
                 # set up parallel processes that read from queue and save results in shared memory + shared memory
                 q = mp.Queue(maxsize=NUM_WORKERS)
