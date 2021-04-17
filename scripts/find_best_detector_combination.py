@@ -2,12 +2,10 @@
 Experimental script to quantify how invariant the hidden states are to
 rotation and location variants of a shape.
 
-1) Input weights are first filtered based on whether they exhibit a regular pattern,
+1) Combinations of input weights obtained (each called a detector),
 and then made discrete by rounding to the nearest mode.
-2) The hidden state is computed using these filtered, discrete weights.
-3) a measure of invariance is computed using two terms:
-    a) proportion of states states shared within a shape
-    b) proportion of states not shared between shapes
+2) The hidden state is computed using these detectors.
+3) a score is computed that is proportional to the number of states not shared between shapes (higher is better)
 
 Notes:
     - each primary color channel is evaluated separately. all combinations of input weight patterns are searched,
@@ -25,36 +23,20 @@ import multiprocessing as mp
 from pathlib import Path
 
 from polyominoworld import configs
-from polyominoworld.utils import get_leftout_positions, calc_terms1_and_terms2
+from polyominoworld.utils import get_leftout_positions, evaluate_detector_combo
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
-from polyominoworld.params import param2default
+from polyominoworld.params import param2default, param2requests
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 4
+MAX_COMBO_SIZE = 2
 SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
-NUM_WORKERS = 4
+NUM_WORKERS = 6
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
 HIDDEN_IDS = [i for i in range(16)]
-
-
-param2requests = {
-
-    'colors': [(
-        'red',
-        'green',
-        'blue',
-    )],
-
-    'learning_rate': [0.2],
-    'num_epochs': [100],
-    'hidden_size': [16],
-
-
-}
 
 if __name__ == '__main__':
 
@@ -103,7 +85,7 @@ if __name__ == '__main__':
                 largest_avg_res = mp.Value('d')
                 largest_avg_res.value = +0.0
                 pool = mp.Pool(NUM_WORKERS,
-                               initializer=calc_terms1_and_terms2,
+                               initializer=evaluate_detector_combo,
                                initargs=(q,
                                          data,
                                          h_x,

@@ -58,8 +58,8 @@ param2requests = {
         'blue',
     )],
 
-    'learning_rate': [0.2],
-    'num_epochs': [100],
+    'learning_rate': [0.1],
+    'num_epochs': [1000],
     'hidden_size': [16],
 
 

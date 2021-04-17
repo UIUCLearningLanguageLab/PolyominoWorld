@@ -159,8 +159,9 @@ def main(param2val):
                                         performance_data,
                                         start_time)
 
-    # save network weights for visualizing later
-    torch.save(net.state_dict(), save_path / 'model.pt')
+            # save network weights for visualizing later
+            torch.save(net.state_dict(), save_path / f'model_{epoch:06}.pt')
+            torch.save(net.state_dict(), save_path / 'model.pt')
 
     # prepare collected data for returning to Ludwig (which saves data to shared drive)
     res: List[pd.Series] = []
