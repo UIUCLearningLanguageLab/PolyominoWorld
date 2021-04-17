@@ -64,7 +64,7 @@ def evaluate_detector_combo(q: mp.Queue,
 
         # compute states produced by dot product of input and detectors
         shape2states = {shape: [] for shape in configs.World.master_shapes}
-        shape2states_other = {shape: set() for shape in configs.World.master_shapes}
+        shape2states_other = {shape: [] for shape in configs.World.master_shapes}
         for event in data.get_events():
             # get input from single color channel
             x = event.world_vector.as_3d()[rgb_id].flatten()
@@ -74,16 +74,15 @@ def evaluate_detector_combo(q: mp.Queue,
             shape2states[event.shape].append(state)
             for shape_other in configs.World.master_shapes:
                 if shape_other != event.shape:
-                    shape2states_other[shape_other].add(state)
+                    shape2states_other[shape_other].append(state)
 
-        # analyze states for invariance to rotation and location, for each shape separately
+        # compute score: how often are states for one shape shared by other shapes, on average?
         scores = []
         for shape, states in sorted(shape2states.items()):
-            num_states_unique_to_shape = 0
+            num_times_confused = 0
             for state in states:
-                if state not in shape2states_other[shape]:
-                    num_states_unique_to_shape += 1
-            score = num_states_unique_to_shape / len(states)
+                num_times_confused += shape2states_other[shape].count(state)
+            score = len(states) / (num_times_confused + len(states))
             # collect
             scores.append(score)
 

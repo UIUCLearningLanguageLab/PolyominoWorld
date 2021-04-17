@@ -10,7 +10,6 @@ and then made discrete by rounding to the nearest mode.
 Notes:
     - each primary color channel is evaluated separately. all combinations of input weight patterns are searched,
     to identify the combination of patterns that results in highest measure of invariance.
-    - measure of invariance is a product of two proportions, consequently max=1 and min=0.
     - a perfect score is not expected because networks are trained to distinguish color,
     which means that hidden state cannot be expected to abstract over (become invariant to) color.
 
@@ -32,7 +31,7 @@ from polyominoworld.params import param2default, param2requests
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 2
+MAX_COMBO_SIZE = 4
 SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 6
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
