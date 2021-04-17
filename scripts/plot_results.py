@@ -8,6 +8,7 @@ create an environment variable "LUDWIG_MNT" that points to the path where ludwig
 """
 
 from typing import Optional, List, Tuple
+from pathlib import Path
 
 from ludwig.results import gen_param_paths
 
@@ -16,7 +17,7 @@ from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'acc_shape_valid'  # name of performance curve to plot
+PATTERN: str = 'acc_size_train'  # name of performance curve to plot
 
 # TODO order legend by shape, or color
 
@@ -41,7 +42,8 @@ project_name = 'PolyominoWorld'
 for p, label in gen_param_paths(project_name,
                                 param2requests,
                                 param2default,
-                                runs_path=None,
+                                isolated=True,
+                                runs_path=Path(__file__).parent.parent / 'runs',
                                 ludwig_data_path=None,
                                 label_n=False):
     summary = make_summary(PATTERN, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n

@@ -10,8 +10,21 @@ and then made discrete by rounding to the nearest mode.
 Notes:
     - each primary color channel is evaluated separately. all combinations of input weight patterns are searched,
     to identify the combination of patterns that results in highest measure of invariance.
-    - a perfect score is not expected because networks are trained to distinguish color,
-    which means that hidden state cannot be expected to abstract over (become invariant to) color.
+    - scores range form 0 to 1, with higher better
+
+Findings:
+    - a perfect score can be achieved when using all detectors.
+     this means that shapes are perfectly separable at hidden layer, but only within a color channel.
+     consequently, even in the case that the score for each color channel is perfect,
+     a model may not be perfectly able to classify shapes, because the separability of shapes must hold also
+     across color-channels, not just within.
+     it is likely a model will first learn unique strategies for separating shapes within each color channel,
+     resulting in perfect score,
+    but never be able to combine the 3 solutions into a single solution that works equally well across channels.
+    - when using only 2 detectors, checkerboard detectors are best,
+    but when using more than 2 detectors, non-regular non-checkerboard detectors give highest score
+
+
 
 """
 
@@ -31,7 +44,8 @@ from polyominoworld.params import param2default, param2requests
 
 from ludwig.results import gen_param_paths
 
-MAX_COMBO_SIZE = 4
+MIN_COMBO_SIZE = 16
+MAX_COMBO_SIZE = 16
 SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 6
 # manually specify ids of input weights that appear regular. do this for first model replication, which is loaded first
@@ -55,6 +69,8 @@ if __name__ == '__main__':
 
         # only use one color channel
         for rgb_id, color in enumerate(['red', 'green', 'blue']):
+
+            # TODO make new script to test not just within color channel but ACROSS color channels
 
             # use all locations, rotations, and shapes, but only one primary color
             world = World(params)
@@ -94,7 +110,7 @@ if __name__ == '__main__':
                                          ))
 
                 # search all combinations of input weight patterns
-                for combo_size in range(1, MAX_COMBO_SIZE + 1):
+                for combo_size in range(MIN_COMBO_SIZE, MAX_COMBO_SIZE + 1):
                     for h_ids in combinations(HIDDEN_IDS, combo_size):
                         q.put(h_ids)  # blocks when q is full
 
