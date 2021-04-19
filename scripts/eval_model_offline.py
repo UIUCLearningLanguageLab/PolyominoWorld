@@ -12,7 +12,6 @@ import numpy as np
 from polyominoworld.utils import get_leftout_positions
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
-
 from polyominoworld import configs
 from polyominoworld.world import World
 from polyominoworld.params import Params
@@ -41,7 +40,7 @@ if __name__ == '__main__':
             param2val = yaml.load(f, Loader=yaml.FullLoader)
         params = Params.from_param2val(param2val)
 
-        # TODO
+        # are any features leftout?
         if EVAL_LEFTOUT_VARIANTS:
             leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params.leftout_variants]
         else:

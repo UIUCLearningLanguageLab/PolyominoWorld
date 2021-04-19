@@ -3,6 +3,13 @@ This module contains settings that control all aspects of the program,
 that are not of direct research interest, e.g. constants, defaults, flow-control, type checking, etc.
 """
 from typing import List
+from pathlib import Path
+
+
+class Dirs:
+    src = Path(__file__).parent
+    root = src.parent
+    embedding_projector = root / 'embedding_projector'  # tsv files for tensorflow embedding projector app
 
 
 class Try:
