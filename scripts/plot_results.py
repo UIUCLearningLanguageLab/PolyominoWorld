@@ -17,7 +17,7 @@ from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'acc_size_train'  # name of performance curve to plot
+PATTERN: str = 'acc_shape_train'  # name of performance curve to plot
 
 # TODO order legend by shape, or color
 

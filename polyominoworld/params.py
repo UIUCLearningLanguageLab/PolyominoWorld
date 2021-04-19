@@ -54,11 +54,9 @@ param2requests = {
 
     'colors': [(
         'red',
-        'green',
-        'blue',
     )],
 
-    'learning_rate': [0.1],
+    'learning_rate': [0.3],
     'num_epochs': [1000],
     'hidden_size': [16],
 

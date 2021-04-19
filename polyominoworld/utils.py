@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 import multiprocessing as mp
@@ -31,8 +31,8 @@ def evaluate_detector_combo(q: mp.Queue,
                             data: DataSet,
                             h_x: np.array,
                             scale_weights: float,
-                            rgb_id: int,
                             score_avg_max: mp.Value,
+                            rgb_id: Optional[int] = None,
                             ):
     """
     a consumer that reads input from a queue and saves best results to shared memory.
@@ -41,6 +41,10 @@ def evaluate_detector_combo(q: mp.Queue,
     the score is related to overlap between shapes of hidden states corresponding to examples of a shape
 
     """
+    if rgb_id is not None:
+        name_of_color_channel = {0: 'red', 1: 'green', 2: 'blue'}[rgb_id]
+    else:
+        name_of_color_channel = None
 
     while True:
 
@@ -53,21 +57,31 @@ def evaluate_detector_combo(q: mp.Queue,
         detectors = []
         for h_id, hi in enumerate(h_x):
             # get weights to one color channel only
-            hi_single_channel = hi.reshape((3, configs.World.max_x, configs.World.max_y))[rgb_id, :, :]
+            if rgb_id is not None:
+                hi_reshaped = hi.reshape((3, configs.World.max_x, configs.World.max_y))[rgb_id, :, :]
+            else:
+                hi_reshaped = hi
             # scale so that modes of hi are aligned with integers in base 1
-            hi_single_channel_scaled = hi_single_channel * scale_weights
+            hi_scaled = hi_reshaped * scale_weights
             # make discrete
-            hi_single_channel_discrete = np.rint(hi_single_channel_scaled)
+            hi_discrete = np.rint(hi_scaled)
+            # collect detectors only if they are supposed to be collected
             if h_id in h_ids:
-                detectors.append(hi_single_channel_discrete.flatten())
+                detectors.append(hi_discrete.flatten())
         detector_mat = np.array(detectors)
 
         # compute states produced by dot product of input and detectors
         shape2states = {shape: [] for shape in configs.World.master_shapes}
         shape2states_other = {shape: [] for shape in configs.World.master_shapes}
         for event in data.get_events():
+            # filter by color channel
+            if rgb_id is not None and event.color != name_of_color_channel:
+                continue
             # get input from single color channel
-            x = event.world_vector.as_3d()[rgb_id].flatten()
+            if rgb_id is not None:
+                x = event.world_vector.as_3d()[rgb_id].flatten()
+            else:
+                x = event.world_vector.vector.numpy()
             # compute discrete state
             state = tuple(detector_mat @ x)
             # collect states
@@ -76,15 +90,28 @@ def evaluate_detector_combo(q: mp.Queue,
                 if shape_other != event.shape:
                     shape2states_other[shape_other].append(state)
 
+        # # TODO why does score=1.0 with only 1 detector?
+        # for shape, so in shape2states_other.items():
+        #     ss = shape2states[shape]
+        #     print(shape, len(so), len(ss), len(set(so)), len(set(ss)), len(set(so).intersection(set(ss))))
+        # return
+
         # compute score: how often are states for one shape shared by other shapes, on average?
         scores = []
+        no_states = False
         for shape, states in sorted(shape2states.items()):
+            if not states:  # this may happen if no data for a particular color is in data
+                no_states = True
+                break
             num_times_confused = 0
             for state in states:
                 num_times_confused += shape2states_other[shape].count(state)
             score = len(states) / (num_times_confused + len(states))
             # collect
             scores.append(score)
+
+        if no_states:
+            continue
 
         # compute average score
         score_avg = np.mean(scores)

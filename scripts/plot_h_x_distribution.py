@@ -16,8 +16,10 @@ from polyominoworld.params import param2default, param2requests
 
 from ludwig.results import gen_param_paths
 
-SCALE = 0.9  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
-SHIFT = 0.1
+SCALE = 0.8  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
+SHIFT = 0.0
+
+NUM_BINS = 64
 
 if __name__ == '__main__':
 
@@ -49,12 +51,14 @@ if __name__ == '__main__':
 
             max_x = 4
             fig, ax = plt.subplots()
-            ax.hist(h_x.flatten() * 1, bins=128, range=[-max_x, +max_x], histtype='step')
-            ax.hist(h_x.flatten() * SCALE + SHIFT, bins=128, range=[-max_x, +max_x])
+            ax.set_title(f'scale={SCALE} shift={SHIFT}')
+            ax.hist(h_x.flatten() * SCALE + SHIFT, bins=NUM_BINS, range=[-max_x, +max_x], histtype='step')
             ax.set_xlim([-max_x, max_x])
             x_ticks = np.arange(-max_x, max_x)
             ax.set_xticks(x_ticks)
             ax.set_xticklabels(x_ticks)
+            for xi in [-2, -1, 0, 1, 2]:
+                ax.axvline(x=xi, linestyle=':')
             plt.show()
 
         raise SystemExit  # do not keep searching for models - regular pattern ids are defined for first model only

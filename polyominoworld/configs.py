@@ -68,7 +68,7 @@ class Display:
 
 
 class Evaluation:
-    epoch_interval = 10
+    epoch_interval = 100
     means_only = False  # True if collecting summaries only (e.g. means)
 
 

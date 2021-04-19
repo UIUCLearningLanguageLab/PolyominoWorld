@@ -210,6 +210,5 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
                        performance_data['acc_avg_train'][-1][1],
                        performance_data['acc_avg_valid'][-1][1],
                        )
-    print(f'Evaluation took {time.time() - start_time_eval} seconds')
 
 

@@ -55,7 +55,8 @@ class WorldVector:
     @property
     def vector(self) -> torch.tensor:
         """
-        collect 1 rgb vector (of size 3) for each cell in world.
+        return a vector that represents the world, by
+        concatenating the rgb vector (of size 3) for each cell in world.
         the rgb vector corresponds to either a background color or the color of a shape.
         """
 
@@ -68,6 +69,9 @@ class WorldVector:
                 if cell in self.active_cell2color:
                     color = self.active_cell2color[cell]
                     rgb_vector = np.array(configs.World.color2rgb[color])
+
+                    # TODO
+                    # rgb_vector = np.clip(rgb_vector, 0, 1)
 
                 # color of background
                 else:
