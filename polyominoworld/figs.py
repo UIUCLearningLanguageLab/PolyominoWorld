@@ -246,8 +246,10 @@ def plot_line(ys: np.array,
               x_ticks: List[int],
               labels: List[str],
               y_lims: Optional[List[float]] = None,
-              h_line: Optional[float] = None,
+              baseline_input: Optional[float] = None,
+              baseline_random: Optional[float] = None,
               ):
+
     fig, ax = plt.subplots(1, figsize=(6, 4), dpi=163)
     plt.title(title, fontsize=configs.Figs.title_font_size)
     ax.set_ylabel(y_axis_label, fontsize=configs.Figs.ax_font_size)
@@ -266,12 +268,17 @@ def plot_line(ys: np.array,
         line, = ax.plot(x_ticks, y, linewidth=2, color=f'C{n}')
         lines.append([line])
 
-    if h_line is not None:
-        ax.axhline(y=h_line, color='grey', ls=':')
+    if baseline_input is not None:
+        line, = ax.plot(x_ticks, [baseline_input] * len(x_ticks), color='grey', ls=':')
+        lines.append([line])
+
+    if baseline_random is not None:
+        line, = ax.plot(x_ticks, [baseline_random] * len(x_ticks), color='grey', ls='--')
+        lines.append([line])
 
     # legend
     plt.legend([l[0] for l in lines],
-               labels,
+               labels + [f'input baseline={baseline_input:.2f}', f'random baseline={baseline_random:.2f}'],
                loc='upper center',
                bbox_to_anchor=(0.5, -0.3),
                ncol=2,

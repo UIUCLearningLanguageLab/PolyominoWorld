@@ -1,12 +1,14 @@
 """
+Analyse hidden states using accuracy of a linear readout at hidden layer.
+Perfect accuracy indicates linear separability.
 
-Analyse hidden states using accuracy of a linear readout at hidden layer,
- implemented with the moore penrose pseudo inverse.
-
+implemented with the moore-penrose pseudo-inverse:
 least squares approximation of linear transformation = W  = LP+
 where L has binary class labels in cols, and P+ is pseudo-inv of representations in columns
 
 see: https://www.frontiersin.org/articles/10.3389/fpsyg.2013.00515/full
+
+
 """
 from typing import Tuple
 import torch
@@ -28,16 +30,23 @@ from polyominoworld.figs import plot_line
 from ludwig.results import gen_param_paths
 
 FEATURE_TYPE = 'shape'
+USE_NON_LINEARITY = True
 
 
 def make_l_and_p(data: DataSet,
-                 random_state: bool,
+                 net: Network,
+                 use_non_linearity: bool = USE_NON_LINEARITY,
+                 state_is_random: bool = False,
+                 state_is_input: bool = False,
                  ) -> Tuple[np.array, np.array]:
+
+    h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
+
     lis = []
     pis = []
     for event in data.get_events():
 
-        # li
+        # L has columns of localist target vectors
         if FEATURE_TYPE == 'shape':
             li = [1 if event.shape == s else 0 for s in configs.World.master_shapes]
         elif FEATURE_TYPE == 'color':
@@ -48,15 +57,25 @@ def make_l_and_p(data: DataSet,
             raise AttributeError('Invalid feature type')
         lis.append(li)
 
-        # pi
-        x = event.world_vector.vector.numpy()
-        state = h_x @ x
-        if random_state:
-            state = np.random.random((h_x @ x).shape)
+        # P has columns of representation vectors
+        x = event.world_vector.vector
+
+        # compute baseline state
+        if state_is_random:
+            state = np.random.permutation(net.forward(x).detach().numpy())
+        elif state_is_input:  # yields same results as random_state = True
+            state = x.numpy()
+
+        # compute actual state
+        else:
+            if use_non_linearity:
+                state = net.forward(x).detach().numpy()
+            else:
+                state = h_x @ x.numpy()
 
         pi = state.T
-
         pis.append(pi)
+
     L = np.array(lis).T
     P = np.array(pis).T
 
@@ -107,20 +126,22 @@ if __name__ == '__main__':
         if not paths_to_net:
             raise FileNotFoundError('Did not find any model files')
 
+        rep_names = [p.name for p in param_path.glob('*') if p.is_dir()]
+
+        net = Network(params)
+
         x_tick2ys = defaultdict(list)
         for path_to_net in paths_to_net:
 
             print(f'Loading net from {path_to_net}')
 
-            # load net
-            net = Network(params)
+            # load weights into net
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
             net.eval()
-            h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
             # make L and P
-            L, P = make_l_and_p(data, random_state=False)
+            L, P = make_l_and_p(data, net, state_is_random=False)
             # compute W
             W = L @ pinv(P)
             # compute linear readout L
@@ -134,11 +155,17 @@ if __name__ == '__main__':
             x_tick = int(path_to_net.stem.lstrip('model_'))
             x_tick2ys[x_tick].append(accuracy)
 
-        # compute random guessing baseline
-        L, P = make_l_and_p(data, random_state=True)
+        # compute baseline based on linear separability of input
+        L, P = make_l_and_p(data, net, state_is_input=True)
         W = L @ pinv(P)
         L_predicted = W @ P  # [num features, num instances]
-        guessing_accuracy = calc_accuracy_of_readout(L, L_predicted)
+        baseline_input = calc_accuracy_of_readout(L, L_predicted)
+
+        # compute random guessing baseline
+        L, P = make_l_and_p(data, net, state_is_random=True)
+        W = L @ pinv(P)
+        L_predicted = W @ P  # [num features, num instances]
+        baseline_random = calc_accuracy_of_readout(L, L_predicted)
 
         # plot
         ys = []
@@ -148,13 +175,14 @@ if __name__ == '__main__':
         x_ticks = list(sorted(x_tick2ys))
         plot_line(
             ys,
-            title=f'{param_path.name}\nLinear readout at hidden state',
+            title=f'{param_path.name}\nLinear readout at hidden state\nuse non-linearity={USE_NON_LINEARITY}',
             x_axis_label='Epoch',
-            y_axis_label=f'{FEATURE_TYPE} Accuracy',
+            y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
             x_ticks=x_ticks,
-            labels=[],
+            labels=rep_names,
             y_lims=[0, 1],
-            h_line=guessing_accuracy,
+            baseline_input=baseline_input,
+            baseline_random=baseline_random,
         )
 
         break  # do not keep searching for models - regular pattern ids are defined for first model only
