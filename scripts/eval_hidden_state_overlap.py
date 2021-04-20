@@ -6,7 +6,7 @@ rotation and location variants of a shape.
 and then made discrete by rounding to the nearest mode.
 2) The hidden state is computed using these detectors.
 3) a score is computed that is proportional to the number of states not shared between shapes (higher is better).
-the score cna be interpreted as a measure of "separability" of shapes at the hidden layer
+the score cna be interpreted as a measure of "overlap" of shapes at the hidden layer
 
 Notes:
     - each primary color channel is evaluated separately when RGB_ID is not None.
@@ -15,13 +15,7 @@ Notes:
     - scores range form 0 to 1, with higher better
 
 Findings:
-    - a perfect score can be achieved when using all detectors.
-     this means that shapes are perfectly separable at hidden layer, but only within a color channel.
-     consequently, even in the case that the score for each color channel is perfect,
-     a model may not be perfectly able to classify shapes, because the separability of shapes must hold also
-     across color-channels, not just within.
-     it is likely a model will first learn unique strategies for separating shapes within each color channel,
-     resulting in perfect score,
+    - a perfect score can be achieved (1.0) trivially if the net just represents all instances uniquely.
     but never be able to combine the 3 solutions into a single solution that works equally well across channels.
     - when using only 2 detectors, checkerboard detectors are best,
     but when using more than 2 detectors, non-regular non-checkerboard detectors give highest score
@@ -52,9 +46,9 @@ from ludwig.results import gen_param_paths
 MIN_COMBO_SIZE = 16
 SCALE = 1.0  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 NUM_WORKERS = 6
-RGB_ID = None  # None to evaluate all three color channels
+RGB_ID = 0  # None to evaluate all three color channels
 ACROSS_TIME = True
-ACROSS_SHAPE = False
+ACROSS_SHAPE = True
 
 if __name__ == '__main__':
 
@@ -165,7 +159,7 @@ if __name__ == '__main__':
         plot_line(
             ys,
             title=f'across_shape={ACROSS_SHAPE}\ncolor channel={RGB_ID}',
-            x_axis_label='Evaluation Epoch',
+            x_axis_label='Epoch',
             y_axis_label='Hidden state overlap',
             x_ticks=x_ticks,
             labels=[],

@@ -246,6 +246,7 @@ def plot_line(ys: np.array,
               x_ticks: List[int],
               labels: List[str],
               y_lims: Optional[List[float]] = None,
+              h_line: Optional[float] = None,
               ):
     fig, ax = plt.subplots(1, figsize=(6, 4), dpi=163)
     plt.title(title, fontsize=configs.Figs.title_font_size)
@@ -264,6 +265,9 @@ def plot_line(ys: np.array,
     for n, y in enumerate(ys):
         line, = ax.plot(x_ticks, y, linewidth=2, color=f'C{n}')
         lines.append([line])
+
+    if h_line is not None:
+        ax.axhline(y=h_line, color='grey', ls=':')
 
     # legend
     plt.legend([l[0] for l in lines],
