@@ -19,8 +19,6 @@ from polyominoworld.params import param2default, param2requests
 # which results to plot
 PATTERN: str = 'acc_shape_train'  # name of performance curve to plot
 
-# TODO order legend by shape, or color
-
 # available patterns:
 # {1}_{2}_{3}
 # 1: cost, acc

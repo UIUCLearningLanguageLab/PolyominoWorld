@@ -33,6 +33,7 @@ def evaluate_detector_combo(q: mp.Queue,
                             scale_weights: float,
                             score_avg_max: mp.Value,
                             rgb_id: Optional[int] = None,
+                            across_shape: bool = True,
                             ):
     """
     a consumer that reads input from a queue and saves best results to shared memory.
@@ -53,10 +54,10 @@ def evaluate_detector_combo(q: mp.Queue,
         if h_ids is None:
             break
 
-        # get set of detectors for single color channel
+        # get set of detectors for one or all color channel
         detectors = []
         for h_id, hi in enumerate(h_x):
-            # get weights to one color channel only
+            # get weights to one color or all channel
             if rgb_id is not None:
                 hi_reshaped = hi.reshape((3, configs.World.max_x, configs.World.max_y))[rgb_id, :, :]
             else:
@@ -90,12 +91,6 @@ def evaluate_detector_combo(q: mp.Queue,
                 if shape_other != event.shape:
                     shape2states_other[shape_other].append(state)
 
-        # # TODO why does score=1.0 with only 1 detector?
-        # for shape, so in shape2states_other.items():
-        #     ss = shape2states[shape]
-        #     print(shape, len(so), len(ss), len(set(so)), len(set(ss)), len(set(so).intersection(set(ss))))
-        # return
-
         # compute score: how often are states for one shape shared by other shapes, on average?
         scores = []
         no_states = False
@@ -103,10 +98,19 @@ def evaluate_detector_combo(q: mp.Queue,
             if not states:  # this may happen if no data for a particular color is in data
                 no_states = True
                 break
-            num_times_confused = 0
-            for state in states:
-                num_times_confused += shape2states_other[shape].count(state)
-            score = len(states) / (num_times_confused + len(states))
+
+            if across_shape:
+                num_times_confused = 0
+                for state in states:
+                    num_times_confused += shape2states_other[shape].count(state)
+                score = len(states) / (num_times_confused + len(states))
+
+            else:
+                num_times_confused = 0
+                for state in states:
+                    num_times_confused += states.count(state)
+                score = num_times_confused / (len(states) * len(states))
+
             # collect
             scores.append(score)
 

@@ -126,6 +126,8 @@ class World:
 
 class Figs:
     lw = 1
-    ax_label_fs = 14
-    leg_fs = 8
+    ax_font_size = 14
+    leg_font_size = 8
     dpi = 163
+    title_font_size = 8
+    tick_font_size = 8

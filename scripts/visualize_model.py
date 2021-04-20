@@ -10,6 +10,7 @@ create an environment variable "LUDWIG_MNT" that points to the path where ludwig
 
 import torch
 import yaml
+from pathlib import Path
 
 from polyominoworld.utils import get_leftout_positions
 from polyominoworld.dataset import DataSet
@@ -29,6 +30,8 @@ if __name__ == '__main__':
             project_name,
             param2requests,
             param2default,
+            isolated=True,
+            runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings

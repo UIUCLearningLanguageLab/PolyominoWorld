@@ -131,6 +131,10 @@ def main(param2val):
                                 performance_data,
                                 start_time)
 
+    # save network weights for visualizing later
+    torch.save(net.state_dict(), save_path / f'model_{epoch:06}.pt')
+    torch.save(net.state_dict(), save_path / 'model.pt')
+
     # train loop
     for epoch in range(1, params.num_epochs + 1):  # start at 1 because evaluation at epoch=0 happens before training
 

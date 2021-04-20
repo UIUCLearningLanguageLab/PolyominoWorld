@@ -59,8 +59,8 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
     # setting up the matplotlib figure and axis
     fig, ax = plt.subplots(figsize=figsize, dpi=configs.Figs.dpi)
     plt.title(title)
-    ax.set_xlabel(x_label, fontsize=configs.Figs.ax_label_fs)
-    ax.set_ylabel(y_label, fontsize=configs.Figs.ax_label_fs)
+    ax.set_xlabel(x_label, fontsize=configs.Figs.ax_font_size)
+    ax.set_ylabel(y_label, fontsize=configs.Figs.ax_font_size)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)
@@ -122,11 +122,11 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
 
     # legend
     if title:
-        plt.legend(fontsize=configs.Figs.leg_fs, frameon=False, loc=legend_loc, ncol=1)
+        plt.legend(fontsize=configs.Figs.leg_font_size, frameon=False, loc=legend_loc, ncol=1)
     else:
         plt.legend(bbox_to_anchor=(0.5, 1.0),
                    borderaxespad=1.0,
-                   fontsize=configs.Figs.leg_fs,
+                   fontsize=configs.Figs.leg_font_size,
                    frameon=False,
                    loc='lower center',
                    ncol=3,
@@ -206,9 +206,9 @@ def plot_hidden_weights_analysis(arr: np.array,
 
 
 def plot_state_analysis(mat: np.array,
+                        title: str = '',
                         y_tick_labels: Optional[List[str]] = None,
                         x_tick_labels: Optional[List[str]] = None,
-                        title: str = '',
                         dpi: int = 192 // 2
                         ):
     fig, axes = plt.subplots(1, 2, figsize=(6, 6), dpi=dpi)
@@ -235,5 +235,43 @@ def plot_state_analysis(mat: np.array,
         lines = (ax.xaxis.get_ticklines() +
                  ax.yaxis.get_ticklines())
         plt.setp(lines, visible=False)
+
+    plt.show()
+
+
+def plot_line(ys: np.array,
+              title: str,
+              x_axis_label: str,
+              y_axis_label: str,
+              x_ticks: List[int],
+              labels: List[str],
+              y_lims: Optional[List[float]] = None,
+              ):
+    fig, ax = plt.subplots(1, figsize=(6, 4), dpi=163)
+    plt.title(title, fontsize=configs.Figs.title_font_size)
+    ax.set_ylabel(y_axis_label, fontsize=configs.Figs.ax_font_size)
+    ax.set_xlabel(x_axis_label, fontsize=configs.Figs.ax_font_size)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(['' if n + 1 != len(x_ticks) else f'{i:,}' for n, i in enumerate(x_ticks)],
+                       fontsize=configs.Figs.tick_font_size)
+    if y_lims:
+        ax.set_ylim(y_lims)
+
+    # plot
+    lines = []  # will have 1 list for each condition
+    for n, y in enumerate(ys):
+        line, = ax.plot(x_ticks, y, linewidth=2, color=f'C{n}')
+        lines.append([line])
+
+    # legend
+    plt.legend([l[0] for l in lines],
+               labels,
+               loc='upper center',
+               bbox_to_anchor=(0.5, -0.3),
+               ncol=2,
+               frameon=False,
+               fontsize=configs.Figs.leg_font_size)
 
     plt.show()

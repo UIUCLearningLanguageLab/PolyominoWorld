@@ -50,6 +50,10 @@ def is_exp2(param_path: Path,
     return res
 
 
+# param2requests = {
+#     'hidden_size': [32],
+# }
+
 param2requests = {
 
     'colors': [(
