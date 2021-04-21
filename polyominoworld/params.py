@@ -59,8 +59,8 @@ param2requests = {
     )],
 
     'learning_rate': [0.4],
-    'num_epochs': [100],
-    'hidden_size': [32],
+    'num_epochs': [1000],
+    'hidden_size': [16],
 }
 
 # param2requests = {

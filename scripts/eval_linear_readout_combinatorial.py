@@ -15,6 +15,8 @@ import yaml
 from itertools import combinations
 import multiprocessing as mp
 from pathlib import Path
+import time
+import numpy as np
 from collections import defaultdict
 
 from polyominoworld.utils import get_leftout_positions, evaluate_detector_combo
@@ -23,6 +25,8 @@ from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
+from polyominoworld.figs import plot_line
+from polyominoworld.evaluate import evaluate_linear_readout
 
 from ludwig.results import gen_param_paths
 
@@ -77,37 +81,57 @@ if __name__ == '__main__':
             net.load_state_dict(state_dict)
             net.requires_grad_(False)
             net.eval()
-            h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
-            # set up parallel processes that read from queue and save results in shared memory + shared memory
-            q = mp.Queue(maxsize=NUM_WORKERS)
-            score_max = mp.Value('d')
-            score_max.value = +0.0
-            pool = mp.Pool(NUM_WORKERS,
-                           initializer=evaluate_detector_combo,
-                           initargs=(q,
-                                     data,
-                                     net,
-                                     FEATURE_TYPE,
-                                     score_max,
-                                     ))
-
-            # search all combinations of input weight patterns
+            # search all combinations of hidden units
             for combo_size in range(MIN_COMBO_SIZE, params.hidden_size + 1):
+
+                # set up parallel processes that read from queue and save results in shared memory + shared memory
+                q = mp.Queue(maxsize=NUM_WORKERS)
+                score_max = mp.Value('d')
+                score_max.value = +0.0
+                pool = mp.Pool(NUM_WORKERS,
+                               initializer=evaluate_detector_combo,
+                               initargs=(q,
+                                         data,
+                                         net,
+                                         FEATURE_TYPE,
+                                         score_max,
+                                         ))
+
                 print(f'Searching combo size={combo_size}')
                 for h_ids in combinations(range(params.hidden_size), combo_size):
                     q.put(list(h_ids))  # blocks when q is full
 
-            # close pool
-            print('Closing pool')
-            for _ in range(NUM_WORKERS):
-                q.put(None)
-            pool.close()
-            print('Joining pool')
-            pool.join()
+                # close pool
+                for _ in range(NUM_WORKERS):
+                    q.put(None)
+                pool.close()
+                pool.join()
 
-            # report
-            print(f'best score={score_max.value:.4f} FEATURE_TYPE={FEATURE_TYPE}')
-            print()
+                # collect best score for given combo size
+                x_tick = combo_size
+                x_tick2ys[x_tick].append(score_max.value)
+
+            # compute  baselines
+            baseline_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_input=True)
+            random_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_random=True)
+
+            # plot
+            ys = []
+            for x_tick, y in sorted(x_tick2ys.items()):
+                ys.append(y)
+            ys = np.array(ys).T
+            x_ticks = list(sorted(x_tick2ys))
+            plot_line(
+                ys,
+                title=f'{param_path.name}\nLinear readout at hidden state\n',
+                x_axis_label='Hidden unit combination size',
+                y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
+                x_ticks=x_ticks,
+                labels=rep_names,
+                y_lims=[0, 1],
+                baseline_input=baseline_acc,
+                baseline_random=random_acc,
+            )
 
         break  # do not keep searching for models - regular pattern ids are defined for first model only

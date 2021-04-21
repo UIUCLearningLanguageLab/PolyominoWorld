@@ -175,7 +175,6 @@ def make_l_and_p(data: DataSet,
             else:
                 state = z_h
 
-
         if state_is_random:
             state = np.random.permutation(state)
 
