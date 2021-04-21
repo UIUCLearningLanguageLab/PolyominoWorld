@@ -133,15 +133,13 @@ def make_l_and_p(data: DataSet,
                  net: Network,
                  feature_type: str,
                  h_ids: Optional[List[int]] = None,
-                 non_linearity: str = 'tanh',
+                 non_linearity: bool = True,
                  state_is_random: bool = False,
                  state_is_input: bool = False,
                  ) -> Tuple[np.array, np.array]:
     """
     build data structures for evaluating linear readout
     """
-
-    h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
     lis = []
     pis = []
@@ -165,16 +163,18 @@ def make_l_and_p(data: DataSet,
             state = x.numpy()
         else:
             if h_ids is None:
-                state = h_x @ x.numpy()
+                z_h = net.h_x.weight @ x + net.h_x.bias  # don't forget the bias!
+                z_h = z_h.numpy()
             else:
-                state = h_x[h_ids, :] @ x.numpy()
+                term1 = net.h_x.weight.numpy()[h_ids, :] @ x.numpy()
+                term2 = net.h_x.bias.numpy()[h_ids]
+                z_h = term1 + term2
 
-            if non_linearity == 'tanh':
-                state = np.tanh(state)
-            elif non_linearity == 'none':
-                pass
+            if non_linearity:
+                state = np.tanh(z_h)
             else:
-                raise AttributeError('Invalid non_linearity')
+                state = z_h
+
 
         if state_is_random:
             state = np.random.permutation(state)
@@ -209,7 +209,7 @@ def evaluate_linear_readout(data: DataSet,
                             net: Network,
                             feature_type: str,
                             h_ids: Optional[List[int]] = None,
-                            non_linearity: str = 'tanh',
+                            non_linearity: bool = True,
                             **kwargs,
                             ) -> float:
     """

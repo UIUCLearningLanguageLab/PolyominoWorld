@@ -72,6 +72,7 @@ if __name__ == '__main__':
             # load weights into net
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
+            net.requires_grad_(False)
             net.eval()
 
             accuracy = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE)

@@ -75,6 +75,7 @@ if __name__ == '__main__':
             # load weights into net
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
+            net.requires_grad_(False)
             net.eval()
             h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
@@ -95,7 +96,7 @@ if __name__ == '__main__':
             for combo_size in range(MIN_COMBO_SIZE, params.hidden_size + 1):
                 print(f'Searching combo size={combo_size}')
                 for h_ids in combinations(range(params.hidden_size), combo_size):
-                    q.put(h_ids)  # blocks when q is full
+                    q.put(list(h_ids))  # blocks when q is full
 
             # close pool
             print('Closing pool')
