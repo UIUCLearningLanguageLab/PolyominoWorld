@@ -12,21 +12,22 @@ see: https://www.frontiersin.org/articles/10.3389/fpsyg.2013.00515/full
 """
 import torch
 import yaml
+from itertools import combinations
+import multiprocessing as mp
 from pathlib import Path
 from collections import defaultdict
-import numpy as np
 
-from polyominoworld.evaluate import evaluate_linear_readout
-from polyominoworld.utils import get_leftout_positions
+from polyominoworld.utils import get_leftout_positions, evaluate_detector_combo
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
-from polyominoworld.figs import plot_line
 
 from ludwig.results import gen_param_paths
 
+MIN_COMBO_SIZE = 1
+NUM_WORKERS = 6
 FEATURE_TYPE = 'shape'
 
 if __name__ == '__main__':
@@ -56,13 +57,15 @@ if __name__ == '__main__':
                        name='re-generated')
 
         # multiple models may exist for the same hyper-parameter configuration - iterate over each
-        paths_to_net = list(sorted(param_path.rglob(f'model_*.pt')))
+        paths_to_net = list(sorted(param_path.rglob(f'model.pt')))
         if not paths_to_net:
             raise FileNotFoundError('Did not find any model files')
 
         rep_names = [p.name for p in param_path.glob('*') if p.is_dir()]
 
         net = Network(params)
+
+        assert MIN_COMBO_SIZE <= params.hidden_size
 
         x_tick2ys = defaultdict(list)
         for path_to_net in paths_to_net:
@@ -73,34 +76,37 @@ if __name__ == '__main__':
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
             net.eval()
+            h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
-            accuracy = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE)
-            print(f'accuracy of readout={accuracy:.4f}')
+            # set up parallel processes that read from queue and save results in shared memory + shared memory
+            q = mp.Queue(maxsize=NUM_WORKERS)
+            score_max = mp.Value('d')
+            score_max.value = +0.0
+            pool = mp.Pool(NUM_WORKERS,
+                           initializer=evaluate_detector_combo,
+                           initargs=(q,
+                                     data,
+                                     net,
+                                     FEATURE_TYPE,
+                                     score_max,
+                                     ))
+
+            # search all combinations of input weight patterns
+            for combo_size in range(MIN_COMBO_SIZE, params.hidden_size + 1):
+                print(f'Searching combo size={combo_size}')
+                for h_ids in combinations(range(params.hidden_size), combo_size):
+                    q.put(h_ids)  # blocks when q is full
+
+            # close pool
+            print('Closing pool')
+            for _ in range(NUM_WORKERS):
+                q.put(None)
+            pool.close()
+            print('Joining pool')
+            pool.join()
+
+            # report
+            print(f'best score={score_max.value:.4f} FEATURE_TYPE={FEATURE_TYPE}')
             print()
-
-            x_tick = int(path_to_net.stem.lstrip('model_'))
-            x_tick2ys[x_tick].append(accuracy)
-
-        # compute  baselines
-        baseline_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_input=True)
-        random_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_random=True)
-
-        # plot
-        ys = []
-        for x_tick, y in sorted(x_tick2ys.items()):
-            ys.append(y)
-        ys = np.array(ys).T
-        x_ticks = list(sorted(x_tick2ys))
-        plot_line(
-            ys,
-            title=f'{param_path.name}\nLinear readout at hidden state\n',
-            x_axis_label='Epoch',
-            y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
-            x_ticks=x_ticks,
-            labels=rep_names,
-            y_lims=[0, 1],
-            baseline_input=baseline_acc,
-            baseline_random=random_acc,
-        )
 
         break  # do not keep searching for models - regular pattern ids are defined for first model only

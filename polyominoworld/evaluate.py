@@ -1,12 +1,11 @@
 import numpy as np
-import random
-import math
 import torch
-from typing import Union, Optional, Dict
+from typing import Union, Dict, Tuple, Optional, List
+from numpy.linalg import pinv
 
 from polyominoworld.network import Network
 from polyominoworld.dataset import DataSet
-from polyominoworld.helpers import Event
+
 from polyominoworld import configs
 
 
@@ -30,9 +29,6 @@ def evaluate_network(net: Network,
                      dataset: DataSet,
                      criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
                      ) -> Dict[str, np.array]:
-
-    # TODO when training auto-associator, also train a classifier (with its hidden layer as input) alongside it,
-    #  that can be evaluated on classification accuracy here
 
     # evaluate cost and accuracy classifying features in the world
     if net.params.y_type == 'features':
@@ -128,87 +124,105 @@ def evaluate_autoassociator(net: Network,
                             criterion_all: torch.nn.MSELoss,
                             ) -> Dict[str, float]:
 
-    # TODO ph february 21 2021: this function evaluates auto-associator classification of features.
-    #  but it is probably better to evaluate the auto-associator hidden layer via a classifier.
-    #  this would spare us the need to come up with code for evaluating classification accuracy,
-    #  because we would just use existing code
+    # TODO evaluate the auto-associator hidden layer using a linear readout (and moore penrose pseudo inverse).
 
-    color_rgb_matrix = np.zeros([len(master_color_labels), 3], float)
-    for n, color in enumerate(master_color_labels):
-        rgb = configs.World.color2rgb[color]
-        color_rgb_matrix[n] = rgb
+    raise NotImplementedError
 
-    # for each item in the dataset
-    for event in dataset.get_events():
-        event: Event
 
-        x = event.get_x(net.params.x_type)
-        y = event.get_y(net.params.y_type)
+def make_l_and_p(data: DataSet,
+                 net: Network,
+                 feature_type: str,
+                 h_ids: Optional[List[int]] = None,
+                 non_linearity: str = 'tanh',
+                 state_is_random: bool = False,
+                 state_is_input: bool = False,
+                 ) -> Tuple[np.array, np.array]:
+    """
+    build data structures for evaluating linear readout
+    """
 
-        o = net.forward(x).detach().numpy()
+    h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
 
-        # use the output vector to calculate which cells are "on", and what color they are
-        color_pred_list = []
-        position_pred_list = []
-        min_x = dataset.max_y + 1
-        min_y = dataset.max_x + 1
-        for j in range(world_size):
-            pred_rgb = np.array([o[j], o[j + world_size], o[j + world_size * 2]])
-            distance_vector = np.linalg.norm(color_rgb_matrix - pred_rgb, axis=1)
-            pred_index = np.argmin(distance_vector)
-            pred_label = all_color_labels[pred_index]
-            if pred_label != 'grey':
-                # todo this may need to be num_columns, not num_rows, depending on how rXc matrix is flattened
-                coordinates = [math.floor(j / configs.World.max_x), j % configs.World.max_y]
-                if coordinates[0] < min_x:
-                    min_x = coordinates[0]
-                if coordinates[1] < min_y:
-                    min_y = coordinates[1]
-                color_pred_list.append(pred_label)
-                position_pred_list.append(coordinates)
+    lis = []
+    pis = []
+    for event in data.get_events():
 
-        # convert the list of positions of cells that are "on", to a set of top-left-aligned active coordinates
-        for j in range(len(position_pred_list)):
-            position_pred_list[j] = [position_pred_list[j][0]-min_x, position_pred_list[j][1] - min_y]
-        position_pred_set = set(tuple(tuple(x) for x in position_pred_list))
-
-        # check to see if the set of top-lef- aligned active coordinates matches the definition of any shapes
-        shape_pred_label = None
-        for j in range(len(master_shape_label_list)):
-            if master_shape_position_list[j] == position_pred_set:
-                shape_pred_label = master_shape_label_list[j]
-                break
-        if shape_pred_label is None:
-            shape_pred_label = random.choice(master_shapes)
-
-        if len(color_pred_list) > 0:
-            size_pred = len(color_pred_list)
+        # make l
+        if feature_type == 'shape':
+            li = [1 if event.shape == s else 0 for s in configs.World.master_shapes]
+        elif feature_type == 'color':
+            li = [1 if event.color == s else 0 for s in configs.World.master_colors]
+        elif feature_type == 'size':
+            li = [1 if event.size == s else 0 for s in configs.World.master_sizes]
         else:
-            size_pred = random.choice([1, 2, 3, 4])
+            raise AttributeError('Invalid feature type')
+        lis.append(li)
 
-        if len(color_pred_list) == 0:
-            color_pred_list = [random.choice(master_color_labels)]
-        color_pred_label = random.choice(color_pred_list)
+        # make p
+        x = event.world_vector.vector
 
-        for feature_type in configs.World.feature_type2values:
-            feature_index = dataset.included_feature_index_dict[true_label]
-            costs[j] += current_sum_cost
-
-            if feature_type == 'size':
-                pred_label = size_pred
-            elif feature_type == 'shape':
-                pred_label = shape_pred_label
-            elif feature_type == 'color':
-                pred_label = color_pred_label
-            elif feature_type == 'action':
-                pred_label = None
+        if state_is_input:
+            state = x.numpy()
+        else:
+            if h_ids is None:
+                state = h_x @ x.numpy()
             else:
-                raise TypeError("Feature Type Not recognized While Evaluating Autoassociator")
+                state = h_x[h_ids, :] @ x.numpy()
 
-            if true_label == pred_label:
-                accuracies[j] += 1
+            if non_linearity == 'tanh':
+                state = np.tanh(state)
+            elif non_linearity == 'none':
+                pass
+            else:
+                raise AttributeError('Invalid non_linearity')
 
-    costs /= len(dataset.x)
-    accuracies = accuracies / len(dataset.x)
+        if state_is_random:
+            state = np.random.permutation(state)
+
+        pi = state.T
+        pis.append(pi)
+
+    l = np.array(lis).T  # l has columns of localist target vectors
+    p = np.array(pis).T  # p has columns of representation vectors
+
+    return l, p
+
+
+def calc_accuracy(l_matrix_correct: np.array,
+                  l_matrix_predicted: np.array,
+                  ) -> float:
+    """
+    calculate accuracy of predicted class labels against target labels.
+    used for evaluating linear readout.
+    """
+    num_correct = 0
+    for li_correct, li_predicted in zip(l_matrix_correct.T, l_matrix_predicted.T):
+        assert np.sum(li_correct) == 1.0
+        id_correct = np.argmax(li_correct)
+        id_predicted = np.argmax(li_predicted)
+        if id_correct == id_predicted:
+            num_correct += 1
+    return num_correct / len(l_matrix_correct.T)
+
+
+def evaluate_linear_readout(data: DataSet,
+                            net: Network,
+                            feature_type: str,
+                            h_ids: Optional[List[int]] = None,
+                            non_linearity: str = 'tanh',
+                            **kwargs,
+                            ) -> float:
+    """
+    compute accuracy of linear readout.
+    """
+
+    # make l and P
+    l, p = make_l_and_p(data, net, feature_type, h_ids, non_linearity, **kwargs)
+    # compute W
+    w = l @ pinv(p)
+    # compute linear readout l
+    l_predicted = w @ p  # [num features, num instances]
+    # compute accuracy
+    res = calc_accuracy(l, l_predicted)
 
     return res
