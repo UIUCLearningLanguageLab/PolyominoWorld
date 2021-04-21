@@ -32,6 +32,7 @@ def evaluate_detector_combo(q: mp.Queue,
                             net: Network,
                             feature_type: str,
                             score_avg_max: mp.Value,
+                            lock: mp.Lock,
                             ):
     """
     a consumer that reads input from a queue and saves best results to shared memory.
@@ -51,10 +52,11 @@ def evaluate_detector_combo(q: mp.Queue,
 
         score = evaluate_linear_readout(data, net, feature_type, h_ids)
 
-        # report
+        # TODO test lock
+        lock.acquire()
+        # report + update shared memory
         if score > score_avg_max.value:
             print(f'score={score :.4f} | h_ids={h_ids} ')
-
-        # update shared memory
         if score > score_avg_max.value:
             score_avg_max.value = score
+        lock.release()

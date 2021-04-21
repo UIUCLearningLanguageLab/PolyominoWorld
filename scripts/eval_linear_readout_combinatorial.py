@@ -15,7 +15,6 @@ import yaml
 from itertools import combinations
 import multiprocessing as mp
 from pathlib import Path
-import time
 import numpy as np
 from collections import defaultdict
 
@@ -32,7 +31,7 @@ from ludwig.results import gen_param_paths
 
 MIN_COMBO_SIZE = 1
 NUM_WORKERS = 6
-FEATURE_TYPE = 'shape'
+FEATURE_TYPE = 'size'
 
 if __name__ == '__main__':
 
@@ -89,13 +88,15 @@ if __name__ == '__main__':
                 q = mp.Queue(maxsize=NUM_WORKERS)
                 score_max = mp.Value('d')
                 score_max.value = +0.0
+                lock = mp.Lock()
                 pool = mp.Pool(NUM_WORKERS,
-                               initializer=evaluate_detector_combo,
+                               initializer=evaluate_detector_combo,  # TODO speed up using batching
                                initargs=(q,
                                          data,
                                          net,
                                          FEATURE_TYPE,
                                          score_max,
+                                         lock,
                                          ))
 
                 print(f'Searching combo size={combo_size}')
