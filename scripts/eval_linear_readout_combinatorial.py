@@ -16,9 +16,10 @@ from itertools import combinations
 import multiprocessing as mp
 from pathlib import Path
 import numpy as np
+from typing import Tuple
 from collections import defaultdict
 
-from polyominoworld.utils import get_leftout_positions, evaluate_detector_combo
+from polyominoworld.utils import get_leftout_positions
 from polyominoworld.dataset import DataSet
 from polyominoworld.network import Network
 from polyominoworld.world import World
@@ -31,7 +32,43 @@ from ludwig.results import gen_param_paths
 
 MIN_COMBO_SIZE = 1
 NUM_WORKERS = 6
-FEATURE_TYPE = 'size'
+FEATURE_TYPE = 'shape'
+
+
+def init(data_,
+         net_,
+         feature_type_,
+         score_max_,
+         lock_,
+         ):
+    global data, net, feature_type, score_max, lock
+    data = data_
+    net = net_
+    feature_type = feature_type_
+    score_max = score_max_
+    lock = lock_
+
+
+def evaluate_detector_combo(h_ids_: Tuple[int],
+                            ) -> None:
+    """
+    compute linear readout accuracy for given detector combination
+    """
+
+    from polyominoworld.evaluate import evaluate_linear_readout
+
+    score = evaluate_linear_readout(data, net, feature_type, list(h_ids_))
+
+    # TODO test lock
+    # report + update shared memory
+    if score > score_max.value:
+        lock.acquire()
+        score_max.value = score
+        print(f'score={score :.4f} | h_ids={h_ids_} ')
+        lock.release()
+
+    return None
+
 
 if __name__ == '__main__':
 
@@ -90,18 +127,17 @@ if __name__ == '__main__':
                 score_max.value = +0.0
                 lock = mp.Lock()
                 pool = mp.Pool(NUM_WORKERS,
-                               initializer=evaluate_detector_combo,  # TODO speed up using batching
-                               initargs=(q,
-                                         data,
+                               initializer=init,
+                               initargs=(data,
                                          net,
                                          FEATURE_TYPE,
                                          score_max,
                                          lock,
                                          ))
 
+                # do the work
                 print(f'Searching combo size={combo_size}')
-                for h_ids in combinations(range(params.hidden_size), combo_size):
-                    q.put(list(h_ids))  # blocks when q is full
+                pool.map(evaluate_detector_combo, combinations(range(params.hidden_size), combo_size))
 
                 # close pool
                 for _ in range(NUM_WORKERS):
@@ -112,6 +148,9 @@ if __name__ == '__main__':
                 # collect best score for given combo size
                 x_tick = combo_size
                 x_tick2ys[x_tick].append(score_max.value)
+
+                if score_max.value > 0.99:
+                    break  # no need to keep searching
 
             # compute  baselines
             baseline_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_input=True)

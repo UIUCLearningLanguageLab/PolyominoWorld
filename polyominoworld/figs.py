@@ -257,8 +257,7 @@ def plot_line(ys: np.array,
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xticks(x_ticks)
-    ax.set_xticklabels(['' if n + 1 != len(x_ticks) else f'{i:,}' for n, i in enumerate(x_ticks)],
-                       fontsize=configs.Figs.tick_font_size)
+    ax.set_xticklabels(x_ticks, fontsize=configs.Figs.tick_font_size)
     if y_lims:
         ax.set_ylim(y_lims)
 
