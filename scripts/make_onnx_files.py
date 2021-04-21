@@ -35,7 +35,7 @@ def main():
             pytorch_model.load_state_dict(torch.load(path_to_net, map_location=torch.device('cpu')))
             pytorch_model.eval()
 
-            dummy_input = torch.zeros((WorldVector.calc_size(), ))  # dummy input with shape  model expects as input
+            dummy_input = torch.zeros(1, WorldVector.calc_size()) # dummy input with shape  model expects as input
             path_out = Path(__file__).parent.parent / 'onnx_models' / f'{param2val["param_name"]}_{rep_id}.onnx'
             if not path_out.parent.exists():
                 path_out.parent.mkdir()
