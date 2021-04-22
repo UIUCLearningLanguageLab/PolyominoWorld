@@ -52,22 +52,8 @@ def is_exp2(param_path: Path,
 
 param2requests = {
 
-    'colors': [(
-        'red',
-        'green',
-        'blue',
-    )],
 
-    'allow_negative_x': [False],
-
-    'learning_rate': [0.4],
-    'num_epochs': [1000],
-    'hidden_size': [16],
 }
-
-# param2requests = {
-#     'hidden_size': [32],
-# }
 
 
 # default hyper parameters
@@ -88,7 +74,7 @@ param2default = {
     'seed': 1,
     'shuffle_sequences': True,
     'shuffle_events': False,
-    'allow_negative_x': True,  # much better performance if -1s are not allowed in x
+    'allow_negative_x': False,  # much better performance if -1s are not allowed in x
     'bg_color': 'grey',  # using a black background makes training much more difficult because of -1s
     'actions_and_probabilities': (
         ('rest', 0.0),

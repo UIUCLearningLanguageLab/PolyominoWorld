@@ -6,6 +6,7 @@ import random
 
 from polyominoworld import configs
 
+
 @dataclass(frozen=True)
 class WorldCell:
     x: int = field()
