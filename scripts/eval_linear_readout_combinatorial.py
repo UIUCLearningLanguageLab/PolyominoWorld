@@ -25,14 +25,14 @@ from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
-from polyominoworld.figs import plot_line
+from polyominoworld.figs import plot_lines
 from polyominoworld.evaluate import evaluate_linear_readout
 
 from ludwig.results import gen_param_paths
 
 MIN_COMBO_SIZE = 1
 NUM_WORKERS = 6
-FEATURE_TYPE = 'shape'
+FEATURE_TYPE = 'size'
 
 
 def init(data_,
@@ -162,7 +162,7 @@ if __name__ == '__main__':
                 ys.append(y)
             ys = np.array(ys).T
             x_ticks = list(sorted(x_tick2ys))
-            plot_line(
+            plot_lines(
                 ys,
                 title=f'{param_path.name}\nLinear readout at hidden state\n',
                 x_axis_label='Hidden unit combination size',

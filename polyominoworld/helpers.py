@@ -6,9 +6,6 @@ import random
 
 from polyominoworld import configs
 
-RGB = Tuple[float, float, float]
-
-
 @dataclass(frozen=True)
 class WorldCell:
     x: int = field()
@@ -21,14 +18,22 @@ class ShapeCell:
     y: int = field()
 
 
-@dataclass(frozen=True)
+@dataclass()
 class WorldVector:
     """
     raw world data encoded in a single vector
     """
 
-    active_cell2color: Dict[WorldCell, RGB] = field()
+    active_cell2color: Dict[WorldCell, str] = field()
     bg_color: str = field()
+    allow_negative_x: bool = field()
+    color2rgb: Dict[str, np.array] = field(init=False)
+
+    def __post_init__(self):
+        if self.allow_negative_x:
+            self.color2rgb = {c: np.array(rgb) for c, rgb in configs.World.color2rgb.items()}
+        else:
+            self.color2rgb = {c: np.clip(rgb, 0, 1) for c, rgb in configs.World.color2rgb.items()}
 
     @classmethod
     def calc_size(cls) -> int:
@@ -43,14 +48,14 @@ class WorldVector:
         note: background color will be different every time this function is called if bg_color='random'
         """
         if self.bg_color == 'random':
-            rgb = [random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1)]
+            rgb_vector = [random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1)]
         else:
-            if self.bg_color in configs.World.color2rgb:
-                rgb = configs.World.color2rgb[self.bg_color]
+            if self.bg_color in self.color2rgb:
+                rgb_vector = self.color2rgb[self.bg_color]
             else:
                 raise RuntimeError(f"Color {self.bg_color} not recognized")
 
-        return np.array(rgb)
+        return rgb_vector
 
     @property
     def vector(self) -> torch.tensor:
@@ -67,11 +72,8 @@ class WorldVector:
 
                 # color of shape at cell
                 if cell in self.active_cell2color:
-                    color = self.active_cell2color[cell]
-                    rgb_vector = np.array(configs.World.color2rgb[color])
-
-                    # TODO
-                    # rgb_vector = np.clip(rgb_vector, 0, 1)
+                    color: str = self.active_cell2color[cell]
+                    rgb_vector = self.color2rgb[color]
 
                 # color of background
                 else:
@@ -108,7 +110,7 @@ class WorldVector:
                 # color of shape at cell
                 if cell in self.active_cell2color:
                     color = self.active_cell2color[cell]
-                    res[:, pos_y, pos_x] = np.array(configs.World.color2rgb[color])
+                    res[:, pos_y, pos_x] = np.array(self.color2rgb[color])
 
                 # color of background
                 else:
@@ -124,7 +126,7 @@ class WorldVector:
         warning: it is extremely important to copy active_cell2color,
          otherwise it will be linked to the world, and updated whenever the world is updated,
         """
-        return cls(world.active_cell2color.copy(), world.params.bg_color)
+        return cls(world.active_cell2color.copy(), world.params.bg_color, world.params.allow_negative_x)
 
 
 @dataclass(frozen=True)

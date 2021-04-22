@@ -239,16 +239,17 @@ def plot_state_analysis(mat: np.array,
     plt.show()
 
 
-def plot_line(ys: np.array,
-              title: str,
-              x_axis_label: str,
-              y_axis_label: str,
-              x_ticks: List[int],
-              labels: List[str],
-              y_lims: Optional[List[float]] = None,
-              baseline_input: Optional[float] = None,
-              baseline_random: Optional[float] = None,
-              ):
+def plot_lines(ys: np.array,
+               title: str,
+               x_axis_label: str,
+               y_axis_label: str,
+               x_ticks: List[int],
+               labels: List[str],
+               y_lims: Optional[List[float]] = None,
+               baseline_input: Optional[float] = None,
+               baseline_random: Optional[float] = None,
+               label_last_x_tick_only: bool = False,
+               ):
 
     fig, ax = plt.subplots(1, figsize=(6, 4), dpi=163)
     plt.title(title, fontsize=configs.Figs.title_font_size)
@@ -257,7 +258,11 @@ def plot_line(ys: np.array,
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xticks(x_ticks)
-    ax.set_xticklabels(x_ticks, fontsize=configs.Figs.tick_font_size)
+    if label_last_x_tick_only:
+        x_tick_labels = ['' if  n < len(x_ticks) - 1 else i for n, i in enumerate(x_ticks)]
+    else:
+        x_tick_labels = x_ticks
+    ax.set_xticklabels(x_tick_labels, fontsize=configs.Figs.tick_font_size)
     if y_lims:
         ax.set_ylim(y_lims)
 

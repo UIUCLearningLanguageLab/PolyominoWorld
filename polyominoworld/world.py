@@ -8,8 +8,6 @@ from polyominoworld import shapes
 from polyominoworld.helpers import Sequence, Event, ShapeState, FeatureVector, WorldVector, WorldCell
 
 
-RGB = Tuple[float, float, float]
-
 
 class World:
     """
@@ -35,7 +33,7 @@ class World:
         self.action_probabilities = [p for a, p in self.params.actions_and_probabilities]
 
         # init/reset world by starting with no active cell
-        self.active_cell2color: Dict[WorldCell, RGB] = {}
+        self.active_cell2color: Dict[WorldCell, str] = {}
 
         self.master_positions = [(x, y) for x, y in
                                  itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
@@ -231,7 +229,7 @@ class World:
 
     def _update_active_cells(self,
                              world_cells: List[WorldCell],
-                             color: RGB,
+                             color: str,
                              ) -> None:
 
         self.active_cell2color.clear()

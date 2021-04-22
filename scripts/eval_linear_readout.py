@@ -23,7 +23,7 @@ from polyominoworld.network import Network
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
-from polyominoworld.figs import plot_line
+from polyominoworld.figs import plot_lines
 
 from ludwig.results import gen_param_paths
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             ys.append(y)
         ys = np.array(ys).T
         x_ticks = list(sorted(x_tick2ys))
-        plot_line(
+        plot_lines(
             ys,
             title=f'{param_path.name}\nLinear readout at hidden state\n',
             x_axis_label='Epoch',
@@ -102,6 +102,7 @@ if __name__ == '__main__':
             y_lims=[0, 1],
             baseline_input=baseline_acc,
             baseline_random=random_acc,
+            label_last_x_tick_only=True,
         )
 
         break  # do not keep searching for models - regular pattern ids are defined for first model only

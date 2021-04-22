@@ -58,6 +58,8 @@ param2requests = {
         'blue',
     )],
 
+    'allow_negative_x': [False],
+
     'learning_rate': [0.4],
     'num_epochs': [1000],
     'hidden_size': [16],
@@ -86,7 +88,8 @@ param2default = {
     'seed': 1,
     'shuffle_sequences': True,
     'shuffle_events': False,
-    'bg_color': 'grey',
+    'allow_negative_x': True,  # much better performance if -1s are not allowed in x
+    'bg_color': 'grey',  # using a black background makes training much more difficult because of -1s
     'actions_and_probabilities': (
         ('rest', 0.0),
         ('move', 1.0),
@@ -157,6 +160,7 @@ class Params:
     seed: int
     shuffle_sequences: bool
     shuffle_events: bool
+    allow_negative_x: bool
     bg_color: str
     actions_and_probabilities: Dict[str, float]
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]

@@ -5,13 +5,10 @@ from polyominoworld import configs
 from polyominoworld.helpers import ShapeState, ShapeCell
 
 
-RGB = Tuple[float, float, float]
-
-
 class Shape:
 
     def __init__(self,
-                 color: RGB,
+                 color: str,
                  variant: int,
                  position: Tuple[int, int],
                  ) -> None:
