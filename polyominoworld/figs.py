@@ -51,7 +51,7 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                      x_lims: List[int] = None,
                      log_y: bool = False,
                      start_x_at_zero: bool = False,
-                     y_grid: bool = False,
+                     y_grid: bool = True,
                      legend_labels: Union[None, list] = None,
                      legend_loc: str = 'lower right',
                      verbose: bool = False,

@@ -19,10 +19,13 @@ class Display:
     def __init__(self,
                  data: DataSet,
                  net: Network,
+                 allow_negative_ones: bool,
                  ):
 
         self.data = data
         self.net = net
+        self.allow_negative_ones = allow_negative_ones
+
         self.net.eval()
 
         self.events: List[Event] = self.data.get_events()
@@ -498,13 +501,18 @@ class Display:
             tag = None
         return tag
 
-    @staticmethod
-    def rgb_to_hex(r, g, b):
+    def rgb_to_hex(self, r, g, b):
         def clamp(x):
             return max(0, min(x, 255))
-        scaled_r = ((r + 1) * 128) - 1
-        scaled_g = ((g + 1) * 128) - 1
-        scaled_b = ((b + 1) * 128) - 1
+
+        if self.allow_negative_ones:
+            scaled_r = ((r + 1) * 128) - 1
+            scaled_g = ((g + 1) * 128) - 1
+            scaled_b = ((b + 1) * 128) - 1
+        else:
+            scaled_r = r * 255
+            scaled_g = g * 255
+            scaled_b = b * 255
 
         hex_value = "#{0:02x}{1:02x}{2:02x}".format(clamp(int(scaled_r)), clamp(int(scaled_g)), clamp(int(scaled_b)))
         return hex_value
