@@ -59,7 +59,6 @@ def evaluate_detector_combo(h_ids_: Tuple[int],
 
     score = evaluate_linear_readout(data, net, feature_type, list(h_ids_))
 
-    # TODO test lock
     # report + update shared memory
     if score > score_max.value:
         lock.acquire()

@@ -13,6 +13,7 @@ import torch
 import time
 from typing import Dict, List, Tuple, Union
 import random
+import numpy as np
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.utils import get_leftout_positions
@@ -135,16 +136,28 @@ def main(param2val):
     torch.save(net.state_dict(), save_path / f'model_{epoch:06}.pt')
     torch.save(net.state_dict(), save_path / 'model.pt')
 
+    def divide_into_batches(l):
+        # looping till length l
+        for i in range(0, len(l), params.batch_size):
+            yield l[i:i + params.batch_size]
+
+    learning_rates = np.sin(np.linspace(1e-3, 180, params.num_epochs) * np.pi / 180) * params.learning_rate
+
     # train loop
     for epoch in range(1, params.num_epochs + 1):  # start at 1 because evaluation at epoch=0 happens before training
 
+        # start with small learning rate and ramp up, then down again (super-convergence)
+        lr = learning_rates[epoch - 1]
+        elapsed_time = performance_data['cumulative_seconds'][-1][1]
+        print(f'epoch={epoch:04}/{params.num_epochs} | learning rate={lr:.3f} | elapsed={int(elapsed_time):012}s')
+        optimizer.param_groups[0]['lr'] = lr
+
         # train
         net.train()
-        for event in data_train.get_events():
+        for events_in_batch in divide_into_batches(data_train.get_events()):
 
-            x = event.get_x(net.params.x_type)
-            y = event.get_y(net.params.y_type)
-
+            x = torch.stack([event.get_x(net.params.x_type) for event in events_in_batch])
+            y = torch.stack([event.get_y(net.params.y_type) for event in events_in_batch])
             o = net.forward(x)
             loss = criterion_avg(o, y)
             optimizer.zero_grad()
@@ -170,7 +183,6 @@ def main(param2val):
     # prepare collected data for returning to Ludwig (which saves data to shared drive)
     res: List[pd.Series] = []
     for name, curves in performance_data.items():
-        print(f'Making pandas series with name={name} and length={len(curves)}', flush=True)
         index, curve = zip(*curves)
         s = pd.Series(curve, index=index)
         s.name = name

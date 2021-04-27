@@ -91,7 +91,6 @@ class World:
                  'yellow': (1., 1., -1.),
                  'cyan': (-1., 1., 1.),
                  'magenta': (1., -1., 1.),
-                 'grey': (0., 0., 0.),
                  }
 
     action2directions = {

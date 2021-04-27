@@ -40,8 +40,8 @@ project_name = 'PolyominoWorld'
 for p, label in gen_param_paths(project_name,
                                 param2requests,
                                 param2default,
-                                isolated=True,
-                                runs_path=Path(__file__).parent.parent / 'runs',
+                                # isolated=True,
+                                # runs_path=Path(__file__).parent.parent / 'runs',
                                 ludwig_data_path=None,
                                 label_n=False):
     summary = make_summary(PATTERN, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n

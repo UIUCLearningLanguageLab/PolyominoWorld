@@ -63,19 +63,20 @@ param2default = {
     'hidden_size': 32,
     'hidden_activation_function': 'tanh',
     'learning_rate': 0.4,
-    'num_epochs': 300,
+    'num_epochs': 1000,
     'weight_init': 0.001,
     'optimizer': 'SGD',
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
+    'batch_size': 1,
 
     # data
     'seed': 1,
     'shuffle_sequences': True,
     'shuffle_events': False,
     'allow_negative_x': False,  # much better performance if -1s are not allowed in x
-    'bg_color': 'grey',  # using a black background makes training much more difficult because of -1s
+    'bg_color': 'black',
     'actions_and_probabilities': (
         ('rest', 0.0),
         ('move', 1.0),
@@ -102,7 +103,6 @@ param2default = {
         'yellow',
         'cyan',
         'magenta',
-        'grey',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
 
@@ -142,6 +142,7 @@ class Params:
     x_type: str
     y_type: str
     criterion: str
+    batch_size: int
 
     seed: int
     shuffle_sequences: bool

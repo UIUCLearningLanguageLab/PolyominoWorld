@@ -72,7 +72,7 @@ def evaluate_classification(net: Network,
             performance_name = f'acc_{feature_type}_{dataset.name}'
             res.setdefault(performance_name, 0.0)
             o_restricted = o[o_ids]  # logits restricted to one feature_type
-            y_restricted = event.get_y(net.params.y_type)[o_ids]
+            y_restricted = event.get_y(net.params.y_type)[o_ids].detach().cpu().numpy()
             if np.argmax(o_restricted) == np.argmax(y_restricted):
                 res[performance_name] += 1
 

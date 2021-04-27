@@ -47,10 +47,10 @@ if __name__ == '__main__':
 
         # use all locations, rotations, shapes, and colors - and filter later
         world = World(params)
-        data = DataSet(world.generate_sequences(leftout_colors=('', ),
-                                                leftout_shapes=('', ),
-                                                leftout_variants='',
-                                                leftout_positions=get_leftout_positions(''),
+        data = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
+                                                leftout_shapes=params.leftout_shapes,
+                                                leftout_variants=params.leftout_variants,
+                                                leftout_positions=get_leftout_positions(params.leftout_half),
                                                 ),
                        params,
                        name='re-generated')
