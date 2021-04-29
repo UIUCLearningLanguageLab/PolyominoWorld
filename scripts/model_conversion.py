@@ -1,5 +1,7 @@
 """
-Convert pytorch model binary files to onnx format, for web-based visualization
+Convert pytorch model binary files to onnx format, 
+import the onnx model to Tensorflow, 
+save the TF file for the web visualization
 """
 
 from pathlib import Path
@@ -7,10 +9,13 @@ import torch
 import yaml
 
 
+import onnx
+from onnx_tf.backend import prepare
 from polyominoworld.helpers import WorldVector
 from polyominoworld.params import Params
 from polyominoworld.params import param2requests, param2default
 from polyominoworld.network import Network
+
 
 from ludwig.results import gen_param_paths
 
@@ -36,13 +41,20 @@ def main():
             pytorch_model.eval()
 
             dummy_input = torch.zeros(1, WorldVector.calc_size()) # dummy input with shape  model expects as input
-            path_out = Path(__file__).parent.parent / 'onnx_models' / f'{param2val["param_name"]}_{rep_id}.onnx'
-            if not path_out.parent.exists():
-                path_out.parent.mkdir()
+            onnx_path_out = Path(__file__).parent.parent / 'onnx_models' / f'{param2val["param_name"]}_{rep_id}.onnx'
+            if not onnx_path_out.parent.exists():
+                onnx_path_out.parent.mkdir()
             torch.onnx.export(pytorch_model,
                               dummy_input,
-                              path_out,
+                              onnx_path_out,
                               verbose=True)
+            
+            model = onnx.load(onnx_path_out)
+            tf_rep = prepare(model)
+            tf_path_out = Path(__file__).parent.parent / 'tensorflow_models' / f'{param2val["param_name"]}_{rep_id}.pb'
+            if not tf_path_out.parent.exists():
+                tf_path_out.parent.mkdir()
+            tf_rep.export_graph(tf_path_out)
 
 
 if __name__ == '__main__':
