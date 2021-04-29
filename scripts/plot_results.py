@@ -56,7 +56,7 @@ if not summaries:
 
 # plot
 fig = make_summary_fig(summaries,
-                       x_label='Epoch',
+                       x_label='Training Step',
                        y_label=make_y_label(PATTERN),
                        title=TITLE,
                        figsize=FIG_SIZE,

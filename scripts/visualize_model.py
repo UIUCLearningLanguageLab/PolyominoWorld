@@ -59,5 +59,5 @@ if __name__ == '__main__':
             net.eval()
 
             # visualize
-            display = Display(data, net)
+            display = Display(data, net, params.allow_negative_x)
             display.root.mainloop()

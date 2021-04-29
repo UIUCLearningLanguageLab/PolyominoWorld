@@ -25,7 +25,7 @@ class World:
         self.params = params
 
         # check params
-        for color in self.params.colors:
+        for color in self.params.fg_colors:
             if color not in configs.World.color2rgb:
                 raise ValueError('Color must be in configs.World.color2rgb')
 
@@ -49,13 +49,13 @@ class World:
         res = []
 
         # for each possible color
-        for color in self.params.colors:
+        for fg_color in self.params.fg_colors:
 
-            if color in leftout_colors:  # careful: do not leave out bg_color: validation set will be empty
+            if fg_color in leftout_colors:  # careful: do not leave out bg_color: validation set will be empty
                 continue
 
-            if color == self.params.bg_color:
-                continue
+            if fg_color == self.params.bg_color:
+                raise RuntimeError('Foreground color is background color')
 
             # for each user-requested shape+variant combination
             for shape_name, variants in self.params.shapes_and_variants:
@@ -82,7 +82,7 @@ class World:
                             continue
 
                         # make shape
-                        shape = self._make_shape(color, position, shape_name, variant)
+                        shape = self._make_shape(fg_color, position, shape_name, variant)
 
                         if not self._is_shape_legal(shape, leftout_positions):
                             continue

@@ -95,7 +95,7 @@ if __name__ == '__main__':
         plot_lines(
             ys,
             title=f'{param_path.name}\nLinear readout at hidden state\n',
-            x_axis_label='Epoch',
+            x_axis_label='Training Step',
             y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
             x_ticks=x_ticks,
             labels=rep_names,

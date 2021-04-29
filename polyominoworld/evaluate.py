@@ -10,6 +10,8 @@ from polyominoworld import configs
 
 
 def print_eval_summary(epoch: int,
+                       step: int,
+                       max_step: int,
                        cumulative_time: float,
                        cost_avg_train: float,
                        cost_avg_valid: float,
@@ -17,7 +19,7 @@ def print_eval_summary(epoch: int,
                        acc_avg_valid: float,
                        ):
     device = "gpu" if configs.Training.gpu else "cpu"
-    output_string = f"Epoch={epoch:04} | "
+    output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
     output_string += f"cost-train={cost_avg_train:0.2f} cost-valid={cost_avg_valid:0.2f} | "
     output_string += f"acc-train={acc_avg_train:0.2f} acc-valid={acc_avg_valid:0.2f} | "
     output_string += f"minutes elapsed={int(cumulative_time/60):03}min with device={device}"

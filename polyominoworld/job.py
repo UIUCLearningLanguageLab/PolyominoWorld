@@ -14,6 +14,7 @@ import time
 from typing import Dict, List, Tuple, Union
 import random
 import numpy as np
+from itertools import count
 
 from polyominoworld.dataset import DataSet
 from polyominoworld.utils import get_leftout_positions
@@ -118,67 +119,95 @@ def main(param2val):
         raise AttributeError(f'Invalid arg to optimizer')
 
     # init
-    print("Starting training {}-to-{} model on {} epochs".format(params.x_type, params.y_type, params.num_epochs))
+    print("Starting training {}-to-{} model on {:,} steps".format(params.x_type, params.y_type, params.num_steps))
     start_time = time.time()
+    step = 0
     epoch = 0
+    is_finished_training = False
     performance_data: Dict[str, List[Tuple[int, float]]] = {}
 
     # eval before training
     evaluate_on_train_and_valid(criterion_all,
                                 data_train,
                                 data_valid,
-                                epoch,
+                                step,
                                 net,
                                 performance_data,
                                 start_time)
 
+    print_eval_summary(epoch,
+                       step,
+                       params.num_steps,
+                       performance_data['cumulative_seconds'][-1][1],
+                       performance_data['cost_avg_train'][-1][1],
+                       performance_data['cost_avg_valid'][-1][1],
+                       performance_data['acc_avg_train'][-1][1],
+                       performance_data['acc_avg_valid'][-1][1],
+                       )
+
     # save network weights for visualizing later
-    torch.save(net.state_dict(), save_path / f'model_{epoch:06}.pt')
+    torch.save(net.state_dict(), save_path / f'model_{step:012}.pt')
     torch.save(net.state_dict(), save_path / 'model.pt')
 
-    def divide_into_batches(l):
-        # looping till length l
-        for i in range(0, len(l), params.batch_size):
-            yield l[i:i + params.batch_size]
+    # compute cyclical learning rate
+    start_lr = 0.1 / params.learning_rate  # start lr should be larger than end lr
+    learning_rates = np.sin(np.linspace(start_lr, 180, params.num_steps) * np.pi / 180) * params.learning_rate
 
-    learning_rates = np.sin(np.linspace(1e-3, 180, params.num_epochs) * np.pi / 180) * params.learning_rate
+    # precompute training tensors
+    events = data_train.get_events()
+    xs = torch.stack([event.get_x(net.params.x_type) for event in events])
+    ys = torch.stack([event.get_y(net.params.y_type) for event in events])
 
     # train loop
-    for epoch in range(1, params.num_epochs + 1):  # start at 1 because evaluation at epoch=0 happens before training
+    for epoch in count(start=1, step=1):  # infinite counter
 
         # start with small learning rate and ramp up, then down again (super-convergence)
-        lr = learning_rates[epoch - 1]
-        elapsed_time = performance_data['cumulative_seconds'][-1][1]
-        print(f'epoch={epoch:04}/{params.num_epochs} | learning rate={lr:.3f} | elapsed={int(elapsed_time):012}s')
+        lr = learning_rates[step]
         optimizer.param_groups[0]['lr'] = lr
 
-        # train
-        net.train()
-        for events_in_batch in divide_into_batches(data_train.get_events()):
+        for x, y in zip(torch.split(xs, params.batch_size), torch.split(ys, params.batch_size)):
+            step += 1
 
-            x = torch.stack([event.get_x(net.params.x_type) for event in events_in_batch])
-            y = torch.stack([event.get_y(net.params.y_type) for event in events_in_batch])
+            # train
+            net.train()
             o = net.forward(x)
             loss = criterion_avg(o, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-        # eval
-        net.eval()
+            # eval
+            net.eval()
+            if step % configs.Evaluation.step_interval == 0:
+                evaluate_on_train_and_valid(criterion_all,
+                                            data_train,
+                                            data_valid,
+                                            step,
+                                            net,
+                                            performance_data,
+                                            start_time)
 
-        if epoch % configs.Evaluation.epoch_interval == 0:
-            evaluate_on_train_and_valid(criterion_all,
-                                        data_train,
-                                        data_valid,
-                                        epoch,
-                                        net,
-                                        performance_data,
-                                        start_time)
+                # print
+                print_eval_summary(epoch,
+                                   step,
+                                   params.num_steps,
+                                   performance_data['cumulative_seconds'][-1][1],
+                                   performance_data['cost_avg_train'][-1][1],
+                                   performance_data['cost_avg_valid'][-1][1],
+                                   performance_data['acc_avg_train'][-1][1],
+                                   performance_data['acc_avg_valid'][-1][1],
+                                   )
 
-            # save network weights for visualizing later
-            torch.save(net.state_dict(), save_path / f'model_{epoch:06}.pt')
-            torch.save(net.state_dict(), save_path / 'model.pt')
+                # save network weights for visualizing later
+                torch.save(net.state_dict(), save_path / f'model_{step:012}.pt')
+                torch.save(net.state_dict(), save_path / 'model.pt')
+
+            if step >= params.num_steps:
+                is_finished_training = True
+                break
+
+        if is_finished_training:
+            break
 
     # prepare collected data for returning to Ludwig (which saves data to shared drive)
     res: List[pd.Series] = []
@@ -196,7 +225,7 @@ def main(param2val):
 def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
                                 data_train: DataSet,
                                 data_valid: DataSet,
-                                epoch: int,
+                                step: int,
                                 net: Network,
                                 performance_data: Dict[str, List[Tuple[int, float]]],
                                 start_time_train: time.time,
@@ -209,22 +238,11 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
 
     start_time_eval = time.time()
     cumulative_time = start_time_eval - start_time_train
-    performance_data.setdefault('cumulative_seconds', []).append((epoch, cumulative_time))
+    performance_data.setdefault('cumulative_seconds', []).append((step, cumulative_time))
 
     # for train and valid data
     for data in [data_train, data_valid]:
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():
-            performance_data.setdefault(name, []).append((epoch, val))
-
-    # print
-    print_eval_summary(epoch,
-                       performance_data['cumulative_seconds'][-1][1],
-                       performance_data['cost_avg_train'][-1][1],
-                       performance_data['cost_avg_valid'][-1][1],
-                       performance_data['acc_avg_train'][-1][1],
-                       performance_data['acc_avg_valid'][-1][1],
-                       )
-
-
+            performance_data.setdefault(name, []).append((step, val))
