@@ -5,3 +5,6 @@
 ./polyominoworld_runs/*
 ./runs/*
 ./onnx_models/*
+
+.vscode
+venv/
