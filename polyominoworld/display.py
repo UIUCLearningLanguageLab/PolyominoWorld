@@ -27,6 +27,12 @@ class Display:
         self.allow_negative_ones = allow_negative_ones
 
         self.net.eval()
+        self.net.requires_grad_(False)
+
+        # visualisation work for model with 1 hidden layer only
+        if len(net.h_xs) > 1:
+            raise RuntimeError('Visualisation work for model with 1 hidden layer only')
+        self.net.h_x = net.h_xs[0]  # for convenience
 
         self.events: List[Event] = self.data.get_events()
 
@@ -91,9 +97,10 @@ class Display:
         print(event)
 
         x = event.get_x(self.net.params.x_type)
-        o, h = self.net.forward(x, return_h=True)
-        x = x.detach().numpy()
-        o = o.detach().numpy()
+        o = self.net.forward(x).numpy()
+        hs = [h.numpy() for h in self.net.compute_hs(x)]
+
+        h = hs[0]  # todo
 
         self.canvas_net.delete("all")
         self.canvas_weights.delete("all")

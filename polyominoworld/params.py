@@ -65,7 +65,7 @@ def is_exp2(param_path: Path,
 
 param2requests = {
 
-    'hidden_sizes': [(16, 8), (16, 10), (16, 12)],
+    'hidden_sizes': [(16, 12)],
     'learning_rate': [6.0],
     'batch_size': [4096],
     'num_steps': [200_000],

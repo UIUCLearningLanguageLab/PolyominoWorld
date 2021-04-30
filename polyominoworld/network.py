@@ -1,10 +1,9 @@
-from typing import Any
+from typing import List
 
 import torch
 
 from polyominoworld.params import Params
 from polyominoworld.helpers import FeatureVector, WorldVector
-from polyominoworld import configs
 
 
 class Network(torch.nn.Module):
@@ -59,25 +58,32 @@ class Network(torch.nn.Module):
 
     def forward(self,
                 x: torch.tensor,
-                return_h: bool = False,  # for visualisation
                 ) -> torch.tensor:
+
+        h = x
+        for h_x in self.h_xs:
+            z_h = h_x(h)
+            h = self.hidden_act(z_h)
+
+        z_y = self.y_h(h)
+
+        if self.output_act is not None:
+            y = self.output_act(z_y)
+        else:
+            y = z_y
+
+        return y
+
+    def compute_hs(self,
+                   x: torch.tensor,
+                   ) -> List[torch.tensor]:
+        """compute only the hidden states, for offline analysis"""
 
         hs = []
         h = x
         for h_x in self.h_xs:
             z_h = h_x(h)
             h = self.hidden_act(z_h)
-            if return_h:
-                hs.append(h)
+            hs.append(h)
 
-        z_o = self.y_h(h)
-
-        if self.output_act is not None:
-            y = self.output_act(z_o)
-        else:
-            y = z_o
-
-        if return_h:
-            return y, []
-        else:
-            return y
+        return hs

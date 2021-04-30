@@ -19,6 +19,8 @@ from ludwig.results import gen_param_paths
 SCALE = 0.8  # scale weights so that rounding to nearest integer effectively rounds to nearest mode
 SHIFT = 0.0
 
+HIDDEN_LAYER_ID = 0
+
 NUM_BINS = 64
 
 if __name__ == '__main__':
@@ -47,7 +49,7 @@ if __name__ == '__main__':
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
             net.eval()
-            h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
+            h_x = net.h_xs[HIDDEN_LAYER_ID].weight.detach().numpy()  # [num hidden, num world cells]
 
             max_x = 4
             fig, ax = plt.subplots()

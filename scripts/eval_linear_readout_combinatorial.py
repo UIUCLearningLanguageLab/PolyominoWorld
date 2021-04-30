@@ -27,13 +27,14 @@ from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
 from polyominoworld.figs import plot_lines
 from polyominoworld.evaluate import evaluate_linear_readout
+from polyominoworld import configs
 
 from ludwig.results import gen_param_paths
 
-MIN_COMBO_SIZE = 1
+MIN_COMBO_SIZE = 16
 HIDDEN_LAYER_ID = 0
 NUM_WORKERS = 6
-FEATURE_TYPE = 'size'
+FEATURE_TYPE = 'shape'
 
 
 def init(data_,
@@ -58,7 +59,7 @@ def evaluate_detector_combo(h_ids_: Tuple[int],
 
     from polyominoworld.evaluate import evaluate_linear_readout
 
-    score = evaluate_linear_readout(data, net, feature_type, list(h_ids_))
+    score = evaluate_linear_readout(data, net, feature_type, HIDDEN_LAYER_ID, list(h_ids_))
 
     # report + update shared memory
     if score > score_max.value:
@@ -71,6 +72,8 @@ def evaluate_detector_combo(h_ids_: Tuple[int],
 
 
 if __name__ == '__main__':
+
+    configs.Device.gpu = False
 
     project_name = 'PolyominoWorld'
     for param_path, label in gen_param_paths(
@@ -105,7 +108,8 @@ if __name__ == '__main__':
 
         net = Network(params)
 
-        assert MIN_COMBO_SIZE <= params.hidden_sizes[HIDDEN_LAYER_ID]
+        hidden_size = params.hidden_sizes[HIDDEN_LAYER_ID]
+        assert MIN_COMBO_SIZE <= hidden_size
 
         x_tick2ys = defaultdict(list)
         for path_to_net in paths_to_net:
@@ -119,7 +123,7 @@ if __name__ == '__main__':
             net.eval()
 
             # search all combinations of hidden units
-            for combo_size in range(MIN_COMBO_SIZE, params.hidden_sizes[HIDDEN_LAYER_ID] + 1):
+            for combo_size in range(MIN_COMBO_SIZE, hidden_size + 1):
 
                 # set up parallel processes that read from queue and save results in shared memory + shared memory
                 q = mp.Queue(maxsize=NUM_WORKERS)
@@ -137,7 +141,7 @@ if __name__ == '__main__':
 
                 # do the work
                 print(f'Searching combo size={combo_size}')
-                pool.map(evaluate_detector_combo, combinations(range(params.hidden_sizes[HIDDEN_LAYER_ID]), combo_size))
+                pool.map(evaluate_detector_combo, combinations(range(hidden_size), combo_size))
 
                 # close pool
                 for _ in range(NUM_WORKERS):
@@ -153,8 +157,8 @@ if __name__ == '__main__':
                     break  # no need to keep searching
 
             # compute  baselines
-            baseline_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_input=True)
-            random_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_random=True)
+            baseline_acc = evaluate_linear_readout(data, net, FEATURE_TYPE, HIDDEN_LAYER_ID, state_is_input=True)
+            random_acc = evaluate_linear_readout(data, net, FEATURE_TYPE, HIDDEN_LAYER_ID, state_is_random=True)
 
             # plot
             ys = []

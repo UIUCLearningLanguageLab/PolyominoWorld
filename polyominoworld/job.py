@@ -91,7 +91,7 @@ def main(param2val):
         state_dict = torch.load(path_cpt)
         net.load_state_dict(state_dict)
         print(f'Loaded model from {path_cpt}')
-    if configs.Training.gpu:
+    if configs.Device.gpu:
         if torch.cuda.is_available():
             net.cuda()
         else:

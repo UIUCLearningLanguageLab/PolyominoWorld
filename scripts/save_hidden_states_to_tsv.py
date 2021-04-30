@@ -21,16 +21,20 @@ from polyominoworld.utils import get_leftout_positions
 
 from ludwig.results import gen_param_paths
 
+HIDDEN_LAYER_ID = 0
+
 
 if __name__ == '__main__':
+
+    configs.Device.gpu = False
 
     project_name = 'PolyominoWorld'
     for param_path, label in gen_param_paths(
             project_name,
             param2requests,
             param2default,
-            isolated=True,
-            runs_path=Path(__file__).parent.parent / 'runs',
+            # isolated=True,
+            # runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings
@@ -57,6 +61,7 @@ if __name__ == '__main__':
             net = Network(params)
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
+            net.requires_grad_(False)
             net.eval()
 
             header2column = {
@@ -68,9 +73,10 @@ if __name__ == '__main__':
             for event in dataset.get_events():
 
                 x = event.get_x(net.params.x_type)
-                o, h = net.forward(x, return_h=True)
+                hs = [h.numpy() for h in net.compute_hs(x)]
+                h = hs[HIDDEN_LAYER_ID]
                 # collect
-                vectors.append(h.detach().numpy())
+                vectors.append(h)
                 header2column['shape'].append(event.shape)
                 header2column['size'].append(event.size)
                 header2column['color'].append(event.color)

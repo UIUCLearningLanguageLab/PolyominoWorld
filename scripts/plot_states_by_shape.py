@@ -19,6 +19,7 @@ from polyominoworld.params import param2default, param2requests
 from ludwig.results import gen_param_paths
 
 RGB_ID = None
+HIDDEN_LAYER_ID = 0
 
 
 if __name__ == '__main__':
@@ -62,7 +63,7 @@ if __name__ == '__main__':
             state_dict = torch.load(path_to_net, map_location=torch.device('cpu'))
             net.load_state_dict(state_dict)
             net.eval()
-            h_x = net.h_x.weight.detach().numpy()  # [num hidden, num world cells]
+            h_x = net.h_xs[HIDDEN_LAYER_ID].weight.detach().numpy()  # [num hidden, num world cells]
 
             # get set of detectors for one or all color channel
             detectors = []

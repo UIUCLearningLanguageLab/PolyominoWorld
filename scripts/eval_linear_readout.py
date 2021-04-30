@@ -24,20 +24,24 @@ from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2default, param2requests
 from polyominoworld.figs import plot_lines
+from polyominoworld import configs
 
 from ludwig.results import gen_param_paths
 
 FEATURE_TYPE = 'shape'
+HIDDEN_LAYER_ID = 1
 
 if __name__ == '__main__':
+
+    configs.Device.gpu = False
 
     project_name = 'PolyominoWorld'
     for param_path, label in gen_param_paths(
             project_name,
             param2requests,
             param2default,
-            isolated=True,
-            runs_path=Path(__file__).parent.parent / 'runs',
+            # isolated=True,
+            # runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings
@@ -75,7 +79,7 @@ if __name__ == '__main__':
             net.requires_grad_(False)
             net.eval()
 
-            accuracy = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE)
+            accuracy = evaluate_linear_readout(data, net, FEATURE_TYPE, HIDDEN_LAYER_ID)
             print(f'accuracy of readout={accuracy:.4f}')
             print()
 
@@ -83,8 +87,8 @@ if __name__ == '__main__':
             x_tick2ys[x_tick].append(accuracy)
 
         # compute  baselines
-        baseline_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_input=True)
-        random_acc = evaluate_linear_readout(data, net, feature_type=FEATURE_TYPE, state_is_random=True)
+        baseline_acc = evaluate_linear_readout(data, net, FEATURE_TYPE, HIDDEN_LAYER_ID, state_is_input=True)
+        random_acc = evaluate_linear_readout(data, net, FEATURE_TYPE, HIDDEN_LAYER_ID, state_is_random=True)
 
         # plot
         ys = []
@@ -94,7 +98,7 @@ if __name__ == '__main__':
         x_ticks = list(sorted(x_tick2ys))
         plot_lines(
             ys,
-            title=f'{param_path.name}\nLinear readout at hidden state\n',
+            title=f'{param_path.name}\nLinear readout at hidden layer={HIDDEN_LAYER_ID}\n',
             x_axis_label='Training Step',
             y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
             x_ticks=x_ticks,

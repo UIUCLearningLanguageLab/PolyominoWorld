@@ -19,7 +19,7 @@ def print_eval_summary(epoch: int,
                        acc_avg_train: float,
                        acc_avg_valid: float,
                        ):
-    device = "gpu" if configs.Training.gpu else "cpu"
+    device = "gpu" if configs.Device.gpu else "cpu"
     output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
     output_string += f"cost-train={cost_avg_train:0.2f} cost-valid={cost_avg_valid:0.2f} | "
     output_string += f"acc-train={acc_avg_train:0.2f} acc-valid={acc_avg_valid:0.2f} | "
@@ -136,8 +136,8 @@ def evaluate_autoassociator(net: Network,
 def make_l_and_p(data: DataSet,
                  net: Network,
                  feature_type: str,
+                 h_layer_id: int,
                  h_ids: Optional[List[int]] = None,
-                 non_linearity: bool = True,
                  state_is_random: bool = False,
                  state_is_input: bool = False,
                  ) -> Tuple[np.array, np.array]:
@@ -167,17 +167,13 @@ def make_l_and_p(data: DataSet,
             state = x.numpy()
         else:
             if h_ids is None:
-                z_h = net.h_x.weight @ x + net.h_x.bias  # don't forget the bias!
-                z_h = z_h.numpy()
+                state = [h for h in net.compute_hs(x)][h_layer_id].numpy()
             else:
-                term1 = net.h_x.weight.numpy()[h_ids, :] @ x.numpy()
-                term2 = net.h_x.bias.numpy()[h_ids]
-                z_h = term1 + term2
-
-            if non_linearity:
-                state = np.tanh(z_h)
-            else:
-                state = z_h
+                state = x
+                for h_x in net.h_xs:
+                    term1 = h_x.weight.numpy()[h_ids, :] @ state.numpy()
+                    term2 = h_x.bias.numpy()[h_ids]
+                    state = np.tanh(term1 + term2)
 
         if state_is_random:
             state = np.random.permutation(state)
@@ -211,8 +207,8 @@ def calc_accuracy(l_matrix_correct: np.array,
 def evaluate_linear_readout(data: DataSet,
                             net: Network,
                             feature_type: str,
+                            h_layer_id: int,
                             h_ids: Optional[List[int]] = None,
-                            non_linearity: bool = True,
                             **kwargs,
                             ) -> float:
     """
@@ -220,7 +216,7 @@ def evaluate_linear_readout(data: DataSet,
     """
 
     # make l and P
-    l, p = make_l_and_p(data, net, feature_type, h_ids, non_linearity, **kwargs)
+    l, p = make_l_and_p(data, net, feature_type, h_layer_id, h_ids, **kwargs)
     # compute W
     w = l @ pinv(p)
     # compute linear readout l

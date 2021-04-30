@@ -19,19 +19,22 @@ from polyominoworld.display import Display
 from polyominoworld.world import World
 from polyominoworld.params import Params
 from polyominoworld.params import param2requests, param2default
+from polyominoworld import configs
 
 from ludwig.results import gen_param_paths
 
 
 if __name__ == '__main__':
 
+    configs.Device.gpu = False  # do not send x, and y to gpu
+
     project_name = 'PolyominoWorld'
     for param_path, label in gen_param_paths(
             project_name,
             param2requests,
             param2default,
-            isolated=True,
-            runs_path=Path(__file__).parent.parent / 'runs',
+            # isolated=True,
+            # runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings

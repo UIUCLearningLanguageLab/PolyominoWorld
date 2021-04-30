@@ -86,7 +86,7 @@ class WorldVector:
         concatenation = np.hstack(rgb_vectors).astype(np.float32)
         res = torch.from_numpy(concatenation)
 
-        if configs.Training.gpu:
+        if configs.Device.gpu:
             res = res.cuda()
 
         return res
@@ -197,7 +197,7 @@ class FeatureVector:
 
         res = torch.from_numpy(res)
 
-        if configs.Training.gpu:
+        if configs.Device.gpu:
             res = res.cuda()
 
         return res
