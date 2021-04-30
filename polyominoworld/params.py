@@ -15,14 +15,15 @@ experiment 3: continue training exp2 models on full data, tracking speed of lear
 
 
 hyper-parameter tuning notes:
-    the smallest number of hidden units that can achieve perfect accuracy within 1 million steps
-    is a model with 21 hidden units. a model with 16 hidden units achieves a best accuracy  near 95%.
-    however, it can achieve 100% when only red, green, and blue colors are allowed
 
      best hyper-parameters for hidden size=32:
-        - for batch size   1: lr=2.8, weight init=0.001 -> perfect accuracy at step=600K in 3 minutes
-        - for batch size 128: lr=4.0, weight init=0.01  -> perfect accuracy at step=200K in 1 minute
+        - for batch size    1: lr=2.8, weight init=0.001 -> perfect accuracy at step=600K in 3 minutes
+        - for batch size  128: lr=4.0, weight init=0.01  -> perfect accuracy at step=200K in 1 minute
+        - for batch size 8192: lr=8.0, weight init=0.01  -> perfect accuracy at step= 50K in 2 minutes
+    best hyper-parameters for hidden size=18:
+        - for batch size 4096: lr=6.0, weight init=0.01  -> perfect accuracy at step=200K in 7 minutes
 
+    WARNING: num_steps interacts with cyclical learning rate schedule
 """
 from typing import Dict, Tuple
 from dataclasses import dataclass
@@ -60,6 +61,11 @@ def is_exp2(param_path: Path,
 
 
 param2requests = {
+
+    'hidden_size': [17],
+    'batch_size': [4096],
+    'learning_rate': [4.6, 4.7, 4.8, 4.9, 5.0, 5.1],
+    'num_steps': [300_000],
 
 }
 

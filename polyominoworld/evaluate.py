@@ -12,6 +12,7 @@ from polyominoworld import configs
 def print_eval_summary(epoch: int,
                        step: int,
                        max_step: int,
+                       lr: float,
                        cumulative_time: float,
                        cost_avg_train: float,
                        cost_avg_valid: float,
@@ -22,7 +23,8 @@ def print_eval_summary(epoch: int,
     output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
     output_string += f"cost-train={cost_avg_train:0.2f} cost-valid={cost_avg_valid:0.2f} | "
     output_string += f"acc-train={acc_avg_train:0.2f} acc-valid={acc_avg_valid:0.2f} | "
-    output_string += f"minutes elapsed={int(cumulative_time/60):03}min with device={device}"
+    output_string += f"elapsed={int(cumulative_time):04}s | "
+    output_string += f"lr={lr:.4f}"
 
     print(output_string, flush=True)
 

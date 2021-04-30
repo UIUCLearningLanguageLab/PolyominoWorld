@@ -123,6 +123,7 @@ def main(param2val):
     start_time = time.time()
     step = 0
     epoch = 0
+    lr = 0
     is_finished_training = False
     performance_data: Dict[str, List[Tuple[int, float]]] = {}
 
@@ -138,6 +139,7 @@ def main(param2val):
     print_eval_summary(epoch,
                        step,
                        params.num_steps,
+                       lr,
                        performance_data['cumulative_seconds'][-1][1],
                        performance_data['cost_avg_train'][-1][1],
                        performance_data['cost_avg_valid'][-1][1],
@@ -191,6 +193,7 @@ def main(param2val):
                 print_eval_summary(epoch,
                                    step,
                                    params.num_steps,
+                                   lr,
                                    performance_data['cumulative_seconds'][-1][1],
                                    performance_data['cost_avg_train'][-1][1],
                                    performance_data['cost_avg_valid'][-1][1],
