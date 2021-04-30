@@ -16,12 +16,15 @@ experiment 3: continue training exp2 models on full data, tracking speed of lear
 
 hyper-parameter tuning notes:
 
+    no hyper parameters were found that allowed a 16 hidden unit model to achieve perfect accuracy,
+    but adding a second layer of 12 (but not lower) hidden units results in perfect accuracy.
+
+    best hyper-parameters for hidden size=18:
+        - for batch size 4096: lr=6.0, num_steps=300K  -> perfect accuracy at step=200K in 3 minutes
      best hyper-parameters for hidden size=32:
         - for batch size    1: lr=2.8, num_steps=1M    -> perfect accuracy at step=600K in 3 minutes
         - for batch size  128: lr=4.0, num_steps=300K  -> perfect accuracy at step=200K in 1 minute
-        - for batch size 8192: lr=8.0, num_steps=100k  -> perfect accuracy at step= 50K in 2 minutes
-    best hyper-parameters for hidden size=18:
-        - for batch size 4096: lr=6.0, num_steps=3M  -> perfect accuracy at step=200K in 7 minutes
+        - for batch size 8192: lr=8.0, num_steps=100k  -> perfect accuracy at step= 40K in 1 minute
 
     WARNING: num_steps interacts with cyclical learning rate schedule
 """
@@ -62,10 +65,10 @@ def is_exp2(param_path: Path,
 
 param2requests = {
 
-    'hidden_sizes': [(32, ), (32, 8), ],
-    'learning_rate': [8.0],
-    'batch_size': [8192],
-    'num_steps': [100_000],
+    'hidden_sizes': [(16, 8), (16, 10), (16, 12)],
+    'learning_rate': [6.0],
+    'batch_size': [4096],
+    'num_steps': [200_000],
 
 }
 
