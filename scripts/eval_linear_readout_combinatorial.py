@@ -31,6 +31,7 @@ from polyominoworld.evaluate import evaluate_linear_readout
 from ludwig.results import gen_param_paths
 
 MIN_COMBO_SIZE = 1
+HIDDEN_LAYER_ID = 0
 NUM_WORKERS = 6
 FEATURE_TYPE = 'size'
 
@@ -76,8 +77,8 @@ if __name__ == '__main__':
             project_name,
             param2requests,
             param2default,
-            isolated=True,
-            runs_path=Path(__file__).parent.parent / 'runs',
+            # isolated=True,
+            # runs_path=Path(__file__).parent.parent / 'runs',
     ):
 
         # load hyper-parameter settings
@@ -104,7 +105,7 @@ if __name__ == '__main__':
 
         net = Network(params)
 
-        assert MIN_COMBO_SIZE <= params.hidden_size
+        assert MIN_COMBO_SIZE <= params.hidden_sizes[HIDDEN_LAYER_ID]
 
         x_tick2ys = defaultdict(list)
         for path_to_net in paths_to_net:
@@ -118,7 +119,7 @@ if __name__ == '__main__':
             net.eval()
 
             # search all combinations of hidden units
-            for combo_size in range(MIN_COMBO_SIZE, params.hidden_size + 1):
+            for combo_size in range(MIN_COMBO_SIZE, params.hidden_sizes[HIDDEN_LAYER_ID] + 1):
 
                 # set up parallel processes that read from queue and save results in shared memory + shared memory
                 q = mp.Queue(maxsize=NUM_WORKERS)
@@ -136,7 +137,7 @@ if __name__ == '__main__':
 
                 # do the work
                 print(f'Searching combo size={combo_size}')
-                pool.map(evaluate_detector_combo, combinations(range(params.hidden_size), combo_size))
+                pool.map(evaluate_detector_combo, combinations(range(params.hidden_sizes[HIDDEN_LAYER_ID]), combo_size))
 
                 # close pool
                 for _ in range(NUM_WORKERS):

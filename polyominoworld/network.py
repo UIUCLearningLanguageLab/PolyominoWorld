@@ -4,6 +4,7 @@ import torch
 
 from polyominoworld.params import Params
 from polyominoworld.helpers import FeatureVector, WorldVector
+from polyominoworld import configs
 
 
 class Network(torch.nn.Module):
@@ -15,13 +16,8 @@ class Network(torch.nn.Module):
         super(Network, self).__init__()
 
         self.params = params
-        self.has_hidden_layer = True
 
-        if params.hidden_activation_function is None:  # use network without hidden layer
-            print('Making network without hidden layer')
-            self.has_hidden_layer = False
-
-        elif params.hidden_activation_function == 'tanh':
+        if params.hidden_activation_function == 'tanh':
             self.hidden_act = torch.nn.Tanh()
         elif params.hidden_activation_function == 'sigmoid':
             self.hidden_act = torch.nn.Sigmoid()
@@ -46,43 +42,42 @@ class Network(torch.nn.Module):
         else:
             raise AttributeError(f'y_type "{params.y_type}" not recognized')
 
-        # weights for multi-layer net
-        self.h_x = torch.nn.Linear(self.input_size, self.params.hidden_size)
-        self.y_h = torch.nn.Linear(self.params.hidden_size, self.output_size)
-        # weights for single-layer net
-        self.y_x = torch.nn.Linear(self.input_size, self.output_size)
-        self.init_weights()
+        # hidden weights
+        self.h_xs = torch.nn.ModuleList()
+        hs_previous = self.input_size
+        for hs in params.hidden_sizes:
+            h_x = torch.nn.Linear(hs_previous, hs, bias=True)
+            hs_previous = hs
+            h_x.weight.data.uniform_(-self.params.weight_init, self.params.weight_init)
+            torch.nn.init.zeros_(h_x.bias)
+            self.h_xs.append(h_x)
 
-    def init_weights(self):
-        self.h_x.weight.data.uniform_(-self.params.weight_init, self.params.weight_init)
-        self.h_x.bias.data.uniform_(-self.params.weight_init, self.params.weight_init)
-
+        # output weights
+        self.y_h = torch.nn.Linear(hs_previous, self.output_size, bias=True)
         self.y_h.weight.data.uniform_(-self.params.weight_init, self.params.weight_init)
-        self.y_h.bias.data.uniform_(-self.params.weight_init, self.params.weight_init)
-
-        self.y_x.weight.data.uniform_(-self.params.weight_init, self.params.weight_init)
-        self.y_x.bias.data.uniform_(-self.params.weight_init, self.params.weight_init)
+        torch.nn.init.zeros_(self.y_h.bias)
 
     def forward(self,
                 x: torch.tensor,
                 return_h: bool = False,  # for visualisation
                 ) -> torch.tensor:
-        if self.has_hidden_layer:
-            z_h = self.h_x(x)
+
+        hs = []
+        h = x
+        for h_x in self.h_xs:
+            z_h = h_x(h)
             h = self.hidden_act(z_h)
-            z_o = self.y_h(h)
-        else:
-            z_o = self.y_x(x)
+            if return_h:
+                hs.append(h)
+
+        z_o = self.y_h(h)
 
         if self.output_act is not None:
-            o = self.output_act(z_o)
+            y = self.output_act(z_o)
         else:
-            o = z_o
+            y = z_o
 
         if return_h:
-            if self.has_hidden_layer:
-                return o, h
-            else:
-                raise RuntimeError('Requested hidden state, but net does not have hidden layer')
-
-        return o
+            return y, []
+        else:
+            return y

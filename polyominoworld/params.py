@@ -17,11 +17,11 @@ experiment 3: continue training exp2 models on full data, tracking speed of lear
 hyper-parameter tuning notes:
 
      best hyper-parameters for hidden size=32:
-        - for batch size    1: lr=2.8, weight init=0.001 -> perfect accuracy at step=600K in 3 minutes
-        - for batch size  128: lr=4.0, weight init=0.01  -> perfect accuracy at step=200K in 1 minute
-        - for batch size 8192: lr=8.0, weight init=0.01  -> perfect accuracy at step= 50K in 2 minutes
+        - for batch size    1: lr=2.8, num_steps=1M    -> perfect accuracy at step=600K in 3 minutes
+        - for batch size  128: lr=4.0, num_steps=300K  -> perfect accuracy at step=200K in 1 minute
+        - for batch size 8192: lr=8.0, num_steps=100k  -> perfect accuracy at step= 50K in 2 minutes
     best hyper-parameters for hidden size=18:
-        - for batch size 4096: lr=6.0, weight init=0.01  -> perfect accuracy at step=200K in 7 minutes
+        - for batch size 4096: lr=6.0, num_steps=3M  -> perfect accuracy at step=200K in 7 minutes
 
     WARNING: num_steps interacts with cyclical learning rate schedule
 """
@@ -62,10 +62,10 @@ def is_exp2(param_path: Path,
 
 param2requests = {
 
-    'hidden_size': [17],
-    'batch_size': [4096],
-    'learning_rate': [4.6, 4.7, 4.8, 4.9, 5.0, 5.1],
-    'num_steps': [300_000],
+    'hidden_sizes': [(32, ), (32, 8), ],
+    'learning_rate': [8.0],
+    'batch_size': [8192],
+    'num_steps': [100_000],
 
 }
 
@@ -74,16 +74,16 @@ param2requests = {
 param2default_batching = {
     # model
     'load_from_checkpoint': 'none',
-    'hidden_size': 32,
-    'hidden_activation_function': 'tanh',
-    'learning_rate': 4.0,  # max learning rate in cyclical learning rate schedule
-    'num_steps': 1_000_000,
+    'hidden_sizes': (32, ),
+    'learning_rate': 8.0,  # max learning rate in cyclical learning rate schedule
+    'batch_size': 8192,  # large batch + large lr size speeds convergence
+    'num_steps': 100_000,
     'weight_init': 0.01,  # different from non-fast parameters (originally 0.001)
     'optimizer': 'SGD',
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
-    'batch_size': 128,  # large batch + large lr size speeds convergence
+    'hidden_activation_function': 'tanh',
 
     # data
     'seed': 1,
@@ -130,16 +130,16 @@ param2default_batching = {
 param2default = {
     # model
     'load_from_checkpoint': 'none',
-    'hidden_size': 32,
-    'hidden_activation_function': 'tanh',
+    'hidden_sizes': (32, ),
     'learning_rate': 2.8,  # max learning rate in cyclical learning rate schedule
+    'batch_size': 1,  # large batch size only marginally speeds convergence
     'num_steps': 1_000_000,
     'weight_init': 0.01,
     'optimizer': 'SGD',
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
-    'batch_size': 1,  # large batch size only marginally speeds convergence
+    'hidden_activation_function': 'tanh',
 
     # data
     'seed': 1,
@@ -202,16 +202,16 @@ class Params:
     and is populated by Ludwig with hyper-parameters corresponding to a single job.
     """
     load_from_checkpoint: str
-    hidden_size: int
-    hidden_activation_function: str
+    hidden_sizes: Tuple[int]
     learning_rate: float
+    batch_size: int
     num_steps: int
     weight_init: float
     optimizer: str
     x_type: str
     y_type: str
     criterion: str
-    batch_size: int
+    hidden_activation_function: str
 
     seed: int
     shuffle_sequences: bool
