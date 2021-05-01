@@ -21,3 +21,13 @@ def get_leftout_positions(leftout_half: str,
         return []  # nothing is leftout
     else:
         raise AttributeError('Invalid arg to leftout_half')
+
+
+def calc_world_vector_size(add_grayscale: bool,
+                           ) -> int:
+    num_cells = configs.World.max_x * configs.World.max_x
+    if add_grayscale:
+        num_channels = 4
+    else:
+        num_channels = 3  # rgb
+    return num_cells * num_channels

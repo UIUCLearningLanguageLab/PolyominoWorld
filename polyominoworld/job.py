@@ -112,9 +112,13 @@ def main(param2val):
 
     # optimizer
     if params.optimizer == 'Adam':
-        optimizer = torch.optim.Adam(net.parameters(), lr=params.learning_rate)
+        optimizer = torch.optim.Adam(net.parameters(),
+                                     lr=params.learning_rate)
     elif params.optimizer == 'SGD':
-        optimizer = torch.optim.SGD(net.parameters(), lr=params.learning_rate)  # TODO add momentum (cyclical)
+        optimizer = torch.optim.SGD(net.parameters(),
+                                    lr=params.learning_rate,
+                                    momentum=params.momentum,
+                                    nesterov=params.nesterov)
     else:
         raise AttributeError(f'Invalid arg to optimizer')
 

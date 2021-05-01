@@ -21,8 +21,8 @@ def print_eval_summary(epoch: int,
                        ):
     device = "gpu" if configs.Device.gpu else "cpu"
     output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
-    output_string += f"cost-train={cost_avg_train:0.2f} cost-valid={cost_avg_valid:0.2f} | "
-    output_string += f"acc-train={acc_avg_train:0.2f} acc-valid={acc_avg_valid:0.2f} | "
+    output_string += f"cost-train={cost_avg_train:0.3f} cost-valid={cost_avg_valid:0.3f} | "
+    output_string += f"acc-train={acc_avg_train:0.3f} acc-valid={acc_avg_valid:0.3f} | "
     output_string += f"elapsed={int(cumulative_time):04}s | "
     output_string += f"lr={lr:.4f}"
 
@@ -173,7 +173,10 @@ def make_l_and_p(data: DataSet,
                 for h_x in net.h_xs:
                     term1 = h_x.weight.numpy()[h_ids, :] @ state.numpy()
                     term2 = h_x.bias.numpy()[h_ids]
-                    state = np.tanh(term1 + term2)
+                    if net.params.hidden_activation_function == 'tanh':
+                        state = np.tanh(term1 + term2)
+                    else:
+                        raise NotImplementedError
 
         if state_is_random:
             state = np.random.permutation(state)

@@ -62,5 +62,5 @@ if __name__ == '__main__':
             net.eval()
 
             # visualize
-            display = Display(data, net, params.allow_negative_x)
+            display = Display(data, net, allow_negative_ones=False)
             display.root.mainloop()

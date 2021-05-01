@@ -3,7 +3,8 @@ from typing import List
 import torch
 
 from polyominoworld.params import Params
-from polyominoworld.helpers import FeatureVector, WorldVector
+from polyominoworld.helpers import FeatureVector
+from polyominoworld.utils import calc_world_vector_size
 
 
 class Network(torch.nn.Module):
@@ -26,7 +27,7 @@ class Network(torch.nn.Module):
             raise RuntimeError(f"Hidden activation function {params.hidden_activation_function} not recognized")
 
         if params.x_type == 'world':
-            self.input_size = WorldVector.calc_size()
+            self.input_size = calc_world_vector_size(params.add_grayscale)
         elif params.x_type == 'hidden':
             self.input_size = NotImplemented  # TODO
         else:
@@ -34,7 +35,7 @@ class Network(torch.nn.Module):
 
         if params.y_type == 'world':
             self.output_act = torch.nn.Tanh()
-            self.output_size = WorldVector.calc_size()
+            self.output_size = calc_world_vector_size(params.add_grayscale)
         elif params.y_type == 'features':
             self.output_act = None  # bce loss uses logits
             self.output_size = FeatureVector.calc_size()

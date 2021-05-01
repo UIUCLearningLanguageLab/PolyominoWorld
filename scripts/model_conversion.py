@@ -11,7 +11,7 @@ import yaml
 
 import onnx
 from onnx_tf.backend import prepare
-from polyominoworld.helpers import WorldVector
+from polyominoworld.utils import calc_world_vector_size
 from polyominoworld.params import Params
 from polyominoworld.params import param2requests, param2default
 from polyominoworld.network import Network
@@ -40,7 +40,7 @@ def main():
             pytorch_model.load_state_dict(torch.load(path_to_net, map_location=torch.device('cpu')))
             pytorch_model.eval()
 
-            dummy_input = torch.zeros(1, WorldVector.calc_size()) # dummy input with shape  model expects as input
+            dummy_input = torch.zeros(1, calc_world_vector_size(params.add_grayscale))  # dummy input of expected shape
             onnx_path_out = Path(__file__).parent.parent / 'onnx_models' / f'{param2val["param_name"]}_{rep_id}.onnx'
             if not onnx_path_out.parent.exists():
                 onnx_path_out.parent.mkdir()

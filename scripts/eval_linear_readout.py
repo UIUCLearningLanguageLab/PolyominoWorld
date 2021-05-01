@@ -98,7 +98,7 @@ if __name__ == '__main__':
         x_ticks = list(sorted(x_tick2ys))
         plot_lines(
             ys,
-            title=f'{param_path.name}\nLinear readout at hidden layer={HIDDEN_LAYER_ID}\n',
+            title=f'{param_path.name}\nLinear readout at hidden layer with id={HIDDEN_LAYER_ID}\n',
             x_axis_label='Training Step',
             y_axis_label=f'{FEATURE_TYPE.capitalize()} Accuracy',
             x_ticks=x_ticks,

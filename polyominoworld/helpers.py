@@ -19,6 +19,10 @@ class ShapeCell:
     y: int = field()
 
 
+color2channels4 = {c: np.hstack((np.mean(rgb), np.array(rgb))) for c, rgb in configs.World.color2rgb.items()}
+color2channels3 = {c: np.array(rgb) for c, rgb in configs.World.color2rgb.items()}
+
+
 @dataclass()
 class WorldVector:
     """
@@ -27,63 +31,61 @@ class WorldVector:
 
     active_cell2color: Dict[WorldCell, str] = field()
     bg_color: str = field()
-    allow_negative_x: bool = field()
-    color2rgb: Dict[str, np.array] = field(init=False)
+    add_grayscale: bool = field()
 
-    def __post_init__(self):
-        if self.allow_negative_x:
-            self.color2rgb = {c: np.array(rgb) for c, rgb in configs.World.color2rgb.items()}
-        else:
-            self.color2rgb = {c: np.clip(rgb, 0, 1) for c, rgb in configs.World.color2rgb.items()}
-
-    @classmethod
-    def calc_size(cls) -> int:
-        num_cells = configs.World.max_x * configs.World.max_x
-        num_color_channels = 3  # rgb
-        return num_cells * num_color_channels
-
-    def _make_bg_color_vector(self) -> np.array:
+    def _make_bg_color_vector(self,
+                              add_grayscale: bool,
+                              ) -> np.array:
         """
-        create vector of size 3, corresponding to rgb values of background color.
+        create vector of size 3 or 4, corresponding to channel values of background color (rgb or rgb + grayscale).
 
         note: background color will be different every time this function is called if bg_color='random'
         """
         if self.bg_color == 'random':
-            rgb_vector = [random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1)]
-        else:
-            if self.bg_color in self.color2rgb:
-                rgb_vector = self.color2rgb[self.bg_color]
+            if add_grayscale:
+                res = np.random.uniform(0, 1, size=4)
             else:
+                res = np.random.uniform(0, 1, size=3)
+        else:
+            if self.bg_color not in configs.World.color2rgb:
                 raise RuntimeError(f"Color {self.bg_color} not recognized")
 
-        return rgb_vector
+            if add_grayscale:
+                res = color2channels4[self.bg_color]
+            else:
+                res = color2channels3[self.bg_color]
+
+        return res
 
     @property
     def vector(self) -> torch.tensor:
         """
         return a vector that represents the world, by
-        concatenating the rgb vector (of size 3) for each cell in world.
+        concatenating the channel vector (of size 3 if not grayscale, else 4) for each cell in world.
         the rgb vector corresponds to either a background color or the color of a shape.
         """
 
-        rgb_vectors = []
+        channel_vectors = []
         for pos_x in range(configs.World.max_x):
             for pos_y in range(configs.World.max_y):
                 cell = WorldCell(pos_x, pos_y)
 
-                # color of shape at cell
+                # shape at cell
                 if cell in self.active_cell2color:
                     color: str = self.active_cell2color[cell]
-                    rgb_vector = self.color2rgb[color]
+                    if self.add_grayscale:
+                        channels_vector = color2channels4[color]
+                    else:
+                        channels_vector = color2channels3[color]
 
-                # color of background
+                # background
                 else:
-                    rgb_vector = self._make_bg_color_vector()
+                    channels_vector = self._make_bg_color_vector(self.add_grayscale)
 
-                rgb_vectors.append(rgb_vector)
-        
-        # concatenate rgb_vectors
-        concatenation = np.hstack(rgb_vectors).astype(np.float32)
+                channel_vectors.append(channels_vector)
+
+        # concatenate channel_vectors
+        concatenation = np.hstack(channel_vectors).astype(np.float32)
         res = torch.from_numpy(concatenation)
 
         if configs.Device.gpu:
@@ -96,7 +98,7 @@ class WorldVector:
         return world vector as 3d array, where first index, of size 3, corresponds to RGB values.
         the returned array has shape (3, max_x, max_y)
 
-        note: used for visualisation, not training.
+        note: used for visualisation, not training. this array always has 3 rgb channels, and never adds grayscale.
 
         note: column indices should always be considered as  x coordinates,
         and row indices should always be considered as y coordinates.
@@ -111,11 +113,11 @@ class WorldVector:
                 # color of shape at cell
                 if cell in self.active_cell2color:
                     color = self.active_cell2color[cell]
-                    res[:, pos_y, pos_x] = np.array(self.color2rgb[color])
+                    res[:, pos_y, pos_x] = color2channels3[color]  # always use rgb only
 
                 # color of background
                 else:
-                    res[:, pos_y, pos_x] = self._make_bg_color_vector()
+                    res[:, pos_y, pos_x] = self._make_bg_color_vector(add_grayscale=False)
 
         return res
 
@@ -127,7 +129,7 @@ class WorldVector:
         warning: it is extremely important to copy active_cell2color,
          otherwise it will be linked to the world, and updated whenever the world is updated,
         """
-        return cls(world.active_cell2color.copy(), world.params.bg_color, world.params.allow_negative_x)
+        return cls(world.active_cell2color.copy(), world.params.bg_color, world.params.add_grayscale)
 
 
 @dataclass(frozen=True)
@@ -214,7 +216,7 @@ class FeatureVector:
         color_vector = np.eye(len(configs.World.feature_type2values['color']),
                               dtype=np.int32)[configs.World.feature_type2values['color'].index(shape.color)]
         action_vector = np.eye(len(configs.World.feature_type2values['action']),
-                              dtype=np.int32)[configs.World.feature_type2values['action'].index(shape.action)]
+                               dtype=np.int32)[configs.World.feature_type2values['action'].index(shape.action)]
 
         return cls(shape_vector, size_vector, color_vector, action_vector)
 

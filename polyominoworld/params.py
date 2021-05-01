@@ -20,11 +20,12 @@ hyper-parameter tuning notes:
     but adding a second layer of 12 (but not lower) hidden units results in perfect accuracy.
 
     best hyper-parameters for hidden size=18:
-        - for batch size 4096: lr=6.0, num_steps=300K  -> perfect accuracy at step=200K in 3 minutes
+        - for batch size 4096: lr=6.0, num_steps=300K  -> perfect accuracy at step=200K
      best hyper-parameters for hidden size=32:
-        - for batch size    1: lr=2.8, num_steps=1M    -> perfect accuracy at step=600K in 3 minutes
-        - for batch size  128: lr=4.0, num_steps=300K  -> perfect accuracy at step=200K in 1 minute
-        - for batch size 8192: lr=8.0, num_steps=100k  -> perfect accuracy at step= 40K in 1 minute
+        - for batch size    1: lr=2.8, num_steps=1M    -> perfect accuracy at step=600K
+        - for batch size  128: lr=4.0, num_steps=300K  -> perfect accuracy at step=200K
+        - for batch size 4096: lr=4.4, num_steps= 60K  -> perfect accuracy at step= 20K
+        - for batch size 8192: lr=8.0, num_steps=100k  -> perfect accuracy at step= 40K
 
     WARNING: num_steps interacts with cyclical learning rate schedule
 """
@@ -63,12 +64,13 @@ def is_exp2(param_path: Path,
     return res
 
 
+
 param2requests = {
 
-    'hidden_sizes': [(16, 12)],
-    'learning_rate': [6.0],
+    'hidden_sizes': [(32, )],
+    'learning_rate': [4.3, 4.4, 4.5],
     'batch_size': [4096],
-    'num_steps': [200_000],
+    'num_steps': [30_000],
 
 }
 
@@ -78,11 +80,13 @@ param2default_batching = {
     # model
     'load_from_checkpoint': 'none',
     'hidden_sizes': (32, ),
-    'learning_rate': 8.0,  # max learning rate in cyclical learning rate schedule
-    'batch_size': 8192,  # large batch + large lr size speeds convergence
-    'num_steps': 100_000,
+    'learning_rate': 4.4,  # max learning rate in cyclical learning rate schedule
+    'batch_size': 4096,  # large batch + large lr size speeds convergence
+    'num_steps': 60_000,
     'weight_init': 0.01,  # different from non-fast parameters (originally 0.001)
     'optimizer': 'SGD',
+    'momentum': 0.95,  # speed learning significantly
+    'nesterov': True,
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
@@ -92,10 +96,11 @@ param2default_batching = {
     'seed': 1,
     'shuffle_sequences': True,
     'shuffle_events': False,
-    'allow_negative_x': False,  # much better performance if -1s are not allowed in x
+    'add_grayscale': False,
     'bg_color': 'black',
     'fg_colors': (
         'white',
+        'grey',
         'red',
         'blue',
         'green',
@@ -139,6 +144,8 @@ param2default = {
     'num_steps': 1_000_000,
     'weight_init': 0.01,
     'optimizer': 'SGD',
+    'momentum': 0.95,
+    'nesterov': True,
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
@@ -148,8 +155,18 @@ param2default = {
     'seed': 1,
     'shuffle_sequences': True,
     'shuffle_events': False,
-    'allow_negative_x': False,  # much better performance if -1s are not allowed in x
+    'add_grayscale': False,  # adding grayscale does not help or hurt
     'bg_color': 'black',
+    'fg_colors': (
+        'white',
+        'grey',
+        'red',
+        'blue',
+        'green',
+        'yellow',
+        'cyan',
+        'magenta',
+    ),
     'actions_and_probabilities': (
         ('rest', 0.0),
         ('move', 1.0),
@@ -166,15 +183,6 @@ param2default = {
         ('tetromino3', (0, 1, 2, 3)),
         ('tetromino4', (0, 1, 2, 3, 4, 5, 6, 7)),
         ('tetromino5', (0, 1, 2, 3))
-    ),
-    'fg_colors': (
-        'white',
-        'red',
-        'blue',
-        'green',
-        'yellow',
-        'cyan',
-        'magenta',
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
 
@@ -196,6 +204,18 @@ if 'leftout_colors' in param2requests:
         for lc in leftout_colors:
             if lc == param2default['bg_color']:
                 raise ValueError(f'Cannot leave out bg_color. Remove "{lc}" from leftout_colors.')
+# check
+if 'nesterov' in param2requests:
+    if 'optimizer' in param2requests:
+        for optim in param2requests['optimizer']:
+            if optim != 'SGD':
+                raise ValueError(f'Cannot use nesterov momentum without SGD.')
+    if 'momentum' not in param2requests:
+        raise ValueError('When nesterov=True, momentum must be non-zero')
+    else:
+        for mom in param2requests['momentum']:
+            if mom == 0.0:
+                raise ValueError('When nesterov=True, momentum must be non-zero')
 
 
 @dataclass
@@ -211,6 +231,8 @@ class Params:
     num_steps: int
     weight_init: float
     optimizer: str
+    momentum: float
+    nesterov: bool
     x_type: str
     y_type: str
     criterion: str
@@ -219,7 +241,7 @@ class Params:
     seed: int
     shuffle_sequences: bool
     shuffle_events: bool
-    allow_negative_x: bool
+    add_grayscale: bool
     bg_color: str
     fg_colors: Tuple[str,]
     actions_and_probabilities: Dict[str, float]
