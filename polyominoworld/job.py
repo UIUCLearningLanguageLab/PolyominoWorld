@@ -180,6 +180,11 @@ def main(param2val):
     # train loop
     for epoch in count(start=1, step=1):  # infinite counter
 
+        # shuffle data at start of epoch
+        rand_ids = torch.randperm(len(xs))
+        xs = xs[rand_ids]
+        ys = ys[rand_ids]
+
         for x, y in zip(torch.split(xs, params.batch_size), torch.split(ys, params.batch_size)):
             step += 1
 
