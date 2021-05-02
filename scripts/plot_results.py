@@ -29,7 +29,7 @@ PATTERN: str = 'acc_shape_train'  # name of performance curve to plot
 
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
-FIG_SIZE: Tuple[int, int] = (6, 4)  # in inches
+FIG_SIZE: Tuple[int, int] = (6, 6)  # in inches
 Y_LIMS: Optional[List[float]] = [0., 1.]
 CONFIDENCE: float = 0.95
 TITLE = ''
@@ -43,7 +43,7 @@ for p, label in gen_param_paths(project_name,
                                 # isolated=True,
                                 # runs_path=Path(__file__).parent.parent / 'runs',
                                 ludwig_data_path=None,
-                                label_n=False):
+                                label_n=True):
     summary = make_summary(PATTERN, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
     summaries.append(summary)
     print(f'--------------------- End section {p.name}')

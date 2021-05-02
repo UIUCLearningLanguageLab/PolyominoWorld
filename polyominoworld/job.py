@@ -31,6 +31,10 @@ def main(param2val):
     params = Params.from_param2val(param2val)
     print(params, flush=True)
 
+    if params.batch_size < 4096:
+        configs.Device.gpu = False
+        print('Setting gpu=False')
+
     save_path = Path(param2val['save_path'])  # use this path to save any files
     if not save_path.exists():
         save_path.mkdir(parents=True)
@@ -113,11 +117,12 @@ def main(param2val):
     # optimizer
     if params.optimizer == 'Adam':
         optimizer = torch.optim.Adam(net.parameters(),
-                                     lr=params.learning_rate)
+                                     lr=params.learning_rates[0],
+                                     )
     elif params.optimizer == 'SGD':
         optimizer = torch.optim.SGD(net.parameters(),
-                                    lr=params.learning_rate,
-                                    momentum=params.momentum,
+                                    lr=params.learning_rates[0],
+                                    momentum=params.momenta[0],
                                     nesterov=params.nesterov)
     else:
         raise AttributeError(f'Invalid arg to optimizer')
@@ -155,9 +160,17 @@ def main(param2val):
     torch.save(net.state_dict(), save_path / f'model_{step:012}.pt')
     torch.save(net.state_dict(), save_path / 'model.pt')
 
-    # compute cyclical learning rate
-    start_lr = 0.1 / params.learning_rate  # start lr should be larger than end lr
-    learning_rates = np.sin(np.linspace(start_lr, 180, params.num_steps) * np.pi / 180) * params.learning_rate
+    # compute learning rate schedule (linear increase, then linear decrease)
+    lr1, lr2, lr3 = params.learning_rates
+    lrs_inc = list(np.linspace(lr1, lr2, num=params.num_steps // 2 + 1))
+    lrs_dec = list(np.linspace(lr2, lr3, num=params.num_steps // 2 + 1))
+    learning_rates = (lr for lr in lrs_inc + lrs_dec)
+
+    # compute momentum schedule (linear decrease, then linear increase)
+    m1, m2, m3 = params.momenta
+    ma_dec = list(np.linspace(m1, m2, num=params.num_steps // 2 + 1))
+    ma_inc = list(np.linspace(m2, m3, num=params.num_steps // 2 + 1))
+    momenta = (m for m in ma_dec + ma_inc)
 
     # precompute training tensors
     events = data_train.get_events()
@@ -167,12 +180,14 @@ def main(param2val):
     # train loop
     for epoch in count(start=1, step=1):  # infinite counter
 
-        # start with small learning rate and ramp up, then down again (super-convergence)
-        lr = learning_rates[step]
-        optimizer.param_groups[0]['lr'] = lr
-
         for x, y in zip(torch.split(xs, params.batch_size), torch.split(ys, params.batch_size)):
             step += 1
+
+            # start with small learning rate and ramp up, then down again (super-convergence)
+            lr = next(learning_rates)
+            momentum = next(momenta)
+            optimizer.param_groups[0]['lr'] = lr
+            optimizer.param_groups[0]['momentum'] = momentum
 
             # train
             net.train()

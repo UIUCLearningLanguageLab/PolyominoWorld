@@ -68,7 +68,7 @@ class Display:
 
 
 class Evaluation:
-    step_interval = 1_000
+    step_interval = 10_000
     means_only = False  # True if collecting summaries only (e.g. means)
 
 
