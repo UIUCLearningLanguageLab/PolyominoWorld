@@ -49,12 +49,11 @@ def main():
                               onnx_path_out,
                               verbose=True)
             
-            model = onnx.load(onnx_path_out)
-            tf_rep = prepare(model)
+            tf_rep = prepare(onnx.load(onnx_path_out))
             tf_path_out = Path(__file__).parent.parent / 'tensorflow_models' / f'{param2val["param_name"]}_{rep_id}.pb'
             if not tf_path_out.parent.exists():
                 tf_path_out.parent.mkdir()
-            tf_rep.export_graph(tf_path_out)
+            tf_rep.export_graph(str(tf_path_out))
 
 
 if __name__ == '__main__':
