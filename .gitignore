@@ -4,8 +4,13 @@
 ./venv/*
 ./polyominoworld_runs/*
 ./runs/*
-./onnx_models/*
-./tensorflow_models/*
+./onnx_models/
+./tensorflow_models/
 
 .vscode
+idea/
+polyominoworld_runs/
 venv/
+runs/
+onnx_models/
+tensorflow_models/
