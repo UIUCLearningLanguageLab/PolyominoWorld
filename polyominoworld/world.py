@@ -51,7 +51,7 @@ class World:
         # for each possible color
         for fg_color in self.params.fg_colors:
 
-            if fg_color in leftout_colors:  # careful: do not leave out bg_color: validation set will be empty
+            if fg_color in leftout_colors:  # careful: do not leave out bg_color: test set will be empty
                 continue
 
             if fg_color == self.params.bg_color:

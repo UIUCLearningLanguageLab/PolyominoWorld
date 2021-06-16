@@ -23,7 +23,7 @@ PATTERN: str = 'acc_shape_train'  # name of performance curve to plot
 # {1}_{2}_{3}
 # 1: cost, acc
 # 2: shape, color, size (for cost and acc); monomino, ..., red, ..., 1, ..... (for cost only)
-# 3: train, valid
+# 3: train, test
 # 4 cumulative_seconds
 
 

@@ -72,17 +72,17 @@ def main(param2val):
     else:
         leftout_positions_inverse = get_leftout_positions('')  # test on all positions if trained on all positions
 
-    # make test/valid dataset based on what is leftout from training dataset
-    data_valid = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
-                                                  leftout_shapes=leftout_shapes_inverse,
-                                                  leftout_variants=leftout_variants_inverse,
-                                                  leftout_positions=leftout_positions_inverse,
-                                                  ),
-                         params,
-                         'valid')
+    # make test dataset based on what is leftout from training dataset
+    data_test = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
+                                                 leftout_shapes=leftout_shapes_inverse,
+                                                 leftout_variants=leftout_variants_inverse,
+                                                 leftout_positions=leftout_positions_inverse,
+                                                 ),
+                        params,
+                        'test')
 
     assert data_train.sequences
-    assert data_valid.sequences
+    assert data_test.sequences
 
     # network
     net = Network(params)
@@ -137,13 +137,13 @@ def main(param2val):
     performance_data: Dict[str, List[Tuple[int, float]]] = {}
 
     # eval before training
-    evaluate_on_train_and_valid(criterion_all,
-                                data_train,
-                                data_valid,
-                                step,
-                                net,
-                                performance_data,
-                                start_time)
+    evaluate_on_train_and_test(criterion_all,
+                               data_train,
+                               data_test,
+                               step,
+                               net,
+                               performance_data,
+                               start_time)
 
     print_eval_summary(epoch,
                        step,
@@ -151,9 +151,9 @@ def main(param2val):
                        lr,
                        performance_data['cumulative_seconds'][-1][1],
                        performance_data['cost_avg_train'][-1][1],
-                       performance_data['cost_avg_valid'][-1][1],
+                       performance_data['cost_avg_test'][-1][1],
                        performance_data['acc_avg_train'][-1][1],
-                       performance_data['acc_avg_valid'][-1][1],
+                       performance_data['acc_avg_test'][-1][1],
                        )
 
     # save network weights for visualizing later
@@ -205,13 +205,13 @@ def main(param2val):
             # eval
             net.eval()
             if step % configs.Evaluation.step_interval == 0:
-                evaluate_on_train_and_valid(criterion_all,
-                                            data_train,
-                                            data_valid,
-                                            step,
-                                            net,
-                                            performance_data,
-                                            start_time)
+                evaluate_on_train_and_test(criterion_all,
+                                           data_train,
+                                           data_test,
+                                           step,
+                                           net,
+                                           performance_data,
+                                           start_time)
 
                 # print
                 print_eval_summary(epoch,
@@ -220,9 +220,9 @@ def main(param2val):
                                    lr,
                                    performance_data['cumulative_seconds'][-1][1],
                                    performance_data['cost_avg_train'][-1][1],
-                                   performance_data['cost_avg_valid'][-1][1],
+                                   performance_data['cost_avg_test'][-1][1],
                                    performance_data['acc_avg_train'][-1][1],
-                                   performance_data['acc_avg_valid'][-1][1],
+                                   performance_data['acc_avg_test'][-1][1],
                                    )
 
                 # save network weights for visualizing later
@@ -249,14 +249,14 @@ def main(param2val):
     return res
 
 
-def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
-                                data_train: DataSet,
-                                data_valid: DataSet,
-                                step: int,
-                                net: Network,
-                                performance_data: Dict[str, List[Tuple[int, float]]],
-                                start_time_train: time.time,
-                                ) -> None:
+def evaluate_on_train_and_test(criterion_all: Union[torch.nn.BCEWithLogitsLoss, torch.nn.MSELoss],
+                               data_train: DataSet,
+                               data_test: DataSet,
+                               step: int,
+                               net: Network,
+                               performance_data: Dict[str, List[Tuple[int, float]]],
+                               start_time_train: time.time,
+                               ) -> None:
     """
     save performance data to performance_data which will be saved to the shared drive by Ludwig.
     """
@@ -267,8 +267,8 @@ def evaluate_on_train_and_valid(criterion_all: Union[torch.nn.BCEWithLogitsLoss,
     cumulative_time = start_time_eval - start_time_train
     performance_data.setdefault('cumulative_seconds', []).append((step, cumulative_time))
 
-    # for train and valid data
-    for data in [data_train, data_valid]:
+    # for train and test data
+    for data in [data_train, data_test]:
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():

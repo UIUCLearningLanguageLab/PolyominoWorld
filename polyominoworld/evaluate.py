@@ -15,14 +15,14 @@ def print_eval_summary(epoch: int,
                        lr: float,
                        cumulative_time: float,
                        cost_avg_train: float,
-                       cost_avg_valid: float,
+                       cost_avg_test: float,
                        acc_avg_train: float,
-                       acc_avg_valid: float,
+                       acc_avg_test: float,
                        ):
     device = "gpu" if configs.Device.gpu else "cpu"
     output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
-    output_string += f"cost-train={cost_avg_train:0.3f} cost-valid={cost_avg_valid:0.3f} | "
-    output_string += f"acc-train={acc_avg_train:0.3f} acc-valid={acc_avg_valid:0.3f} | "
+    output_string += f"cost-train={cost_avg_train:0.3f} cost-test={cost_avg_test:0.3f} | "
+    output_string += f"acc-train={acc_avg_train:0.3f} acc-test={acc_avg_test:0.3f} | "
     output_string += f"elapsed={int(cumulative_time):04}s | "
     output_string += f"lr={lr:.4f}"
 

@@ -145,7 +145,7 @@ def make_y_label(pattern: str,
             line = {'acc': 'Accuracy',
                     'cost': 'Error',
                     'train': 'TrainData',
-                    'valid': 'TestData',
+                    'test': 'TestData',
                     }[pattern_part]
         except KeyError:
             line = pattern_part
