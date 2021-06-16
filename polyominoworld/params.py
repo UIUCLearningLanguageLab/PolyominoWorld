@@ -74,7 +74,7 @@ param2requests = {
 
     'hidden_sizes': [(32, )],
     'learning_rates': [(0.01, 2.8, 0)],
-    # 'batch_size': [1],
+    'load_from_checkpoint': ['param_021'],
     'num_steps': [1_000_000],
 
 }

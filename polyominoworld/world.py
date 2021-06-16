@@ -8,7 +8,6 @@ from polyominoworld import shapes
 from polyominoworld.helpers import Sequence, Event, ShapeState, FeatureVector, WorldVector, WorldCell
 
 
-
 class World:
     """
     a grid-based world in which sequences of events occur.

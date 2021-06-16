@@ -14,6 +14,7 @@ import time
 from typing import Dict, List, Tuple, Union
 import random
 import numpy as np
+import yaml
 from itertools import count
 
 from polyominoworld.dataset import DataSet
@@ -51,34 +52,48 @@ def main(param2val):
                          params,
                          'train')
 
+    # when loading from checkpoint, figure out what was left out during pre-training (and use this to make test data)
+    if params.load_from_checkpoint:
+        param_path_pretraining = Path(param2val['project_path']) / 'runs' / params.load_from_checkpoint
+        with (param_path_pretraining / 'param2val.yaml').open('r') as f:
+            param2val_pretraining = yaml.load(f, Loader=yaml.FullLoader)
+        params_for_test_data = Params.from_param2val(param2val_pretraining)
+        print('Leftout during pre-training:')
+        print([f'{k}={v}' for k, v in param2val_pretraining.items() if k.startswith('leftout')])
+    else:
+        params_for_test_data = params
+
     # handle leftout colors
-    if params.leftout_colors:
-        leftout_colors_inverse = tuple([c for c in configs.World.master_colors if c not in params.leftout_colors])
+    if params_for_test_data.leftout_colors:
+        leftout_colors_inverse = tuple([c for c in configs.World.master_colors
+                                        if c not in params_for_test_data.leftout_colors])
     else:
         leftout_colors_inverse = ()  # test on all colors if trained on all colors
     # handle leftout shapes
-    if params.leftout_shapes:
-        leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes if c not in params.leftout_shapes])
+    if params_for_test_data.leftout_shapes:
+        leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes
+                                        if c not in params_for_test_data.leftout_shapes])
     else:
         leftout_shapes_inverse = ()  # test on all shapes if trained on all shapes
     # handle leftout variants
-    if params.leftout_variants:
-        leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params.leftout_variants]
+    if params_for_test_data.leftout_variants:
+        leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params_for_test_data.leftout_variants]
     else:
         leftout_variants_inverse = ''  # test on all variants if trained on all variants
     # handle leftout positions
-    if params.leftout_half:
-        leftout_positions_inverse = get_leftout_positions({'upper': 'lower', 'lower': 'upper'}[params.leftout_half])
+    if params_for_test_data.leftout_half:
+        leftout_positions_inverse = get_leftout_positions(
+            {'upper': 'lower', 'lower': 'upper'}[params_for_test_data.leftout_half])
     else:
         leftout_positions_inverse = get_leftout_positions('')  # test on all positions if trained on all positions
 
-    # make test dataset based on what is leftout from training dataset
+    # make test dataset based on what is leftout from training or pretraining dataset
     data_test = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
                                                  leftout_shapes=leftout_shapes_inverse,
                                                  leftout_variants=leftout_variants_inverse,
                                                  leftout_positions=leftout_positions_inverse,
                                                  ),
-                        params,
+                        params_for_test_data,
                         'test')
 
     assert data_train.sequences
