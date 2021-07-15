@@ -47,16 +47,18 @@ if __name__ == '__main__':
         # load hyper-parameter settings
         with (param_path / 'param2val.yaml').open('r') as f:
             param2val = yaml.load(f, Loader=yaml.FullLoader)
-        params = Params.from_param2val(param2val)
+        params: Params = Params.from_param2val(param2val)
 
         # use all locations, rotations, shapes, and colors - and filter later
         world = World(params)
-        data = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
-                                                leftout_shapes=params.leftout_shapes,
-                                                leftout_variants=params.leftout_variants,
-                                                leftout_positions=get_leftout_positions(params.leftout_half),
+        data = DataSet(world.generate_sequences(leftout_colors=params.train_leftout_colors,
+                                                leftout_shapes=params.train_leftout_shapes,
+                                                leftout_variants=params.train_leftout_variants,
+                                                leftout_positions=get_leftout_positions(params.train_leftout_half),
                                                 ),
-                       params,
+                       seed=params.seed,
+                       shuffle_events=params.shuffle_events,
+                       shuffle_sequences=params.shuffle_sequences,
                        name='re-generated')
 
         # multiple models may exist for the same hyper-parameter configuration - iterate over each

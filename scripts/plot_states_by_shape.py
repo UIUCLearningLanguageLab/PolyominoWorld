@@ -45,7 +45,9 @@ if __name__ == '__main__':
                                                 leftout_variants='',
                                                 leftout_positions=get_leftout_positions(''),
                                                 ),
-                       params,
+                       seed=params.seed,
+                       shuffle_events=params.shuffle_events,
+                       shuffle_sequences=params.shuffle_sequences,
                        name='re-generated')
 
         if RGB_ID is not None:

@@ -91,12 +91,14 @@ if __name__ == '__main__':
 
         # use all locations, rotations, shapes, and colors - and filter later
         world = World(params)
-        data = DataSet(world.generate_sequences(leftout_colors=('', ),
-                                                leftout_shapes=('', ),
+        data = DataSet(world.generate_sequences(leftout_colors=(),
+                                                leftout_shapes=(),
                                                 leftout_variants='',
                                                 leftout_positions=get_leftout_positions(''),
                                                 ),
-                       params,
+                       seed=params.seed,
+                       shuffle_events=params.shuffle_events,
+                       shuffle_sequences=params.shuffle_sequences,
                        name='re-generated')
 
         # multiple models may exist for the same hyper-parameter configuration - iterate over each

@@ -14,11 +14,10 @@ import time
 from typing import Dict, List, Tuple, Union
 import random
 import numpy as np
-import yaml
 from itertools import count
 
 from polyominoworld.dataset import DataSet
-from polyominoworld.utils import get_leftout_positions
+from polyominoworld.utils import get_leftout_positions, get_test_data_kwargs
 from polyominoworld.world import World
 from polyominoworld.network import Network
 from polyominoworld.params import Params
@@ -29,8 +28,14 @@ from polyominoworld.evaluate import evaluate_network, print_eval_summary
 def main(param2val):
     """run 1 job, defined by 1 hyper-parameter configuration in "param2val" a dict created by Ludwig"""
 
-    params = Params.from_param2val(param2val)
+    params: Params = Params.from_param2val(param2val)
     print(params, flush=True)
+
+    if params.y_type not in configs.ArgCheck.y_type:
+        raise AttributeError('Invalid arg to y_type')
+
+    if params.x_type not in configs.ArgCheck.x_type:
+        raise AttributeError('Invalid arg to x_type')
 
     if params.batch_size < 4096:
         configs.Device.gpu = False
@@ -44,57 +49,27 @@ def main(param2val):
     world = World(params)
 
     # make train dataset
-    data_train = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
-                                                  leftout_shapes=params.leftout_shapes,
-                                                  leftout_variants=params.leftout_variants,
-                                                  leftout_positions=get_leftout_positions(params.leftout_half),
+    data_train = DataSet(world.generate_sequences(leftout_colors=params.train_leftout_colors,
+                                                  leftout_shapes=params.train_leftout_shapes,
+                                                  leftout_variants=params.train_leftout_variants,
+                                                  leftout_positions=get_leftout_positions(params.train_leftout_half),
                                                   ),
-                         params,
-                         'train')
+                         seed=params.seed,
+                         shuffle_events=params.shuffle_events,
+                         shuffle_sequences=params.shuffle_sequences,
+                         name='train')
 
-    # when loading from checkpoint, figure out what was left out during pre-training (and use this to make test data)
-    if params.load_from_checkpoint:
-        param_path_pretraining = Path(param2val['project_path']) / 'runs' / params.load_from_checkpoint
-        with (param_path_pretraining / 'param2val.yaml').open('r') as f:
-            param2val_pretraining = yaml.load(f, Loader=yaml.FullLoader)
-        params_for_test_data = Params.from_param2val(param2val_pretraining)
-        print('Leftout during pre-training:')
-        print([f'{k}={v}' for k, v in param2val_pretraining.items() if k.startswith('leftout')])
-    else:
-        params_for_test_data = params
-
-    # handle leftout colors
-    if params_for_test_data.leftout_colors:
-        leftout_colors_inverse = tuple([c for c in configs.World.master_colors
-                                        if c not in params_for_test_data.leftout_colors])
-    else:
-        leftout_colors_inverse = ()  # test on all colors if trained on all colors
-    # handle leftout shapes
-    if params_for_test_data.leftout_shapes:
-        leftout_shapes_inverse = tuple([c for c in configs.World.master_shapes
-                                        if c not in params_for_test_data.leftout_shapes])
-    else:
-        leftout_shapes_inverse = ()  # test on all shapes if trained on all shapes
-    # handle leftout variants
-    if params_for_test_data.leftout_variants:
-        leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params_for_test_data.leftout_variants]
-    else:
-        leftout_variants_inverse = ''  # test on all variants if trained on all variants
-    # handle leftout positions
-    if params_for_test_data.leftout_half:
-        leftout_positions_inverse = get_leftout_positions(
-            {'upper': 'lower', 'lower': 'upper'}[params_for_test_data.leftout_half])
-    else:
-        leftout_positions_inverse = get_leftout_positions('')  # test on all positions if trained on all positions
-
-    # make test dataset based on what is leftout from training or pretraining dataset
-    data_test = DataSet(world.generate_sequences(leftout_colors=leftout_colors_inverse,
-                                                 leftout_shapes=leftout_shapes_inverse,
-                                                 leftout_variants=leftout_variants_inverse,
-                                                 leftout_positions=leftout_positions_inverse,
-                                                 ),
-                        params_for_test_data,
-                        'test')
+    # make test dataset based on (ordered by priority):
+    # 1) custom instructions, or
+    # 2) what is leftout from training data, or
+    # 3) what is leftout from pretraining dataset, or
+    # else: nothing is leftout
+    test_data_kwargs = get_test_data_kwargs(param2val)
+    data_test = DataSet(world.generate_sequences(**test_data_kwargs),
+                        seed=params.seed,
+                        shuffle_events=params.shuffle_events,
+                        shuffle_sequences=params.shuffle_sequences,
+                        name='test')
 
     assert data_train.sequences
     assert data_test.sequences

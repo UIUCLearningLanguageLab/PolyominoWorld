@@ -38,8 +38,8 @@ class World:
                                  itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
 
     def generate_sequences(self,
-                           leftout_colors: Tuple[str],
-                           leftout_shapes: Tuple[str],
+                           leftout_colors: Tuple[str, ...],
+                           leftout_shapes: Tuple[str, ...],
                            leftout_variants: str,
                            leftout_positions: List[Tuple[int, int]],
                            ) -> List[Sequence]:

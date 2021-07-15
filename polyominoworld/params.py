@@ -131,10 +131,17 @@ param2default = {
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
 
-    'leftout_variants': '',  # is a string, and can be either "", "half1", or "half2
-    'leftout_half': '',  # is a string, and can be either "", "upper", or "lower"
-    'leftout_colors': (),  # empty means nothing is leftout
-    'leftout_shapes': (),
+    # specific to train data
+    'train_leftout_variants': '',  # is a string, and can be either "", "half1", or "half2
+    'train_leftout_half': '',  # is a string, and can be either "", "upper", or "lower"
+    'train_leftout_colors': (),  # empty means nothing is leftout
+    'train_leftout_shapes': (),
+
+    # specific to test data
+    'test_leftout_variants': '',  # is a string, and can be either "", "half1", or "half2
+    'test_leftout_half': '',  # is a string, and can be either "", "upper", or "lower"
+    'test_leftout_colors': (),  # empty means nothing is leftout
+    'test_leftout_shapes': (),
 
 }
 
@@ -144,11 +151,17 @@ param2debug = {
 }
 
 # check
-if 'leftout_colors' in param2requests:
-    for leftout_colors in param2requests['leftout_colors']:
+if 'train_leftout_colors' in param2requests:
+    for leftout_colors in param2requests['train_leftout_colors']:
         for lc in leftout_colors:
             if lc == param2default['bg_color']:
-                raise ValueError(f'Cannot leave out bg_color. Remove "{lc}" from leftout_colors.')
+                raise ValueError(f'Cannot leave out bg_color. Remove "{lc}" from train_leftout_colors.')
+
+if 'test_leftout_colors' in param2requests:
+    for leftout_colors in param2requests['test_leftout_colors']:
+        for lc in leftout_colors:
+            if lc == param2default['bg_color']:
+                raise ValueError(f'Cannot leave out bg_color. Remove "{lc}" from test_leftout_colors.')
 # check
 if 'nesterov' in param2requests:
     if 'optimizer' in param2requests:
@@ -172,12 +185,12 @@ class Params:
     """
     load_from_checkpoint: str
     hidden_sizes: Tuple[int]
-    learning_rates: Tuple[float]
+    learning_rates: Tuple[float, float, float]
     batch_size: int
     num_steps: int
     weight_init: float
     optimizer: str
-    momenta: Tuple[float]
+    momenta: Tuple[float, float, float]
     nesterov: bool
     x_type: str
     y_type: str
@@ -194,10 +207,15 @@ class Params:
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     num_events_per_sequence: int
 
-    leftout_variants: str
-    leftout_half: str
-    leftout_colors: Tuple[str]
-    leftout_shapes: Tuple[str]
+    train_leftout_variants: str
+    train_leftout_half: str
+    train_leftout_colors: Tuple[str]
+    train_leftout_shapes: Tuple[str]
+
+    test_leftout_variants: str
+    test_leftout_half: str
+    test_leftout_colors: Tuple[str]
+    test_leftout_shapes: Tuple[str]
 
     @classmethod
     def from_param2val(cls, param2val):

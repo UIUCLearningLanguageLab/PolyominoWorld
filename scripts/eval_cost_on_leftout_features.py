@@ -23,7 +23,7 @@ from ludwig.results import gen_param_paths
 EVAL_LEFTOUT_VARIANTS = True
 
 param2requests = {
-    'leftout_variants': ['half1'],
+    'train_leftout_variants': ['half1'],
 }
 
 if __name__ == '__main__':
@@ -38,22 +38,24 @@ if __name__ == '__main__':
         # load hyper-parameter settings
         with (param_path / 'param2val.yaml').open('r') as f:
             param2val = yaml.load(f, Loader=yaml.FullLoader)
-        params = Params.from_param2val(param2val)
+        params: Params = Params.from_param2val(param2val)
 
-        # are any features leftout?
+        # are any features leftout?  # TODO add option to leave out other features
         if EVAL_LEFTOUT_VARIANTS:
-            leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params.leftout_variants]
+            leftout_variants_inverse = {'half1': 'half2', 'half2': 'half1'}[params.train_leftout_variants]
         else:
             leftout_variants_inverse = None
 
         # re-generate data  the way it was during training
         world = World(params)
-        dataset = DataSet(world.generate_sequences(leftout_colors=params.leftout_colors,
-                                                   leftout_shapes=params.leftout_shapes,
-                                                   leftout_variants=leftout_variants_inverse or params.leftout_variants,
-                                                   leftout_positions=get_leftout_positions(params.leftout_half),
+        dataset = DataSet(world.generate_sequences(leftout_colors=params.train_leftout_colors,
+                                                   leftout_shapes=params.train_leftout_shapes,
+                                                   leftout_variants=leftout_variants_inverse or params.train_leftout_variants,
+                                                   leftout_positions=get_leftout_positions(params.train_leftout_half),
                                                    ),
-                          params,
+                          seed=params.seed,
+                          shuffle_events=params.shuffle_events,
+                          shuffle_sequences=params.shuffle_sequences,
                           name='re-generated')
 
         # loss function

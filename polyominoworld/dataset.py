@@ -2,8 +2,6 @@ import random
 import numpy as np
 from typing import List
 
-from polyominoworld import configs
-from polyominoworld.params import Params
 from polyominoworld.helpers import Event, Sequence
 
 
@@ -12,20 +10,17 @@ class DataSet:
 
     def __init__(self,
                  sequences: List[Sequence],
-                 params: Params,
+                 shuffle_sequences: bool,
+                 shuffle_events: bool,
+                 seed: int,
                  name: str,
                  ) -> None:
 
-        if params.y_type not in configs.ArgCheck.y_type:
-            raise AttributeError('Invalid arg to y_type')
-
-        if params.x_type not in configs.ArgCheck.x_type:
-            raise AttributeError('Invalid arg to x_type')
-
-        np.random.seed(params.seed)
+        np.random.seed(seed)
 
         self.sequences = sequences
-        self.params = params
+        self.shuffle_sequences = shuffle_sequences
+        self.shuffle_events = shuffle_events
         self.name = name
 
         print(f'Initialized {self.name} dataset with {len(self.sequences):,} sequences')
@@ -37,13 +32,13 @@ class DataSet:
         """
         res = []
 
-        if self.params.shuffle_sequences:
+        if self.shuffle_sequences:
             random.shuffle(self.sequences)
 
         # for each sequence
         for sequence in self.sequences:
 
-            if self.params.shuffle_events:
+            if self.shuffle_events:
                 random.shuffle(sequence.events)
 
             # for each event
