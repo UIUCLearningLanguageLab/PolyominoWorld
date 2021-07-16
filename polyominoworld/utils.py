@@ -70,7 +70,7 @@ def get_test_data_kwargs(param2val: Dict[str, Any],
     # option 1: use manual instructions for leaving out data
     if any([True if param2val[p] else False for p in param_names_test_leftout]):
         params = Params.from_param2val(param2val)
-        res['leftout_color'] = params.test_leftout_colors
+        res['leftout_colors'] = params.test_leftout_colors
         res['leftout_shapes'] = params.test_leftout_colors
         res['leftout_variants'] = params.test_leftout_colors
         res['leftout_positions'] = params.test_leftout_colors
