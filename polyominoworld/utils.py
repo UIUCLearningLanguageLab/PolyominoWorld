@@ -50,10 +50,10 @@ def get_test_data_kwargs(param2val: Dict[str, Any],
             otherwise, nothing is leftout
     """
     # init with defaults specifying nothing is leftout
-    res = {'leftout_colors_inverse': (),
-           'leftout_shapes_inverse': (),
-           'leftout_variants_inverse': '',
-           'leftout_positions_inverse': get_leftout_positions(''),
+    res = {'leftout_colors': (),
+           'leftout_shapes': (),
+           'leftout_variants': '',
+           'leftout_positions': get_leftout_positions(''),
            }
 
     param_names_test_leftout = ['test_leftout_colors',
