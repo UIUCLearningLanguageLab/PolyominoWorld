@@ -70,7 +70,7 @@ class World:
                 elif leftout_variants == '':
                     pass
                 else:
-                    raise AttributeError('Invalid arg to leftout_variants')
+                    raise AttributeError(f'Invalid arg to leftout_variants: {leftout_variants}')
 
                 for variant in variants:
 
