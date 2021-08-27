@@ -50,35 +50,6 @@ except KeyError:
 
 runs_path = Path(mnt) / 'ludwig_data' / 'PolyominoWorld' / 'runs'
 
-
-def is_exp2(param_path: Path,
-            ) -> bool:
-    """is the parameter configuration part of experiment 2?"""
-
-    res = False
-
-    # load param2val
-    with (param_path / 'param2val.yaml').open('r') as f:
-        param2val = yaml.load(f, Loader=yaml.FullLoader)
-    # check if at least 1 feature was left out -> if so, configuration is from exp 2
-    for k in ['leftout_variants', 'leftout_half', 'leftout_colors', 'leftout_shapes']:
-        if param2val[k] not in {'', ()}:
-            res = True
-
-    print(f'Configuration {param_path.name} is in exp2={res}')
-
-    return res
-
-
-param2requests = {
-
-    'hidden_sizes': [(32, )],
-    'learning_rates': [(0.01, 2.8, 0)],
-    'load_from_checkpoint': ['param_021'],
-    'num_steps': [1_000_000],
-
-}
-
 # default hyper parameters with batch-size=1
 param2default = {
     # model
@@ -149,6 +120,47 @@ param2default = {
 param2debug = {
     'num_steps': 10_000,
 }
+
+
+def find_param_name(**kwargs,
+                    ) -> str:
+    """return the param_name that corresponds to a particular experiment-2 configuration"""
+
+    for param_path in runs_path.glob('param_*'):
+        # load param2val
+        with (param_path / 'param2val.yaml').open('r') as f:
+            param2val = yaml.load(f, Loader=yaml.FullLoader)
+        # exclude param_name if any parameter value does not match kwargs
+        if any([True if param2val[k] != v else False for k, v in kwargs.items()]):
+            continue
+        # exclude if any non-kwarg parameter value does not match defaults
+        for k, v in param2default.items():
+            if k in kwargs:
+                continue
+            if param2val[k] != v:
+                break
+        else:
+            print(f'Found requested experiment-2 param_name: {param_path.name}')
+            return param_path.name
+
+    raise FileNotFoundError(f'Did not find param_name with configuration={kwargs}')
+
+
+# ############################################# user enters requested parameter configuration here
+
+param2requests = {
+
+    # this is how to compare models trained on both halves and tested on lower half:
+    # 1) without pretraining, versus
+    # 2) with pretraining on upper half only
+    'load_from_checkpoint': ['none',  # this model is not pre-trained
+                             find_param_name(train_leftout_half='lower'),  # this model is pre-trained on upper half
+                             ],
+    'test_leftout_half': 'upper',  # this means models are tested on lower half only
+
+}
+
+# #############################################
 
 # check
 if 'train_leftout_colors' in param2requests:
