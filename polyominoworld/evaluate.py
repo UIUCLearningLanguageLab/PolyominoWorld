@@ -13,13 +13,20 @@ def print_eval_summary(epoch: int,
                        step: int,
                        max_step: int,
                        lr: float,
-                       cumulative_time: float,
-                       cost_avg_train: float,
-                       cost_avg_test: float,
-                       acc_avg_train: float,
-                       acc_avg_test: float,
+                       performance_data: dict,
                        ):
-    device = "gpu" if configs.Device.gpu else "cpu"
+
+    cumulative_time = performance_data['cumulative_seconds'][-1][1]
+    cost_avg_train: float = performance_data['cost_avg_train'][-1][1]
+    acc_avg_train: float = performance_data['acc_avg_train'][-1][1]
+
+    try:
+        cost_avg_test = performance_data['cost_avg_test'][-1][1]
+        acc_avg_test = performance_data['acc_avg_test'][-1][1]
+    except KeyError:  # not evaluating test data
+        cost_avg_test = np.nan
+        acc_avg_test = np.nan
+
     output_string = f"epoch={epoch:>6} step={step:>12,}/{max_step:>12,} | "
     output_string += f"cost-train={cost_avg_train:0.3f} cost-test={cost_avg_test:0.3f} | "
     output_string += f"acc-train={acc_avg_train:0.3f} acc-test={acc_avg_test:0.3f} | "
@@ -91,8 +98,7 @@ def evaluate_classification(net: Network,
     res[f'acc_avg_{dataset.name}'] = np.mean([performance for name, performance in res.items()
                                               if name.startswith('acc')])
 
-    if configs.Evaluation.means_only:
-        res = {k: v for k, v in res.items() if 'avg' in k}
+    res = {k: v for k, v in res.items() if 'avg' in k}
 
     return res
 

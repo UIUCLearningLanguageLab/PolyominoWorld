@@ -113,7 +113,9 @@ def main(param2val):
         optimizer = torch.optim.SGD(net.parameters(),
                                     lr=params.learning_rates[0],
                                     momentum=params.momenta[0],
-                                    nesterov=params.nesterov)
+                                    nesterov=params.nesterov,
+                                    weight_decay=params.weight_decay,
+                                    )
     else:
         raise AttributeError(f'Invalid arg to optimizer')
 
@@ -139,11 +141,7 @@ def main(param2val):
                        step,
                        params.num_steps,
                        lr,
-                       performance_data['cumulative_seconds'][-1][1],
-                       performance_data['cost_avg_train'][-1][1],
-                       performance_data['cost_avg_test'][-1][1],
-                       performance_data['acc_avg_train'][-1][1],
-                       performance_data['acc_avg_test'][-1][1],
+                       performance_data,
                        )
 
     # save network weights for visualizing later
@@ -208,11 +206,7 @@ def main(param2val):
                                    step,
                                    params.num_steps,
                                    lr,
-                                   performance_data['cumulative_seconds'][-1][1],
-                                   performance_data['cost_avg_train'][-1][1],
-                                   performance_data['cost_avg_test'][-1][1],
-                                   performance_data['acc_avg_train'][-1][1],
-                                   performance_data['acc_avg_test'][-1][1],
+                                   performance_data,
                                    )
 
                 # save network weights for visualizing later
@@ -259,6 +253,10 @@ def evaluate_on_train_and_test(criterion_all: Union[torch.nn.BCEWithLogitsLoss, 
 
     # for train and test data
     for data in [data_train, data_test]:
+
+        # skip evaluation on test data (useful only when debugging)
+        if data.name == 'test' and configs.Evaluation.skip_test_data:
+            continue
 
         # compute and collect performance data for plotting with Ludwig-Viz
         for name, val in evaluate_network(net, data, criterion_all).items():

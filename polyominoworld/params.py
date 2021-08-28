@@ -6,15 +6,32 @@ Any hyper-parameter not overwritten by param2requests will be assigned its defau
 
 Note: Ludwig relies on the three dictionaries below to be named as-is. Do not rename them.
 
+Organisation as of January 2021:
+
 experiment 2a: all colors except 1
 experiment 2b: all shapes except 1
 experiment 2c: upper vs. lower
 experiment 2d: train on half of variants, test on other halves
-
 experiment 3: continue training exp2 models on full data, tracking speed of learning of novel examples
 
 
-hyper-parameter tuning notes:
+Organisation as of August 2021:
+
+Experiment 1: the basic findings
+Experiment 2: training 5 models for N epochs on top or bottom only (while testing the untrained half),
+then another N epochs on top+bottom (while continuing to test the originally untrained half)
+Experiment 3: train 5*8 models for N epochs, each set of 5 omitting one color (while testing on the untrained color),
+and then continuing to train all models for N epochs on all colors
+ (continuing to test only the originally omitted color)
+Experiment 4: train 5*9 models for N epoch, each set of 5 omitting 1 shape (while testing on the untrained shape),
+and then continuing to train all models for N epochs on all shapes
+ (continuing to test only the originally omitted shape)
+Experiment 5: train 5*2 models for N epochs, each set of 5 omitting half the shape variants
+ (while testing on the omitted half of the variants), then continuing to train all models for N epochs on all variants
+  (continuing to test only on the originally omitted variants)
+
+
+hyper-parameter tuning notes (when background color='black'):
 
     no hyper parameters were found that allowed a 16 hidden unit model to achieve perfect accuracy,
     but adding a second layer of 12 (but not lower) hidden units results in perfect accuracy.
@@ -55,13 +72,14 @@ param2default = {
     # model
     'load_from_checkpoint': 'none',
     'hidden_sizes': (32, ),
-    'learning_rates': (0.01, 2.8, 0.0),  # start, mid, and end lr
+    'learning_rates': (0.4, 0.4, 0.4),  # start, mid, and end lr
     'batch_size': 1,  # large batch size allows convergence of much smaller models
-    'num_steps': 1_000_000,  # this is matched precisely to learning rate schedule
+    'num_steps': 2_000_000,  # this is matched precisely to learning rate schedule
     'weight_init': 0.01,
     'optimizer': 'SGD',
     'momenta': (0.00, 0.0, 0.0),
-    'nesterov': False,
+    'nesterov': False,  # requires momentum to be non-zero
+    'weight_decay': 0.0,
     'x_type': 'world',
     'y_type': 'features',
     'criterion': 'bce',
@@ -72,10 +90,10 @@ param2default = {
     'shuffle_sequences': True,
     'shuffle_events': False,
     'add_grayscale': False,  # adding grayscale does not help or hurt
-    'bg_color': 'black',
+    'bg_color': 'grey',
     'fg_colors': (
         'white',
-        'grey',
+        'black',
         'red',
         'blue',
         'green',
@@ -150,13 +168,7 @@ def find_param_name(**kwargs,
 
 param2requests = {
 
-    # this is how to compare models trained on both halves and tested on lower half:
-    # 1) without pretraining, versus
-    # 2) with pretraining on upper half only
-    'load_from_checkpoint': ['none',  # this model is not pre-trained
-                             find_param_name(train_leftout_half='lower'),  # this model is pre-trained on upper half
-                             ],
-    'test_leftout_half': 'upper',  # this means models are tested on lower half only
+
 
 }
 
@@ -204,6 +216,7 @@ class Params:
     optimizer: str
     momenta: Tuple[float, float, float]
     nesterov: bool
+    weight_decay: float
     x_type: str
     y_type: str
     criterion: str

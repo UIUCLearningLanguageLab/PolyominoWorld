@@ -91,7 +91,7 @@ def get_test_data_kwargs(param2val: Dict[str, Any],
                 {'upper': 'lower', 'lower': 'upper'}[params.train_leftout_half])
 
     # option 3: leave out data not included in pre-training data
-    elif param2val['load_from_checkpoint']:
+    elif param2val['load_from_checkpoint'] != 'none':
         param_path_pretraining = Path(param2val['project_path']) / 'runs' / param2val['load_from_checkpoint']
         with (param_path_pretraining / 'param2val.yaml').open('r') as f:
             param2val_pretraining = yaml.load(f, Loader=yaml.FullLoader)

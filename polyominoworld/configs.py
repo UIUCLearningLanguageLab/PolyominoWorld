@@ -69,7 +69,7 @@ class Display:
 
 class Evaluation:
     step_interval = 10_000
-    means_only = False  # True if collecting summaries only (e.g. means)
+    skip_test_data = False
 
 
 class World:
@@ -83,15 +83,15 @@ class World:
               0, max_y,  # y min, y max
               ]
 
-    color2rgb = {'black': [0.0, 0.0, 0.0],
-                 'white': [1.0, 1.0, 1.0],
-                 'grey': [0.5, 0.5, 0.5],
-                 'red': [1.0, 0.0, 0.0],
-                 'blue': [0.0, 0.0, 1.0],
-                 'green': [0.0, 1.0, 0.0],
-                 'yellow': [1.0, 1.0, 0.0],
-                 'cyan': [0.0, 1.0, 1.0],
-                 'magenta': [1.0, 0.0, 1.0],
+    color2rgb = {'black':   [-1.0, -1.0, -1.0],
+                 'white':   [+1.0, +1.0, +1.0],
+                 'red':     [+1.0, -1.0, -1.0],
+                 'blue':    [-1.0, -1.0, +1.0],
+                 'green':   [-1.0, +1.0, -1.0],
+                 'yellow':  [+1.0, +1.0, -1.0],
+                 'cyan':    [-1.0, +1.0, +1.0],
+                 'magenta': [+1.0, -1.0, +1.0],
+                 'grey':    [+0.0, +0.0, +0.0],
                  }
 
     action2directions = {
