@@ -98,7 +98,7 @@ def evaluate_classification(net: Network,
     res[f'acc_avg_{dataset.name}'] = np.mean([performance for name, performance in res.items()
                                               if name.startswith('acc')])
 
-    res = {k: np.asscalar(v) for k, v in res.items()}
+    res = {k: float(v) for k, v in res.items()}
 
     return res
 
