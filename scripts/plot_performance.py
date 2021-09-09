@@ -64,8 +64,8 @@ for param_path, label in gen_param_paths(project_name,
 
         # todo: raise exception when requested performance is supposed to be excluded (in param2requests)
 
-        y_label = make_y_label(pn.replace('cost_', '').replace('acc_', ''))
-        summary = make_summary(pn, param_path, y_label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
+        label = make_y_label(pn.replace('cost_', '').replace('acc_', ''))
+        summary = make_summary(pn, param_path, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
         summaries.append(summary)
     print(f'--------------------- End section {param_path.name}')
     print()
