@@ -53,12 +53,13 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                      start_x_at_zero: bool = False,
                      y_grid: bool = True,
                      legend_labels: Union[None, list] = None,
-                     legend_loc: str = 'lower right',
+                     legend_loc: str = 'best',
+                     legend_ncol: int = 3,
                      verbose: bool = False,
                      ):
     # setting up the matplotlib figure and axis
     fig, ax = plt.subplots(figsize=figsize, dpi=configs.Figs.dpi)
-    plt.title(title)
+    plt.title(title, fontsize=configs.Figs.title_font_size)
     ax.set_xlabel(x_label, fontsize=configs.Figs.ax_font_size)
     ax.set_ylabel(y_label, fontsize=configs.Figs.ax_font_size)
     ax.spines['right'].set_visible(False)
@@ -129,7 +130,7 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                    fontsize=configs.Figs.leg_font_size,
                    frameon=False,
                    loc='lower center',
-                   ncol=3,
+                   ncol=legend_ncol,
                    )
 
     plt.tight_layout()

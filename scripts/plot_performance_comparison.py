@@ -1,4 +1,9 @@
 """
+
+Plot one or more curves corresponding to a single performance (e.g. accuracy, error, etc.),
+and compare performance across multiple parameter configurations.
+
+Note:
 In order to plot results,
 we need to get results form the shared drive.
 To look for results on the shared drive, we use ludwig.
@@ -17,12 +22,12 @@ from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
 # which results to plot
-PATTERN: str = 'acc_shape_train'  # name of performance curve to plot
+PERFORMANCE_NAME: str = 'acc_shape_train'  # name of performance curve to plot
 
-# available patterns:
+# available performance names:
 # {1}_{2}_{3}
 # 1: cost, acc
-# 2: shape, color, size (for cost and acc); monomino, ..., red, ..., 1, ..... (for cost only)
+# 2: shape, color, size (for cost and acc); shape-monomino, ..., color-red, ..., size-1, ..... (for cost only)
 # 3: train, test
 # 4 cumulative_seconds
 
@@ -44,7 +49,7 @@ for p, label in gen_param_paths(project_name,
                                 # runs_path=Path(__file__).parent.parent / 'runs',
                                 ludwig_data_path=None,
                                 label_n=True):
-    summary = make_summary(PATTERN, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
+    summary = make_summary(PERFORMANCE_NAME, p, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
     summaries.append(summary)
     print(f'--------------------- End section {p.name}')
     print()
@@ -57,7 +62,7 @@ if not summaries:
 # plot
 fig = make_summary_fig(summaries,
                        x_label='Training Step',
-                       y_label=make_y_label(PATTERN),
+                       y_label=make_y_label(PERFORMANCE_NAME),
                        title=TITLE,
                        figsize=FIG_SIZE,
                        y_lims=Y_LIMS,

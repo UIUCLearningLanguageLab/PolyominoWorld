@@ -72,6 +72,10 @@ def evaluate_classification(net: Network,
         costs_by_feature = criterion_all(o, y).detach().cpu().numpy()
         o = o.detach().cpu().numpy()
 
+        # fixme: cost is still collected, even when a feature is absent,
+        #  because cost is still computed at events where the feature is not present.
+        #  this results in incorrect decrease in cost because it is easy to say "no" when a feature is not there.
+
         # collect cost for each feature
         for n, feature_label in enumerate(event.feature_vector.get_feature_labels()):
             performance_name = f'cost_{feature_label}_{dataset.name}'
