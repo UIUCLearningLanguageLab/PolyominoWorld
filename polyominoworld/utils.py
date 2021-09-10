@@ -1,7 +1,7 @@
 import itertools
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple, Dict, Any
-
 import yaml
 
 from polyominoworld import configs
@@ -108,3 +108,13 @@ def get_test_data_kwargs(param2val: Dict[str, Any],
         return res
 
     return res
+
+
+@lru_cache(maxsize=None)
+def is_leftout(feature_value: str,
+               leftout_colors_and_shapes: Tuple[str, ...],
+               ) -> bool:
+    if feature_value in leftout_colors_and_shapes:
+        return True
+
+    return False

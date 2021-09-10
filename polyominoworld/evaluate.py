@@ -2,11 +2,11 @@ import numpy as np
 import torch
 from typing import Union, Dict, Tuple, Optional, List
 from numpy.linalg import pinv
-from functools import lru_cache
 
 from polyominoworld.network import Network
 from polyominoworld.dataset import DataSet
 from polyominoworld import configs
+from polyominoworld.utils import is_leftout
 
 
 def print_eval_summary(epoch: int,
@@ -60,9 +60,12 @@ def evaluate_classification(net: Network,
     """
     return cost and accuracy for each feature, averaged across all samples in provided dataset.
     """
-
-    train_leftout_colors_and_shapes = net.params.train_leftout_colors + net.params.train_leftout_shapes
-    test_leftout_colors_and_shapes = net.params.test_leftout_colors + net.params.test_leftout_shapes
+    if dataset.name == 'train':
+        leftout_colors_and_shapes = net.params.train_leftout_colors + net.params.train_leftout_shapes
+    elif dataset.name == 'test':
+        leftout_colors_and_shapes = net.params.test_leftout_colors + net.params.test_leftout_shapes
+    else:
+        raise AttributeError('Invalid arg to data.name')
 
     res = {}
 
@@ -82,9 +85,7 @@ def evaluate_classification(net: Network,
             # note: cost is still collected even when a feature is leftout from data,
             #  because cost is still computed at events where the feature is not present.
             if is_leftout(feature_label.value_name,
-                          dataset.name,
-                          train_leftout_colors_and_shapes,
-                          test_leftout_colors_and_shapes,
+                          leftout_colors_and_shapes,
                           ):
                 continue
 
@@ -117,30 +118,6 @@ def evaluate_classification(net: Network,
     # print(is_leftout.cache_info())
 
     return res
-
-
-@lru_cache(maxsize=None)
-def is_leftout(feature_value: str,
-               data_name: str,
-               train_leftout_colors_and_shapes: Tuple[str, ...],
-               test_leftout_colors_and_shapes: Tuple[str, ...],
-               ) -> bool:
-
-    if data_name == 'train':
-
-        if feature_value in train_leftout_colors_and_shapes:
-            print(feature_value, train_leftout_colors_and_shapes)
-            return True
-    elif data_name == 'test':
-        if feature_value in test_leftout_colors_and_shapes:
-            print(feature_value, test_leftout_colors_and_shapes)
-            return True
-    else:
-        raise AttributeError(f'Invalid arg to data name: {data_name}.')
-
-    print(data_name, feature_value, False)
-
-    return False
 
 
 def evaluate_reconstruction(net: Network,

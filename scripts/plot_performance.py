@@ -13,13 +13,15 @@ create an environment variable "LUDWIG_MNT" that points to the path where ludwig
 """
 
 from typing import Optional, List, Tuple
+import yaml
 from pathlib import Path
 
 from ludwig.results import gen_param_paths
 
 from polyominoworld.figs import make_summary_fig, rank_label_for_legend_order, make_y_label
 from polyominoworld.summary import make_summary
-from polyominoworld.params import param2default, param2requests
+from polyominoworld.utils import is_leftout
+from polyominoworld.params import param2default, param2requests, Params
 
 # names of performance curves to plot
 PERFORMANCE_NAMES: List[str] = ['acc_shape_train', 'acc_shape_test']
@@ -59,11 +61,28 @@ for param_path, label in gen_param_paths(project_name,
                                          # runs_path=Path(__file__).parent.parent / 'runs',
                                          ludwig_data_path=None,
                                          label_n=True):
+
+    # load params to get info about what was leftout from data
+    with (param_path / 'param2val.yaml').open('r') as f:
+        param2val = yaml.load(f, Loader=yaml.FullLoader)
+    params = Params.from_param2val(param2val)
+
     title = label
     for pn in PERFORMANCE_NAMES:
 
-        # todo: raise exception when requested performance is supposed to be excluded (in param2requests)
+        # check that we are not trying to plot something that was leftout
+        performance_type, feature_label, data_name = pn.split('_')
+        feature_type, feature_value = feature_label.split('-')
+        if data_name == 'train':
+            leftout_colors_and_shapes = params.train_leftout_colors + params.train_leftout_shapes
+        elif data_name == 'test':
+            leftout_colors_and_shapes = params.test_leftout_colors + params.test_leftout_shapes
+        else:
+            raise AttributeError('Invalid arg to data.name')
+        if is_leftout(feature_value, leftout_colors_and_shapes):
+            raise RuntimeError(f'Feature "{feature_value}" was leftout from {data_name} data.')
 
+        # make summary
         label = make_y_label(pn.replace('cost_', '').replace('acc_', ''))
         summary = make_summary(pn, param_path, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
         summaries.append(summary)
