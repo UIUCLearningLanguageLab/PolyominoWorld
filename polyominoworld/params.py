@@ -174,6 +174,14 @@ param2requests = {
 
 # #############################################
 
+if 'train_leftout_colors' in param2requests:
+    if not isinstance(param2requests['train_leftout_colors'], tuple):
+        raise TypeError('"train_leftout_colors" must be of type tuple')
+
+if 'train_leftout_shapes' in param2requests:
+    if not isinstance(param2requests['train_leftout_shapes'], tuple):
+        raise TypeError('"train_leftout_shapes" must be of type tuple')
+
 # check
 if 'train_leftout_colors' in param2requests:
     for leftout_colors in param2requests['train_leftout_colors']:

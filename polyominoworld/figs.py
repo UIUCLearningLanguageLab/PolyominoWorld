@@ -108,6 +108,8 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
             raise ValueError('Not enough values in PALETTE_IDS')
 
         if verbose:
+            print()
+            print(label)
             for mean_i, std_i in zip(y_mean, h):
                 print(f'mean={mean_i:>6.2f} h={std_i:>6.2f}')
 
