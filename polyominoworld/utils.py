@@ -97,11 +97,18 @@ def get_test_data_kwargs(param2val: Dict[str, Any],
             param2val_pretraining = yaml.load(f, Loader=yaml.FullLoader)
         params_pretrain: Params = Params.from_param2val(param2val_pretraining)
         print('Leftout during pre-training:')
-        print([f'{k}={v}' for k, v in param2val_pretraining.items() if k.startswith('leftout')])
-        res['leftout_colors'] = tuple([c for c in configs.World.master_colors if c not in params_pretrain.train_leftout_colors])
-        res['leftout_shapes'] = tuple([c for c in configs.World.master_shapes if c not in params_pretrain.train_leftout_shapes])
-        res['leftout_variants'] = {'half1': 'half2', 'half2': 'half1'}[params_pretrain.train_leftout_variants]
-        res['leftout_positions'] = get_leftout_positions({'upper': 'lower', 'lower': 'upper'}[params_pretrain.train_leftout_half])
+        print([f'{k}={v}' for k, v in param2val_pretraining.items() if k.startswith('train_leftout')])
+        if params_pretrain.train_leftout_colors:
+            res['leftout_colors'] = tuple([c for c in configs.World.master_colors
+                                           if c not in params_pretrain.train_leftout_colors])
+        if params_pretrain.train_leftout_shapes:
+            res['leftout_shapes'] = tuple([c for c in configs.World.master_shapes
+                                           if c not in params_pretrain.train_leftout_shapes])
+        if params.train_leftout_variants:
+            res['leftout_variants'] = {'half1': 'half2', 'half2': 'half1'}[params_pretrain.train_leftout_variants]
+        if params.train_leftout_variants:
+            res['leftout_positions'] = get_leftout_positions(
+                {'upper': 'lower', 'lower': 'upper'}[params_pretrain.train_leftout_half])
 
     # option 4: do not leave anything out in test data
     else:
