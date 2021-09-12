@@ -166,6 +166,10 @@ def find_param_name(**kwargs,
 
 # ############################################# user enters requested parameter configuration here
 
+
+# WARNING:
+# a tuple with a single string must be followed by a comma for yaml to correctly identify it as a tyuple, not string
+
 param2requests = {
 
 
