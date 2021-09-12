@@ -168,11 +168,15 @@ def find_param_name(**kwargs,
 
 
 # WARNING:
-# a tuple with a single string must be followed by a comma for yaml to correctly identify it as a tyuple, not string
+# a tuple with a single string must be followed by a comma for yaml to correctly identify it as a tuple, not string
 
 param2requests = {
 
-
+    'load_from_checkpoint': ['none',
+                             find_param_name(train_leftout_shapes= ('monomino', )),
+                             # 'param_023',
+                             ],
+    'test_leftout_shapes': [('domino', 'tromino1', 'tromino2', 'tetromino1', 'tetromino2', 'tetromino3', 'tetromino4', 'tetromino5')],
 
 }
 

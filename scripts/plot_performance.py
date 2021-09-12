@@ -18,13 +18,13 @@ from pathlib import Path
 
 from ludwig.results import gen_param_paths
 
-from polyominoworld.figs import make_summary_fig, rank_label_for_legend_order, make_y_label
+from polyominoworld.figs import plot_summary_fig, rank_label_for_legend_order, make_y_label
 from polyominoworld.summary import make_summary
 from polyominoworld.utils import is_leftout
 from polyominoworld.params import param2default, param2requests, Params
 
 # names of performance curves to plot
-PERFORMANCE_NAMES: List[str] = ['acc_shape_train', 'acc_shape_test']
+PERFORMANCE_NAMES: List[str] = ['cost_shape-monomino_train', 'cost_shape-domino_train']
 
 # available PERFORMANCE_NAMES:
 # {1}_{2}_{3}
@@ -51,7 +51,6 @@ else:
     y_label = {'acc': 'Accuracy', 'cost': 'Error'}[y_labels[0]]
 
 # for each job, save a summary, used for plotting
-summaries = []
 title = None
 project_name = 'PolyominoWorld'
 for param_path, label in gen_param_paths(project_name,
@@ -61,6 +60,8 @@ for param_path, label in gen_param_paths(project_name,
                                          # runs_path=Path(__file__).parent.parent / 'runs',
                                          ludwig_data_path=None,
                                          label_n=True):
+
+    summaries = []
 
     # load params to get info about what was leftout from data
     with (param_path / 'param2val.yaml').open('r') as f:
@@ -72,15 +73,16 @@ for param_path, label in gen_param_paths(project_name,
 
         # check that we are not trying to plot something that was leftout
         performance_type, feature_label, data_name = pn.split('_')
-        feature_type, feature_value = feature_label.split('-')
-        if data_name == 'train':
-            leftout_colors_and_shapes = params.train_leftout_colors + params.train_leftout_shapes
-        elif data_name == 'test':
-            leftout_colors_and_shapes = params.test_leftout_colors + params.test_leftout_shapes
-        else:
-            raise AttributeError('Invalid arg to data.name')
-        if is_leftout(feature_value, leftout_colors_and_shapes):
-            raise RuntimeError(f'Feature "{feature_value}" was leftout from {data_name} data.')
+        if performance_type == 'cost':
+            feature_type, feature_value = feature_label.split('-')
+            if data_name == 'train':
+                leftout_colors_and_shapes = params.train_leftout_colors + params.train_leftout_shapes
+            elif data_name == 'test':
+                leftout_colors_and_shapes = params.test_leftout_colors + params.test_leftout_shapes
+            else:
+                raise AttributeError('Invalid arg to data.name')
+            if is_leftout(feature_value, leftout_colors_and_shapes):
+                raise RuntimeError(f'Feature "{feature_value}" was leftout from {data_name} data.')
 
         # make summary
         label = make_y_label(pn.replace('cost_', '').replace('acc_', ''))
@@ -95,7 +97,7 @@ for param_path, label in gen_param_paths(project_name,
         raise SystemExit('No data found')
 
     # plot
-    fig = make_summary_fig(summaries,
+    fig = plot_summary_fig(summaries,
                            x_label='Training Step',
                            y_label=y_label,
                            title=title,
@@ -104,4 +106,3 @@ for param_path, label in gen_param_paths(project_name,
                            legend_labels=LABELS,
                            legend_ncol=1,
                            )
-    fig.show()

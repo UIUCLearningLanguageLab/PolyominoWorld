@@ -41,7 +41,7 @@ def rank_label_for_legend_order(label:  str,
     return rank
 
 
-def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, str, int]],
+def plot_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, str, int]],
                      y_label: str,
                      x_label: str,
                      title: str = '',
@@ -136,7 +136,7 @@ def make_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                    )
 
     plt.tight_layout()
-    return fig
+    plt.show()
 
 
 def make_y_label(pattern: str,

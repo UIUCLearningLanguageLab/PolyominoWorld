@@ -17,7 +17,7 @@ from pathlib import Path
 
 from ludwig.results import gen_param_paths
 
-from polyominoworld.figs import make_summary_fig, rank_label_for_legend_order, make_y_label
+from polyominoworld.figs import plot_summary_fig, rank_label_for_legend_order, make_y_label
 from polyominoworld.summary import make_summary
 from polyominoworld.params import param2default, param2requests
 
@@ -60,13 +60,12 @@ if not summaries:
     raise SystemExit('No data found')
 
 # plot
-fig = make_summary_fig(summaries,
-                       x_label='Training Step',
-                       y_label=make_y_label(PERFORMANCE_NAME),
-                       title=TITLE,
-                       figsize=FIG_SIZE,
-                       y_lims=Y_LIMS,
-                       legend_labels=LABELS,
-                       legend_loc='best',
-                       )
-fig.show()
+plot_summary_fig(summaries,
+                 x_label='Training Step',
+                 y_label=make_y_label(PERFORMANCE_NAME),
+                 title=TITLE,
+                 figsize=FIG_SIZE,
+                 y_lims=Y_LIMS,
+                 legend_labels=LABELS,
+                 legend_loc='best',
+                 )
