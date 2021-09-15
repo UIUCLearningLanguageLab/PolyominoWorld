@@ -67,6 +67,9 @@ except KeyError:
 
 runs_path = Path(mnt) / 'ludwig_data' / 'PolyominoWorld' / 'runs'
 
+if not runs_path.exists():
+    raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
+
 # default hyper parameters with batch-size=1
 param2default = {
     # model

@@ -1,4 +1,4 @@
-numpy~=1.19.2
+numpy==1.18.5
 torch==1.6.0
 https://github.com/phueb/Ludwig/archive/v4.0.3.tar.gz
 pandas~=1.2.2
