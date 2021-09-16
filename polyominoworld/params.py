@@ -175,23 +175,19 @@ def find_param_name(**kwargs,
 
 param2requests = {
 
-    'load_from_checkpoint': ['none',
-                             find_param_name(train_leftout_shapes= ('monomino', )),
-                             # 'param_023',
-                             ],
-    'test_leftout_shapes': [('domino', 'tromino1', 'tromino2', 'tetromino1', 'tetromino2', 'tetromino3', 'tetromino4', 'tetromino5')],
+    'train_leftout_colors': [('red', ), ('black', )],
 
 }
 
 # #############################################
 
 if 'train_leftout_colors' in param2requests:
-    if not isinstance(param2requests['train_leftout_colors'], tuple):
-        raise TypeError('"train_leftout_colors" must be of type tuple')
+    if not all([isinstance(v, tuple) for v in param2requests['train_leftout_colors']]):
+        raise TypeError('Each element of "train_leftout_colors" must be of type tuple')
 
 if 'train_leftout_shapes' in param2requests:
-    if not isinstance(param2requests['train_leftout_shapes'], tuple):
-        raise TypeError('"train_leftout_shapes" must be of type tuple')
+    if not all([isinstance(v, tuple) for v in param2requests['train_leftout_shapes']]):
+        raise TypeError('Each element of "train_leftout_shapes" must be of type tuple')
 
 # check
 if 'train_leftout_colors' in param2requests:
