@@ -14,8 +14,8 @@ def rank_label_for_legend_order(label:  str,
 
     for label_part in label.split('\n'):
         if label_part == 'load_from_checkpoint=none':
-            print('found')
             rank = 0
+            break
 
         # shapes
         for n, shape in enumerate(configs.World.master_shapes):
