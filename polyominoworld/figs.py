@@ -13,7 +13,7 @@ def rank_label_for_legend_order(label:  str,
     rank = 100
 
     for label_part in label.split('\n'):
-        if label_part == 'load_from_checkpoint=none':
+        if label_part == configs. Figs.NO_PRE_TRAINING_STRING:
             rank = 0
             break
 

@@ -131,3 +131,5 @@ class Figs:
     dpi = 163
     title_font_size = 8
     tick_font_size = 8
+
+    NO_PRE_TRAINING_STRING = 'no pre-training'
