@@ -24,7 +24,7 @@ from polyominoworld.utils import is_leftout
 from polyominoworld.params import param2default, param2requests, Params
 
 # names of performance curves to plot
-PERFORMANCE_NAMES: List[str] = ['cost_shape-monomino_train', 'cost_shape-domino_train']
+PERFORMANCE_NAMES: List[str] = ['cost_color-red_test']
 
 # available PERFORMANCE_NAMES:
 # {1}_{2}_{3}
@@ -37,7 +37,6 @@ PERFORMANCE_NAMES: List[str] = ['cost_shape-monomino_train', 'cost_shape-domino_
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (8, 6)  # in inches
-Y_LIMS: Optional[List[float]] = [0., 1.]
 CONFIDENCE: float = 0.95
 
 # check that patterns contains performance curves of same type (e.g. cost, acc)
@@ -102,7 +101,7 @@ for param_path, label in gen_param_paths(project_name,
                            y_label=y_label,
                            title=title,
                            figsize=FIG_SIZE,
-                           y_lims=Y_LIMS,
+                           y_lims=[0, 1] if 'Accuracy' in y_label else None,
                            legend_labels=LABELS,
                            legend_ncol=1,
                            )

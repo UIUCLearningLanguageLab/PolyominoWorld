@@ -35,7 +35,6 @@ PERFORMANCE_NAME: str = 'acc_shape_train'  # name of performance curve to plot
 # figure settings
 LABELS: Optional[List[str]] = None  # custom labels for figure legend
 FIG_SIZE: Tuple[int, int] = (6, 6)  # in inches
-Y_LIMS: Optional[List[float]] = [0., 1.]
 CONFIDENCE: float = 0.95
 TITLE = ''
 
@@ -65,7 +64,7 @@ plot_summary_fig(summaries,
                  y_label=make_y_label(PERFORMANCE_NAME),
                  title=TITLE,
                  figsize=FIG_SIZE,
-                 y_lims=Y_LIMS,
+                 y_lims=[0, 1] if 'acc' in PERFORMANCE_NAME else None,
                  legend_labels=LABELS,
                  legend_loc='best',
                  )

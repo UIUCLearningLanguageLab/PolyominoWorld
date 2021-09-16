@@ -175,21 +175,52 @@ def find_param_name(**kwargs,
 
 param2requests = {
 
-    'train_leftout_colors': [('red', ), ('black', )],
+    'load_from_checkpoint': [
+        'param_043',
+        'none',
+    ],
+    'test_leftout_variants': ['half2'],
 
 }
 
 # #############################################
 
+# type checks
+
+if 'test_leftout_variants' in param2requests:
+    if not all([isinstance(v, str) for v in param2requests['test_leftout_variants']]):
+        raise TypeError('Each element of "test_leftout_variants" must be of type str')
+
+if 'train_leftout_variants' in param2requests:
+    if not all([isinstance(v, str) for v in param2requests['train_leftout_variants']]):
+        raise TypeError('Each element of "train_leftout_variants" must be of type str')
+
+if 'train_leftout_half' in param2requests:
+    if not all([isinstance(v, str) for v in param2requests['train_leftout_half']]):
+        raise TypeError('Each element of "train_leftout_half" must be of type str')
+
+if 'test_leftout_half' in param2requests:
+    if not all([isinstance(v, str) for v in param2requests['test_leftout_half']]):
+        raise TypeError('Each element of "test_leftout_half" must be of type str')
+
 if 'train_leftout_colors' in param2requests:
     if not all([isinstance(v, tuple) for v in param2requests['train_leftout_colors']]):
         raise TypeError('Each element of "train_leftout_colors" must be of type tuple')
+
+if 'test_leftout_colors' in param2requests:
+    if not all([isinstance(v, tuple) for v in param2requests['test_leftout_colors']]):
+        raise TypeError('Each element of "test_leftout_colors" must be of type tuple')
 
 if 'train_leftout_shapes' in param2requests:
     if not all([isinstance(v, tuple) for v in param2requests['train_leftout_shapes']]):
         raise TypeError('Each element of "train_leftout_shapes" must be of type tuple')
 
-# check
+if 'test_leftout_shapes' in param2requests:
+    if not all([isinstance(v, tuple) for v in param2requests['test_leftout_shapes']]):
+        raise TypeError('Each element of "test_leftout_shapes" must be of type tuple')
+
+
+# other checks
 if 'train_leftout_colors' in param2requests:
     for leftout_colors in param2requests['train_leftout_colors']:
         for lc in leftout_colors:
