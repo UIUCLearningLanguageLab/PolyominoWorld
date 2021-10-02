@@ -56,19 +56,30 @@ from typing import Dict, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import sys
 import yaml
 
 try:
-    mnt = os.getenv('LUDWIG_MNT', '/media/')
+    mnt = os.environ['LUDWIG_MNT']
 except KeyError:
-    raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
-                   'Point it to the location where the shared drive is mounted on your system,'
-                   'or use `LUDWIG_MNT=<PATH TO DRIVE>` in front of your `ludwig` command')
+    if sys.platform == 'linux':
+        mnt = '/media/'
+    else:
+        raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
+                       'Use `LUDWIG_MNT=<PATH TO DRIVE>` in front of your `ludwig` command')
 
 runs_path = Path(mnt) / 'ludwig_data' / 'PolyominoWorld' / 'runs'
 
 if not runs_path.exists():
     raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
+
+# some diagnostics
+print('Diagnostics:')
+path = runs_path
+while path != Path('/'):
+    print(f'{path} exists')
+    path = path.parent
+print()
 
 # default hyper parameters with batch-size=1
 param2default = {
