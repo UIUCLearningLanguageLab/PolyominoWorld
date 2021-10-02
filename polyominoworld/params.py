@@ -74,12 +74,14 @@ if not runs_path.exists():
     raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
 
 # some diagnostics
-print('Diagnostics:')
+print('Diagnostics for runs_path:')
 path = runs_path
-while path != Path('/'):
+num_loops = 0
+while path != Path('/') and num_loops < 12:
     print(f'{path} exists')
     path = path.parent
-print()
+    num_loops += 1
+
 
 # default hyper parameters with batch-size=1
 param2default = {
