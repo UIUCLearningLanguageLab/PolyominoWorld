@@ -95,3 +95,4 @@ Before results can be plotted, create an environment variable,
 ## Compatibility
 
 Developed on Ubuntu 18.04 with Python 3.7.9
+Versions of Pytorch above 1.6 are not available for versions of Python above Python3.7.9.
