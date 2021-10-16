@@ -59,29 +59,6 @@ import os
 import sys
 import yaml
 
-try:
-    mnt = os.environ['LUDWIG_MNT']
-except KeyError:
-    if sys.platform == 'linux':
-        mnt = '/media/'
-    else:
-        raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
-                       'Use `LUDWIG_MNT=<PATH TO DRIVE>` in front of your `ludwig` command')
-
-runs_path = Path(mnt) / 'ludwig_data' / 'PolyominoWorld' / 'runs'
-
-if not runs_path.exists():
-    raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
-
-# some diagnostics
-print('Diagnostics for runs_path:')
-path = runs_path
-num_loops = 0
-while path != Path('/') and num_loops < 12:
-    print(f'{path} exists')
-    path = path.parent
-    num_loops += 1
-
 
 # default hyper parameters with batch-size=1
 param2default = {
@@ -156,9 +133,42 @@ param2debug = {
 }
 
 
+# ############################################# helper functions for loading models from checkpoint
+
+
+def get_runs_path() -> Path:
+    try:
+        mnt = os.environ['LUDWIG_MNT']
+    except KeyError:
+        if sys.platform == 'linux':
+            mnt = '/media/'
+        else:
+            raise KeyError('Did not find an environment variable called LUDWIG_MNT. '
+                           'Use `LUDWIG_MNT=<PATH TO DRIVE>` in front of your `ludwig` command')
+
+    runs_path = Path(mnt) / 'ludwig_data' / 'PolyominoWorld' / 'runs'
+
+    if not runs_path.exists():
+        raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
+
+    # some diagnostics
+    print('Diagnostics for runs_path:')
+    path = runs_path
+    num_loops = 0
+    while path != Path('/') and num_loops < 12:
+        print(f'{path} exists')
+        path = path.parent
+        num_loops += 1
+
+    return runs_path
+
+
 def find_param_name(**kwargs,
                     ) -> str:
     """return the param_name that corresponds to a particular experiment-2 configuration"""
+
+    # runs are stored on the shared drive, so first we check that we have access
+    runs_path = get_runs_path()
 
     for param_path in runs_path.glob('param_*'):
         # load param2val
@@ -189,16 +199,14 @@ def find_param_name(**kwargs,
 param2requests = {
 
     'load_from_checkpoint': [
-        'param_043',
+        find_param_name(test_leftout_colors=()),
         'none',
     ],
     'test_leftout_variants': ['half2'],
 
 }
 
-# #############################################
-
-# type checks
+# ############################################# type checks
 
 if 'test_leftout_variants' in param2requests:
     if not all([isinstance(v, str) for v in param2requests['test_leftout_variants']]):
