@@ -196,13 +196,17 @@ def find_param_name(**kwargs,
 # WARNING:
 # a tuple with a single string must be followed by a comma for yaml to correctly identify it as a tuple, not string
 
-param2requests = {
+param2requests = {#[(8,8), (16,8), (16,16), (32,8), (32,16), (64,8), (64,16)]
 
-    'load_from_checkpoint': [
-        find_param_name(test_leftout_colors=()),
-        'none',
-    ],
-    'test_leftout_variants': ['half2'],
+    'y_type': ['world'],
+    'criterion': ['mse'],
+
+
+    #'load_from_checkpoint': [
+        #find_param_name(hidden_sizes=(16,16))
+      #  'none',
+    #],
+   # 'test_leftout_variants': ['half2'],
 
 }
 

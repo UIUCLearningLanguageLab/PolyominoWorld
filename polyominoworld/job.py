@@ -91,9 +91,10 @@ def main(param2val):
         else:
             raise RuntimeError('CUDA is not available')
 
+
     # loss function
     if params.criterion == 'mse':
-        if params.y_type == 'world':  # use MSE only with auto-associator
+        if params.y_type != 'world':  # use MSE only with auto-associator #changed conditional to != from ==
             raise RuntimeError('MSE loss should only be used with auto-associator')
         else:
             criterion_avg = torch.nn.MSELoss()
@@ -142,11 +143,12 @@ def main(param2val):
                        params.num_steps,
                        lr,
                        performance_data,
+                       net.params.y_type,
                        )
 
     # save network weights for visualizing later
-    torch.save(net.state_dict(), save_path / f'model_{step:012}.pt')
-    torch.save(net.state_dict(), save_path / 'model.pt')
+    #torch.save(net.state_dict(), save_path / f'model_{step:012}.pt')
+    #torch.save(net.state_dict(), save_path / 'model.pt')
 
     # compute learning rate schedule (linear increase, then linear decrease)
     lr1, lr2, lr3 = params.learning_rates
@@ -207,6 +209,7 @@ def main(param2val):
                                    params.num_steps,
                                    lr,
                                    performance_data,
+                                   net.params.y_type,
                                    )
 
                 # save network weights for visualizing later

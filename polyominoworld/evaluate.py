@@ -14,15 +14,22 @@ def print_eval_summary(epoch: int,
                        max_step: int,
                        lr: float,
                        performance_data: dict,
+                       y_type: str,
                        ):
 
     cumulative_time = performance_data['cumulative_seconds'][-1][1]
     cost_avg_train: float = performance_data['cost_avg_train'][-1][1]
-    acc_avg_train: float = performance_data['acc_avg_train'][-1][1]
+    if y_type=='features':
+        acc_avg_train: float = performance_data['acc_avg_train'][-1][1]
+    else:
+        acc_avg_train = np.nan
 
     try:
         cost_avg_test = performance_data['cost_avg_test'][-1][1]
-        acc_avg_test = performance_data['acc_avg_test'][-1][1]
+        if y_type == 'features':
+            acc_avg_test = performance_data['acc_avg_test'][-1][1]
+        else:
+            acc_avg_test = np.nan
     except KeyError:  # not evaluating test data
         cost_avg_test = np.nan
         acc_avg_test = np.nan
@@ -125,10 +132,10 @@ def evaluate_reconstruction(net: Network,
                             criterion_all: torch.nn.MSELoss,
                             ) -> Dict[str, float]:
     """
-    return cost reconstructing the world from world input, e.g. "reconstruction cost".
+    return cost reconstructing the world from world input.
     """
 
-    performance_name = f'cost-reconstruction_avg_{dataset.name}'
+    performance_name = f'cost_avg_{dataset.name}'
 
     res = {performance_name: 0}
 
