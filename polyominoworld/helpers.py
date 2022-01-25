@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import Tuple, List, Dict
 import numpy as np
 import torch
-import random
 
 from polyominoworld import configs
 
@@ -32,6 +31,7 @@ class WorldVector:
     active_cell2color: Dict[WorldCell, str] = field()
     bg_color: str = field()
     add_grayscale: bool = field()
+    shift_input: int = field()  # todo experimental
 
     def _make_bg_color_vector(self,
                               add_grayscale: bool,
@@ -82,6 +82,11 @@ class WorldVector:
                 else:
                     channels_vector = self._make_bg_color_vector(self.add_grayscale)
 
+                # todo experimental
+                if self.shift_input > 0:
+                    channels_vector = channels_vector.copy()  # otherwise value in color2channel is changed
+                    channels_vector += self.shift_input
+
                 channel_vectors.append(channels_vector)
 
         # concatenate channel_vectors
@@ -129,7 +134,11 @@ class WorldVector:
         warning: it is extremely important to copy active_cell2color,
          otherwise it will be linked to the world, and updated whenever the world is updated,
         """
-        return cls(world.active_cell2color.copy(), world.params.bg_color, world.params.add_grayscale)
+        return cls(world.active_cell2color.copy(),
+                   world.params.bg_color,
+                   world.params.add_grayscale,
+                   world.params.shift_input,
+                   )
 
 
 @dataclass(frozen=True)

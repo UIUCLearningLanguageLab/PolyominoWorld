@@ -43,8 +43,8 @@ def make_summary(pattern: str,
         pretrain_info = ''
         for k, v in param2default.items():
             if v != param2val_pre_training[k]:
-                pretrain_info += f'{k}={param2val_pre_training[k]} (during pre-training)'
-        label = re.sub(r'load_from_checkpoint=param_\d\d\d', pretrain_info, label, count=0, flags=0)
+                pretrain_info += f'{k}={param2val_pre_training[k]} (during pre-training)\n'
+        label = re.sub(r'load_from_checkpoint=param_\d\d\d', pretrain_info.rstrip('\n'), label, count=0, flags=0)
     else:
         label = label.replace('load_from_checkpoint=none', configs.Figs.NO_PRE_TRAINING_STRING)
 

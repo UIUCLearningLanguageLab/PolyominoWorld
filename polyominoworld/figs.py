@@ -54,7 +54,7 @@ def plot_summary_fig(summaries: List[Tuple[np.ndarray, np.ndarray, np.ndarray, s
                      y_grid: bool = True,
                      legend_labels: Union[None, list] = None,
                      legend_loc: str = 'best',
-                     legend_ncol: int = 3,
+                     legend_ncol: int = 1,
                      verbose: bool = False,
                      ):
     # setting up the matplotlib figure and axis

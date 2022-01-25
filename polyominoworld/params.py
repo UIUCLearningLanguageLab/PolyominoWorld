@@ -59,7 +59,6 @@ import os
 import sys
 import yaml
 
-
 # default hyper parameters with batch-size=1
 param2default = {
     # model
@@ -125,6 +124,9 @@ param2default = {
     'test_leftout_colors': (),  # empty means nothing is leftout
     'test_leftout_shapes': (),
 
+    # experimental (Philip Huebner Spring 2022)
+    'shift_input': 0,
+
 }
 
 # minimal hyper-parameters used for speedy debugging/testing
@@ -184,7 +186,7 @@ def find_param_name(**kwargs,
             if param2val[k] != v:
                 break
         else:
-            print(f'Found requested experiment-2 param_name: {param_path.name}')
+            print(f'Found param_name for loading from checkpoint: {param_path.name}')
             return param_path.name
 
     raise FileNotFoundError(f'Did not find param_name with configuration={kwargs}')
@@ -196,17 +198,17 @@ def find_param_name(**kwargs,
 # WARNING:
 # a tuple with a single string must be followed by a comma for yaml to correctly identify it as a tuple, not string
 
-param2requests = {#[(8,8), (16,8), (16,16), (32,8), (32,16), (64,8), (64,16)]
-
-    'y_type': ['world'],
-    'criterion': ['mse'],
+param2requests = {
 
 
-    #'load_from_checkpoint': [
-        #find_param_name(hidden_sizes=(16,16))
-      #  'none',
-    #],
-   # 'test_leftout_variants': ['half2'],
+    'load_from_checkpoint': [
+        find_param_name(train_leftout_half='upper', shift_input=0),
+        find_param_name(train_leftout_half='upper', shift_input=100),
+        'none',
+    ],
+
+    # 'train_leftout_half': ['upper'],
+    # 'shift_input': [0],
 
 }
 
@@ -298,7 +300,7 @@ class Params:
     shuffle_events: bool
     add_grayscale: bool
     bg_color: str
-    fg_colors: Tuple[str,]
+    fg_colors: Tuple[str, ]
     actions_and_probabilities: Dict[str, float]
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     num_events_per_sequence: int
@@ -312,6 +314,8 @@ class Params:
     test_leftout_half: str
     test_leftout_colors: Tuple[str]
     test_leftout_shapes: Tuple[str]
+
+    shift_input: int
 
     @classmethod
     def from_param2val(cls, param2val):

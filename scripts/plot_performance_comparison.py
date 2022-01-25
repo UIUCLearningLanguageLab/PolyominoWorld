@@ -48,7 +48,7 @@ for param_path, label in gen_param_paths(project_name,
                                          # runs_path=Path(__file__).parent.parent / 'runs',
                                          ludwig_data_path=None,
                                          label_n=True):
-    summary = make_summary(PERFORMANCE_NAME, param_path, label, CONFIDENCE)  # summary contains: x, mean_y, std_y, label, n
+    summary = make_summary(PERFORMANCE_NAME, param_path, label, CONFIDENCE)  # x, mean_y, std_y, label, n
     summaries.append(summary)
     print(f'--------------------- End section {param_path.name}')
     print()

@@ -91,10 +91,9 @@ def main(param2val):
         else:
             raise RuntimeError('CUDA is not available')
 
-
     # loss function
     if params.criterion == 'mse':
-        if params.y_type != 'world':  # use MSE only with auto-associator #changed conditional to != from ==
+        if params.y_type != 'world':  # use MSE only with auto-associator
             raise RuntimeError('MSE loss should only be used with auto-associator')
         else:
             criterion_avg = torch.nn.MSELoss()
