@@ -79,6 +79,7 @@ param2default = {
 
     # data
     'seed': 1,
+    'shuffle_world': False,  # shuffle the world vector (within upper or lower half if other half left out)
     'shuffle_sequences': True,
     'shuffle_events': False,
     'add_grayscale': False,  # adding grayscale does not help or hurt
@@ -124,8 +125,6 @@ param2default = {
     'test_leftout_colors': (),  # empty means nothing is leftout
     'test_leftout_shapes': (),
 
-    # experimental (Philip Huebner Spring 2022)
-    'shuffle_input': False,
 
 }
 
@@ -204,14 +203,14 @@ param2requests = {
 
 
     'load_from_checkpoint': [
-        find_param_name(train_leftout_half='upper', shuffle_input=True),
-        find_param_name(train_leftout_half='upper', shuffle_input=False),
+        find_param_name(train_leftout_half='upper', shuffle_world=True),
+        find_param_name(train_leftout_half='upper', shuffle_world=False),
         'none',
     ],
 
     # 'train_leftout_half': ['upper', ],
-    'test_leftout_half': ['lower', ],  # TODO this is necessary for transfer experiment
-    # 'shuffle_input': [True],
+    # 'shuffle_world': [True],
+    'test_leftout_half': ['lower', ],  # this is necessary for transfer experiment
 
 }
 
@@ -318,7 +317,7 @@ class Params:
     test_leftout_colors: Tuple[str]
     test_leftout_shapes: Tuple[str]
 
-    shuffle_input: bool
+    shuffle_world: bool
 
     @classmethod
     def from_param2val(cls, param2val):

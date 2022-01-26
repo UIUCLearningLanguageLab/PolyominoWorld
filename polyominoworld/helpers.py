@@ -31,7 +31,11 @@ class WorldVector:
     active_cell2color: Dict[WorldCell, str] = field()
     bg_color: str = field()
     add_grayscale: bool = field()
-    shuffle_input: int = field()
+
+    # shuffle
+    shuffle_all: int = field()
+    shuffle_lower: int = field()
+    shuffle_upper: int = field()
 
     def _make_bg_color_vector(self,
                               add_grayscale: bool,
@@ -87,9 +91,15 @@ class WorldVector:
         # concatenate channel_vectors
         concatenation = np.hstack(channel_vectors).astype(np.float32)
 
-        # todo experimental
-        if self.shuffle_input:
+        # shuffle world vector (this is useful for pre-training a net, as a control condition)
+        if self.shuffle_all:
             concatenation = np.random.permutation(concatenation)
+        if self.shuffle_lower:
+            half = len(concatenation) // 2
+            concatenation[half:] = np.random.permutation(concatenation[half:])
+        elif self.shuffle_upper:
+            half = len(concatenation) // 2
+            concatenation[:half] = np.random.permutation(concatenation[:half])
 
         res = torch.from_numpy(concatenation)
 
@@ -129,6 +139,7 @@ class WorldVector:
     @classmethod
     def from_world(cls,
                    world,
+                   leftout_positions: List[Tuple[int, int]],
                    ):
         """
         warning: it is extremely important to copy active_cell2color,
@@ -137,7 +148,9 @@ class WorldVector:
         return cls(world.active_cell2color.copy(),
                    world.params.bg_color,
                    world.params.add_grayscale,
-                   world.params.shuffle_input,
+                   shuffle_all=  world.params.shuffle_world and not leftout_positions,
+                   shuffle_lower=world.params.shuffle_world and (0, 0) not in leftout_positions,
+                   shuffle_upper=world.params.shuffle_world and (0, 0) in leftout_positions,
                    )
 
 

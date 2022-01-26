@@ -125,7 +125,8 @@ class World:
 
         return constructor(color, variant, position)
 
-    def _make_sequence(self, shape,
+    def _make_sequence(self,
+                       shape,
                        leftout_positions: List[Tuple[int, int]],
                        ):
         """a sequence of events that involve a single shape"""
@@ -152,7 +153,7 @@ class World:
                     pos_x=shape.pos_x,
                     pos_y=shape.pos_y,
                     action=shape.action,
-                    world_vector=WorldVector.from_world(self),
+                    world_vector=WorldVector.from_world(self, leftout_positions),
                     hidden_vector=NotImplemented,  # TODO
                     feature_vector=FeatureVector.from_shape(shape),
                 ))

@@ -24,7 +24,7 @@ from polyominoworld.utils import is_leftout
 from polyominoworld.params import param2default, param2requests, Params
 
 # names of performance curves to plot
-PERFORMANCE_NAMES: List[str] = ['acc_shape_test', 'acc_shape_train']
+PERFORMANCE_NAMES: List[str] = ['acc_size_test', 'acc_size_train']
 
 # available PERFORMANCE_NAMES:
 # {1}_{2}_{3}

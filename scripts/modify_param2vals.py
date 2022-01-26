@@ -5,7 +5,9 @@ import yaml
 
 from polyominoworld.params import get_runs_path
 
-ADDED_PARAMS = {'shuffle_input': False}
+ADDED_PARAMS = {'shuffle_world': False}
+
+REMOVED_PARAMS = ['shuffle_input']
 
 
 runs_path = get_runs_path()
@@ -21,6 +23,9 @@ for param_path in sorted(runs_path.glob('param_*')):
     for k, v in ADDED_PARAMS.items():
         if k not in param2val:
             param2val[k] = v
+
+    for k in REMOVED_PARAMS:
+        param2val.pop(k, None)
 
     # write
     with (param_path / 'param2val.yaml').open('w', encoding='utf8') as f:
