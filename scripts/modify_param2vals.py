@@ -5,7 +5,7 @@ import yaml
 
 from polyominoworld.params import get_runs_path
 
-ADDED_PARAMS = {'shift_input': 0}
+ADDED_PARAMS = {'shuffle_input': False}
 
 
 runs_path = get_runs_path()

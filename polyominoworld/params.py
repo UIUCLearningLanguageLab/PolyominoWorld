@@ -125,7 +125,7 @@ param2default = {
     'test_leftout_shapes': (),
 
     # experimental (Philip Huebner Spring 2022)
-    'shift_input': 0,
+    'shuffle_input': False,
 
 }
 
@@ -172,6 +172,8 @@ def find_param_name(**kwargs,
     # runs are stored on the shared drive, so first we check that we have access
     runs_path = get_runs_path()
 
+    print(f'Looking for param_name in {runs_path}')
+
     for param_path in runs_path.glob('param_*'):
         # load param2val
         with (param_path / 'param2val.yaml').open('r') as f:
@@ -202,13 +204,14 @@ param2requests = {
 
 
     'load_from_checkpoint': [
-        find_param_name(train_leftout_half='upper', shift_input=0),
-        find_param_name(train_leftout_half='upper', shift_input=100),
+        find_param_name(train_leftout_half='upper', shuffle_input=True),
+        find_param_name(train_leftout_half='upper', shuffle_input=False),
         'none',
     ],
 
-    # 'train_leftout_half': ['upper'],
-    # 'shift_input': [0],
+    # 'train_leftout_half': ['upper', ],
+    'test_leftout_half': ['lower', ],  # TODO this is necessary for transfer experiment
+    # 'shuffle_input': [True],
 
 }
 
@@ -315,7 +318,7 @@ class Params:
     test_leftout_colors: Tuple[str]
     test_leftout_shapes: Tuple[str]
 
-    shift_input: int
+    shuffle_input: bool
 
     @classmethod
     def from_param2val(cls, param2val):

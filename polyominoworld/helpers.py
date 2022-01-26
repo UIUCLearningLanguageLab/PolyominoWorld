@@ -31,7 +31,7 @@ class WorldVector:
     active_cell2color: Dict[WorldCell, str] = field()
     bg_color: str = field()
     add_grayscale: bool = field()
-    shift_input: int = field()  # todo experimental
+    shuffle_input: int = field()
 
     def _make_bg_color_vector(self,
                               add_grayscale: bool,
@@ -82,15 +82,15 @@ class WorldVector:
                 else:
                     channels_vector = self._make_bg_color_vector(self.add_grayscale)
 
-                # todo experimental
-                if self.shift_input > 0:
-                    channels_vector = channels_vector.copy()  # otherwise value in color2channel is changed
-                    channels_vector += self.shift_input
-
                 channel_vectors.append(channels_vector)
 
         # concatenate channel_vectors
         concatenation = np.hstack(channel_vectors).astype(np.float32)
+
+        # todo experimental
+        if self.shuffle_input:
+            concatenation = np.random.permutation(concatenation)
+
         res = torch.from_numpy(concatenation)
 
         if configs.Device.gpu:
@@ -137,7 +137,7 @@ class WorldVector:
         return cls(world.active_cell2color.copy(),
                    world.params.bg_color,
                    world.params.add_grayscale,
-                   world.params.shift_input,
+                   world.params.shuffle_input,
                    )
 
 

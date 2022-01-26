@@ -169,6 +169,13 @@ def main(param2val):
     # train loop
     for epoch in count(start=1, step=1):  # infinite counter
 
+        # shuffle world_vector tensor at every epoch (to prevent over-fitting on a specific permutation)
+        # careful: train evaluation data uses different data than what is trained on (due to different permutation)
+        if params.shuffle_input:
+            events = data_train.get_events()
+            xs = torch.stack([event.get_x(net.params.x_type) for event in events])
+            ys = torch.stack([event.get_y(net.params.y_type) for event in events])
+
         # shuffle data at start of epoch
         rand_ids = torch.randperm(len(xs))
         xs = xs[rand_ids]
