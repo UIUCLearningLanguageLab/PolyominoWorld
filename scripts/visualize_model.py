@@ -23,7 +23,6 @@ from polyominoworld import configs
 
 from ludwig.results import gen_param_paths
 
-
 if __name__ == '__main__':
 
     configs.Device.gpu = False  # do not send x, and y to gpu
@@ -47,7 +46,7 @@ if __name__ == '__main__':
         data = DataSet(world.generate_sequences(leftout_colors=(),
                                                 leftout_shapes=(),
                                                 leftout_variants='',
-                                                leftout_positions=get_leftout_positions(''),
+                                                leftout_positions=get_leftout_positions(params.train_leftout_half),
                                                 ),
                        seed=params.seed,
                        shuffle_events=params.shuffle_events,
@@ -64,5 +63,5 @@ if __name__ == '__main__':
             net.eval()
 
             # visualize
-            display = Display(data, net, allow_negative_ones=False)
+            display = Display(data, net, allow_negative_ones=True)
             display.root.mainloop()

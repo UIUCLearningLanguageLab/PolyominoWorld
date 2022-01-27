@@ -68,7 +68,7 @@ class Display:
 
 
 class Evaluation:
-    step_interval = 100_000  # todo set to 10_000
+    step_interval = 10_000
     skip_test_data = False
 
 

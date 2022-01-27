@@ -5,9 +5,9 @@ import yaml
 
 from polyominoworld.params import get_runs_path
 
-ADDED_PARAMS = {'shuffle_world': False}
+ADDED_PARAMS = {'leftout_feature_types': ()}
 
-REMOVED_PARAMS = ['shuffle_input']
+REMOVED_PARAMS = []
 
 
 runs_path = get_runs_path()

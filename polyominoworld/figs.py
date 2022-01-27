@@ -37,7 +37,7 @@ def rank_label_for_legend_order(label:  str,
             if variants in label_part:
                 rank = n
 
-    print(f'Assigned label="{label}" rank={rank} in legend order')
+    print(f'Assigned label=\n{label}\nrank={rank} in legend order')
     return rank
 
 

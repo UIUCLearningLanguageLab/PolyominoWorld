@@ -112,6 +112,7 @@ param2default = {
         ('tetromino5', (0, 1, 2, 3))
     ),
     'num_events_per_sequence': 1,  # num of events per sequence
+    'leftout_feature_types': (),  # feature_types (e.g. color) to be left out from supervisory signal
 
     # specific to train data
     'train_leftout_variants': '',  # is a string, and can be either "", "half1", or "half2
@@ -137,7 +138,7 @@ param2debug = {
 # ############################################# helper functions for loading models from checkpoint
 
 
-def get_runs_path() -> Path:
+def get_runs_path(verbose: bool = False) -> Path:
     try:
         mnt = os.environ['LUDWIG_MNT']
     except KeyError:
@@ -153,11 +154,13 @@ def get_runs_path() -> Path:
         raise FileNotFoundError(f'Did not find {runs_path}. Check that your environment variable LUDWIG_MNT is correct')
 
     # some diagnostics
-    print('Diagnostics for runs_path:')
+    if verbose:
+        print('Diagnostics for runs_path:')
     path = runs_path
     num_loops = 0
     while path != Path('/') and num_loops < 12:
-        print(f'{path} exists')
+        if verbose:
+            print(f'{path} exists')
         path = path.parent
         num_loops += 1
 
@@ -202,15 +205,21 @@ def find_param_name(**kwargs,
 param2requests = {
 
 
-    'load_from_checkpoint': [
-        find_param_name(train_leftout_half='upper', shuffle_world=True),
-        find_param_name(train_leftout_half='upper', shuffle_world=False),
-        'none',
-    ],
+    # 'load_from_checkpoint': [
+    #     find_param_name(num_steps=500_000, train_leftout_half='upper', shuffle_world=bool(1), leftout_feature_types=('size', 'color', )),
+    #     find_param_name(num_steps=500_000, train_leftout_half='upper', shuffle_world=bool(1), leftout_feature_types=()),
+    #     find_param_name(num_steps=500_000, train_leftout_half='upper', shuffle_world=bool(0), leftout_feature_types=()),
+    #     'none'
+    # ],
 
-    # 'train_leftout_half': ['upper', ],
-    # 'shuffle_world': [True],
-    'test_leftout_half': ['lower', ],  # this is necessary for transfer experiment
+    # 'test_leftout_half': ['lower', ],  # this is necessary for transfer experiment
+
+    'num_steps': [500_000],
+
+    'train_leftout_half': ['upper', ],
+    'shuffle_world': [True],
+    # 'leftout_feature_types': [(), ('size', 'color', )],
+
 
 }
 
@@ -306,6 +315,7 @@ class Params:
     actions_and_probabilities: Dict[str, float]
     shapes_and_variants: Tuple[Tuple[str, Tuple[int, ]]]
     num_events_per_sequence: int
+    leftout_feature_types: Tuple[str]
 
     train_leftout_variants: str
     train_leftout_half: str

@@ -57,7 +57,7 @@ class WorldVector:
             if add_grayscale:
                 res = color2channels4[self.bg_color]
             else:
-                res = color2channels3[self.bg_color]
+                res = color2channels3[self.bg_color]  # default configuration
 
         return res
 
@@ -96,7 +96,7 @@ class WorldVector:
             concatenation = np.random.permutation(concatenation)
         if self.shuffle_lower:
             half = len(concatenation) // 2
-            concatenation[half:] = np.random.permutation(concatenation[half:])
+            concatenation[half:] = np.random.permutation(concatenation[half:])  # todo this is shuffling left half, not lower half
         elif self.shuffle_upper:
             half = len(concatenation) // 2
             concatenation[:half] = np.random.permutation(concatenation[:half])
@@ -121,18 +121,13 @@ class WorldVector:
 
         res = np.zeros((3, configs.World.max_x, configs.World.max_y))
 
+        x = self.vector.reshape(-1, 3)
+        channel_vectors = iter(x)
+
         for pos_x in range(configs.World.max_x):
             for pos_y in range(configs.World.max_y):
-                cell = WorldCell(pos_x, pos_y)
-
-                # color of shape at cell
-                if cell in self.active_cell2color:
-                    color = self.active_cell2color[cell]
-                    res[:, pos_y, pos_x] = color2channels3[color]  # always use rgb only
-
-                # color of background
-                else:
-                    res[:, pos_y, pos_x] = self._make_bg_color_vector(add_grayscale=False)
+                cv = next(channel_vectors)
+                res[:, pos_x, pos_y] = cv  # this works
 
         return res
 
@@ -143,14 +138,31 @@ class WorldVector:
                    ):
         """
         warning: it is extremely important to copy active_cell2color,
-         otherwise it will be linked to the world, and updated whenever the world is updated,
+         otherwise it will be linked to the world, and updated whenever the world is updated.
+
+        note:
+            when train data is shuffled on top, then test data is shuffled on bottom,
+            and vice versa
         """
+
+        # shuffle world vector?
+        shuffle_all = world.params.shuffle_world and not leftout_positions
+        shuffle_lower = world.params.shuffle_world and (0, 0) not in leftout_positions
+        shuffle_upper = world.params.shuffle_world and (0, 0) in leftout_positions
+
+        if sum([int(shuffle_all), int(shuffle_lower), int(shuffle_upper)]) not in {0, 1}:
+            print(leftout_positions)
+            print(f'shuffle_all={shuffle_all}')
+            print(f'shuffle_lower={shuffle_lower}')
+            print(f'shuffle_upper={shuffle_upper}')
+            raise RuntimeError('Cannot shuffle in more than one condition (all, upper, lower)')
+
         return cls(world.active_cell2color.copy(),
                    world.params.bg_color,
                    world.params.add_grayscale,
-                   shuffle_all=  world.params.shuffle_world and not leftout_positions,
-                   shuffle_lower=world.params.shuffle_world and (0, 0) not in leftout_positions,
-                   shuffle_upper=world.params.shuffle_world and (0, 0) in leftout_positions,
+                   shuffle_all,
+                   shuffle_lower,
+                   shuffle_upper,
                    )
 
 
@@ -229,6 +241,7 @@ class FeatureVector:
     @classmethod
     def from_shape(cls,
                    shape,
+                   leftout_feature_types: Tuple[str],
                    ):
         # create one-hot vectors
         shape_vector = np.eye(len(configs.World.feature_type2values['shape']),
@@ -239,6 +252,16 @@ class FeatureVector:
                               dtype=np.int32)[configs.World.feature_type2values['color'].index(shape.color)]
         action_vector = np.eye(len(configs.World.feature_type2values['action']),
                                dtype=np.int32)[configs.World.feature_type2values['action'].index(shape.action)]
+
+        # leave out feature types (by setting to zero)
+        if 'shape' in leftout_feature_types:
+            shape_vector = np.zeros_like(shape_vector)
+        if 'size' in leftout_feature_types:
+            size_vector = np.zeros_like(size_vector)
+        if 'color' in leftout_feature_types:
+            color_vector = np.zeros_like(color_vector)
+        if 'action' in leftout_feature_types:
+            action_vector = np.zeros_like(action_vector)
 
         return cls(shape_vector, size_vector, color_vector, action_vector)
 

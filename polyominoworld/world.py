@@ -91,7 +91,9 @@ class World:
                             self.active_cell2color[cell] = shape.color
 
                         # make sequence of events
-                        sequence = self._make_sequence(shape, leftout_positions)
+                        sequence = self._make_sequence(shape,
+                                                       leftout_positions,
+                                                       self.params.leftout_feature_types)
                         res.append(sequence)
 
         return res
@@ -128,6 +130,7 @@ class World:
     def _make_sequence(self,
                        shape,
                        leftout_positions: List[Tuple[int, int]],
+                       leftout_feature_types: Tuple[str]
                        ):
         """a sequence of events that involve a single shape"""
 
@@ -144,19 +147,19 @@ class World:
             assert len(self.active_cell2color) == shape.size
 
             # collect event that resulted from action
-            events.append(
-                Event(
-                    shape=shape.name,
-                    size=shape.size,
-                    color=shape.color,
-                    variant=shape.variant,
-                    pos_x=shape.pos_x,
-                    pos_y=shape.pos_y,
-                    action=shape.action,
-                    world_vector=WorldVector.from_world(self, leftout_positions),
-                    hidden_vector=NotImplemented,  # TODO
-                    feature_vector=FeatureVector.from_shape(shape),
-                ))
+            event = Event(
+                shape=shape.name,
+                size=shape.size,
+                color=shape.color,
+                variant=shape.variant,
+                pos_x=shape.pos_x,
+                pos_y=shape.pos_y,
+                action=shape.action,
+                world_vector=WorldVector.from_world(self, leftout_positions),
+                hidden_vector=NotImplemented,  # TODO
+                feature_vector=FeatureVector.from_shape(shape, leftout_feature_types),
+            )
+            events.append(event)
 
         res = Sequence(events)
         return res

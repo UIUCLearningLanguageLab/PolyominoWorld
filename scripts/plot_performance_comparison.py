@@ -41,15 +41,19 @@ TITLE = ''
 # for each job, save a summary, used for plotting
 summaries = []
 project_name = 'PolyominoWorld'
-for param_path, label in sorted(gen_param_paths(project_name,
-                                                param2requests,
-                                                param2default,
-                                                # isolated=True,
-                                                # runs_path=Path(__file__).parent.parent / 'runs',
-                                                ludwig_data_path=None,
-                                                label_n=True)):
+for param_path, label in gen_param_paths(project_name,
+                                         param2requests,
+                                         param2default,
+                                         # isolated=True,
+                                         # runs_path=Path(__file__).parent.parent / 'runs',
+                                         ludwig_data_path=None,
+                                         label_n=False,
+                                         require_all_found=False,
+                                         ):
     summary = make_summary(PERFORMANCE_NAME, param_path, label, CONFIDENCE)  # x, mean_y, std_y, label, n
     summaries.append(summary)
+    print(label)
+    print(summary[1].round(2))
     print(f'--------------------- End section {param_path.name}')
     print()
 
