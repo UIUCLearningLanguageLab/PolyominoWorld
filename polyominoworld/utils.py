@@ -15,10 +15,10 @@ def get_leftout_positions(leftout_half: str,
     all_positions = [(x, y) for x, y in
                      itertools.product(range(configs.World.max_x), range(configs.World.max_y))]
 
-    if leftout_half == 'lower':
+    if leftout_half == 'upper':
         return [(x, y) for x, y in all_positions
                 if y < configs.World.max_y / 2]
-    elif leftout_half == 'upper':
+    elif leftout_half == 'lower':
         return [(x, y) for x, y in all_positions
                 if y >= configs.World.max_y / 2]
     elif leftout_half == '':

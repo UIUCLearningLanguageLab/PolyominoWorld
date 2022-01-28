@@ -86,22 +86,35 @@ class WorldVector:
                 else:
                     channels_vector = self._make_bg_color_vector(self.add_grayscale)
 
-                channel_vectors.append(channels_vector)
-
-        # concatenate channel_vectors
-        concatenation = np.hstack(channel_vectors).astype(np.float32)
+                channel_vectors.append(channels_vector.astype(np.float32))
 
         # shuffle world vector (this is useful for pre-training a net, as a control condition)
-        if self.shuffle_all:
-            concatenation = np.random.permutation(concatenation)
-        if self.shuffle_lower:
-            half = len(concatenation) // 2
-            concatenation[half:] = np.random.permutation(concatenation[half:])  # todo this is shuffling left half, not lower half
-        elif self.shuffle_upper:
-            half = len(concatenation) // 2
-            concatenation[:half] = np.random.permutation(concatenation[:half])
+        # note: we reshape so that x-coord indexes row, and then rotate so x-coords index columns
+        tmp = np.reshape(channel_vectors, (configs.World.max_x, -1)).T
+        num_rows = len(tmp) // 2
 
-        res = torch.from_numpy(concatenation)
+        if self.shuffle_all:
+            conc = np.random.permutation(np.hstack(channel_vectors))
+        elif self.shuffle_lower:
+            half = tmp[num_rows:]
+            cvs_half = half.T.reshape(-1, 3)  # transpose so each row is a channel
+            cvs_half_perm = np.random.permutation(cvs_half)  # shuffle channels
+            lower_perm = cvs_half_perm.reshape(half.T.shape).T  # undo reshape and transposition
+            tmp[num_rows:] = lower_perm  # replace half with permuted half
+            conc = tmp.T.flatten()  # transpose to get channels across columns
+
+        elif self.shuffle_upper:
+            half = tmp[:num_rows]
+            cvs_half = half.T.reshape(-1, 3)  # transpose so each row is a channel
+            cvs_half_perm = np.random.permutation(cvs_half)  # shuffle channels
+            lower_perm = cvs_half_perm.reshape(half.T.shape).T  # undo reshape and transposition
+            tmp[:num_rows] = lower_perm  # replace half with permuted half
+            conc = tmp.T.flatten()  # transpose to get channels across columns
+        else:
+            conc = np.hstack(channel_vectors)
+
+        # concatenate channel_vectors
+        res = torch.from_numpy(conc)
 
         if configs.Device.gpu:
             res = res.cuda()
@@ -147,8 +160,8 @@ class WorldVector:
 
         # shuffle world vector?
         shuffle_all = world.params.shuffle_world and not leftout_positions
-        shuffle_lower = world.params.shuffle_world and (0, 0) not in leftout_positions
-        shuffle_upper = world.params.shuffle_world and (0, 0) in leftout_positions
+        shuffle_lower = world.params.shuffle_world and (0, 0) in leftout_positions
+        shuffle_upper = world.params.shuffle_world and (0, 0) not in leftout_positions
 
         if sum([int(shuffle_all), int(shuffle_lower), int(shuffle_upper)]) not in {0, 1}:
             print(leftout_positions)

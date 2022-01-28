@@ -101,7 +101,7 @@ param2default = {
         ('flip',  0.0),
     ),
     'shapes_and_variants': (  # which shapes and which variant should be included
-        ('monomino', (0,)),
+        # ('monomino', (0,)),  # todo re-enable
         ('domino', (0, 1)),
         ('tromino1', (0, 1)),
         ('tromino2', (0, 1, 2, 3)),
@@ -217,7 +217,7 @@ param2requests = {
     'num_steps': [500_000],
 
     'train_leftout_half': ['upper', ],
-    'shuffle_world': [True],
+    'shuffle_world': [True, False],
     # 'leftout_feature_types': [(), ('size', 'color', )],
 
 

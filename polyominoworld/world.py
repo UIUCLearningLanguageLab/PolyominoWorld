@@ -14,7 +14,7 @@ class World:
     events occur because to actions performed by shapes, e.g. flip, move, rotate
 
 
-    the world is defined with respect to the origin (x=0, y=0), the bottom, left-most point
+    the world is defined with respect to the origin (x=0, y=0), the top, left-most point
     """
 
     def __init__(self,

@@ -221,6 +221,8 @@ class Display:
         #                    font=configs.Display.font_l,
         #                    fill=configs.Display.color_text_fill)
 
+        # note: the origin (x=0, y=0) is in upper left of the display, same as 'world' code
+
         unit_counter = 0
         for pos_x in range(configs.World.max_y):
             for pos_y in range(configs.World.max_x):
